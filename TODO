@@ -1,0 +1,32 @@
+TODO
+
+
+[] what's wrong with render optimization?
+[] draw fixed parts just once
+	[] or have a background "field"?
+
+[] speed up centerNumber by using the fixed size of digits in the font
+
+
+[] field menus:
+	measures: 1, 2, 3, 4, 5, 6, 7, 8
+	beats: 1 ~ 16
+	beatunit: 1, 2, 4, 8, 16
+	tupletcount: 3, 5, 7, 9
+	tupletspan: 2, 4, ?
+
+[] rhythmic unit images
+[] rhythmic unit field
+	- menu of 1, 1/2, 1/4, 1/8, 1/16
+
+[] why doesn't number of selectable fields work?
+
+[] field render for BPM
+	- sideways
+	- select selects from source menu:
+		TAP - 1/4 - 1/16 - 24ppb 32ppb 48ppb
+
+[] field render of memories
+	- like radio, or does editing save into current selected?
+	- select does pick
+	- long-select does write
