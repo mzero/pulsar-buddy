@@ -1,9 +1,7 @@
 TODO
 
 
-[] what's wrong with render optimization?
-[] draw fixed parts just once
-	[] or have a background "field"?
+[] field selector should stay where it was even when idle
 
 [] speed up centerNumber by using the fixed size of digits in the font
 

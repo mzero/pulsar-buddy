@@ -88,8 +88,8 @@ private:
 };
 
 void Field::render() {
-  // if (lastDrawn && value == lastValue && selected == lastSelected)
-  //   return;
+  if (lastDrawn && value == lastValue && selected == lastSelected)
+    return;
 
   uint16_t foreColor = selected ? BLACK : WHITE;
   uint16_t backColor = selected ? WHITE : BLACK;
@@ -177,35 +177,30 @@ void clickSelection() {
   }
 }
 
+
 void drawBPM() {
   display.setRotation(3);
+  display.fillRect(0, 0, 32, 14, BLACK);
+  display.setTextColor(WHITE);
   centerNumber(bpm, 0, 0, 32, 14);
   display.setRotation(0);
 }
 
-void drawSeparator(uint16_t x) {
-  for (uint16_t y = 0; y += 2; y < 32) {
+void drawSeparator(int16_t x) {
+  for (int16_t y = 0; y < 32; y += 2) {
     display.drawPixel(x, y, WHITE);
   }
 }
 
 void drawRepeat() {
-  //centerNumber(4, 18, 0, 10, 32);
   fieldNumberMeasures.render();
-  display.drawLine(30, 12, 36, 18, WHITE);
-  display.drawLine(30, 18, 36, 12, WHITE);
   fieldBeatsPerMeasure.render();
-  display.drawLine(38, 16, 62, 16, WHITE);
   fieldBeatUnit.render();
 }
 
 void drawTuplet() {
   fieldTupletCount.render();
-  centerText(":", 77, 0, 4, 32);
   fieldTupletTime.render();
-  display.fillCircle(97, 24, 2, WHITE);
-  display.fillCircle(98, 23, 2, WHITE);
-  display.drawLine(100, 6, 100, 21, WHITE);
 }
 
 void drawMemory() {
@@ -216,22 +211,50 @@ void drawMemory() {
   display.fillCircle(123, 21, 3, WHITE);
 }
 
-void drawAll() {
+void drawFixed() {
+  // BPM area
+
+  drawSeparator(16);
+
+  // Repeat area
+  //    the x
+  display.drawLine(30, 12, 36, 18, WHITE);
+  display.drawLine(30, 18, 36, 12, WHITE);
+  //    the time signature dividing line
+  display.drawLine(38, 16, 62, 16, WHITE);
+
+  drawSeparator(64);
+
+  // Tuplet area
+  //    the :
+  centerText(":", 77, 0, 4, 32);
+  //    the 1/4 note (for now)
+  display.fillCircle(97, 24, 2, WHITE);
+  display.fillCircle(98, 23, 2, WHITE);
+  display.drawLine(100, 6, 100, 21, WHITE);
+
+  drawSeparator(108);
+
+  // Memory area
+}
+
+void drawAll(bool refresh) {
   unsigned long t0 = millis();
 
-  display.clearDisplay();
+  if (refresh) {
+    display.clearDisplay();
 
-  display.setTextSize(1);
-  display.setFont(&FONT);
-  display.setTextColor(WHITE);
-  display.setTextWrap(false);
+    display.setTextSize(1);
+    display.setFont(&FONT);
+    display.setTextColor(WHITE);
+    display.setTextWrap(false);
+
+    drawFixed();
+  }
 
   drawBPM();
-  drawSeparator(16);
   drawRepeat();
-  drawSeparator(64);
   drawTuplet();
-  drawSeparator(108);
   drawMemory();
 
   unsigned long t1 = millis();
@@ -240,8 +263,8 @@ void drawAll() {
 
   unsigned long t2 = millis();
   Serial.print("draw ms: ");
-  Serial.println(t1 - t0);
-  Serial.print("disp ms: ");
+  Serial.print(t1 - t0);
+  Serial.print(", disp ms: ");
   Serial.println(t2 - t1);
 }
 
@@ -385,14 +408,11 @@ void setup() {
   Serial.begin(9600);
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
-
-  display.clearDisplay();
-  display.display();
-  drawAll();
+  drawAll(true);
 }
 
 void postAction() {
-  drawAll();
+  drawAll(false);
   idleTimeout.activity();
 }
 
@@ -427,7 +447,7 @@ void loop() {
 
   if (idleTimeout.update()) {
     resetSelection();
-    drawAll();
+    drawAll(false);
     return;
   }
 }
