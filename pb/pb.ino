@@ -135,45 +135,52 @@ Field *const selectableFields[] =
 const int numberOfSelectableFields = 5;
   // sizeof(selectableFields) / sizeof(selectableFields[0]);
 
-int selectedFieldIndex = -1;
-bool selectingFields = true;
+enum SelectMode { selectNone, selectField, selectValue };
+
+SelectMode selectMode = selectNone;
+int selectedFieldIndex = 0;
 
 void resetSelection() {
-  if (selectedFieldIndex >= 0) {
-    selectableFields[selectedFieldIndex]->selected = false;
-  }
-  selectedFieldIndex = -1;
-  selectingFields = true;
-}
-
-void selectNextField(int dir) {
-  if (selectedFieldIndex >= 0) {
-    selectableFields[selectedFieldIndex]->selected = false;
-  }
-  selectedFieldIndex =
-    constrain(selectedFieldIndex + dir, 0, numberOfSelectableFields - 1);
-  selectableFields[selectedFieldIndex]->selected = true;
-}
-
-void bumpSelectedFieldValue(int dir) {
-  if (selectableFields[selectedFieldIndex]) {
-    selectableFields[selectedFieldIndex]->value += dir;
-  }
+  selectMode = selectNone;
+  selectableFields[selectedFieldIndex]->selected = false;
 }
 
 void updateSelection(int dir) {
-  if (selectingFields) {
-    selectNextField(dir);
-  } else {
-    bumpSelectedFieldValue(dir);
+  switch (selectMode) {
+
+    case selectNone:
+      selectMode = selectField;
+      selectableFields[selectedFieldIndex]->selected = true;
+      break;
+
+    case selectField:
+      selectableFields[selectedFieldIndex]->selected = false;
+      selectedFieldIndex =
+        constrain(selectedFieldIndex + dir, 0, numberOfSelectableFields - 1);
+      selectableFields[selectedFieldIndex]->selected = true;
+      break;
+
+    case selectValue:
+      selectableFields[selectedFieldIndex]->value += dir;
+      break;
   }
 }
 
 void clickSelection() {
-  if (selectingFields) {
-    selectingFields = false;
-  } else {
-    selectingFields = true;
+  switch (selectMode) {
+
+    case selectNone:
+      selectMode = selectField;
+      selectableFields[selectedFieldIndex]->selected = true;
+      break;
+
+    case selectField:
+      selectMode = selectValue;
+      break;
+
+    case selectValue:
+      selectMode = selectField;
+      break;
   }
 }
 

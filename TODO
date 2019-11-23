@@ -1,7 +1,7 @@
 TODO
 
 
-[] field selector should stay where it was even when idle
+[x] field selector should stay where it was even when idle
 
 [] speed up centerNumber by using the fixed size of digits in the font
 
