@@ -166,8 +166,6 @@ template<>
 void ValueField< uint16_t >::redraw() {
   display.setTextColor(foreColor());
   centerNumber(value, x, y, w, h);
-  Serial.print("showing ");
-  Serial.println(value);
 }
 
 
@@ -335,6 +333,8 @@ void drawFixed() {
 }
 
 void drawAll(bool refresh) {
+  display.dim(false);
+
   unsigned long t0 = millis();
 
   if (refresh) {
@@ -408,10 +408,8 @@ int Encoder::update() {
     if (a && b) {
       if (quads > 1) {
         r = 1;
-        Serial.println("Encoder CW");
       } else if (quads < -1) {
         r = -1;
-        Serial.println("Encoder CWW");
       }
       quads = 0;
     }
@@ -463,22 +461,23 @@ bool Button::update()
 
 class IdleTimeout {
 public:
-  IdleTimeout();
+  IdleTimeout(unsigned long period);
   void activity();
   bool update();      // returns true on start of idle
 
 private:
+  const unsigned long period;
   bool idle;
   unsigned long idleAtTime;
 };
 
-IdleTimeout::IdleTimeout()
-  : idle(true)
+IdleTimeout::IdleTimeout(unsigned long period)
+  : idle(true), period(period)
   { }
 
 void IdleTimeout::activity() {
   idle = false;
-  idleAtTime = millis() + 2000;
+  idleAtTime = millis() + period;
 }
 
 bool IdleTimeout::update() {
@@ -493,7 +492,8 @@ bool IdleTimeout::update() {
   return false;
 }
 
-IdleTimeout idleTimeout;
+IdleTimeout selectionTimeout(2000);
+IdleTimeout dimTimeout(5000);
 Encoder encoder(ENCODER_A, ENCODER_B);
 Button encoderButton(ENCODER_SW);
 Button oledButtonA(BUTTON_A);
@@ -509,7 +509,8 @@ void setup() {
 
 void postAction() {
   drawAll(false);
-  idleTimeout.activity();
+  selectionTimeout.activity();
+  dimTimeout.activity();
 }
 
 void loop() {
@@ -541,9 +542,14 @@ void loop() {
     return;
   }
 
-  if (idleTimeout.update()) {
+  if (selectionTimeout.update()) {
     resetSelection();
     drawAll(false);
+    return;
+  }
+
+  if (dimTimeout.update()) {
+    display.dim(true);
     return;
   }
 }

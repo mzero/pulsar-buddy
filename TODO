@@ -8,11 +8,13 @@ TODO
 	tupletcount: 3, 5, 7, 9
 	tupletspan: 2, 4, ?
 
+[x] dim OLED screen when idle
+
+
 [] rhythmic unit images
 [] rhythmic unit field
 	- menu of 1, 1/2, 1/4, 1/8, 1/16
 
-[] dim OLED screen when idle
 
 [] speed up centerNumber by using the fixed size of digits in the font
 
