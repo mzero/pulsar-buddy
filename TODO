@@ -2,10 +2,10 @@ TODO
 
 [] why doesn't number of selectable fields work?
 
-[-] compound select for common settings...
+[x] compound select for common settings...
 	[x] of meter: 4/4, 3/4, 2/4, 6/8, 12/16
 	[x] of tuplets: 2:3, 3:2, 4:3, 5:4, 7:4, 7:6, 9:8
-	[ ] draw/select separators (— for meter, : for tuplets)
+	[x] draw/select separators (— for meter, : for tuplets)
 
 
 [] speed up centerNumber by using the fixed size of digits in the font

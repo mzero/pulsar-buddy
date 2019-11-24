@@ -232,7 +232,6 @@ public:
     { }
 
   virtual void select(bool);
-  virtual void redraw() { };
 
 protected:
   virtual value_t getValue()
@@ -240,6 +239,8 @@ protected:
 
   virtual void setValue(const value_t& v)
     { fieldA.setValue(v.first); fieldB.setValue(v.second); }
+
+  virtual void redraw() { };
 
   ValueField<T>& fieldA;
   ValueField<T>& fieldB;
@@ -250,6 +251,49 @@ void PairField<T, U>::select(bool s) {
   fieldA.select(s);
   OptionField<value_t>::select(s);
   fieldB.select(s);
+}
+
+
+class TimeSignatureField : public PairField<uint16_t, uint16_t> {
+public:
+  TimeSignatureField(
+    int16_t x, int16_t y, uint16_t w, uint16_t h,
+    ValueField<uint16_t>& numberField,
+    ValueField<uint16_t>& beatField
+    )
+  : PairField<uint16_t, uint16_t>(x, y, w, h, numberField, beatField,
+    { { 4, 4 }, { 3, 4 }, { 2, 4 }, { 6, 8 }, { 12, 16 }, { 16, 16 }}
+    )
+  { }
+
+protected:
+    virtual void redraw();
+};
+
+void TimeSignatureField::redraw() {
+  display.drawFastHLine(x + 1, y + h / 2, w - 2, foreColor());
+}
+
+
+class TupletRatioField : public PairField<uint16_t, uint16_t> {
+public:
+  TupletRatioField(
+    int16_t x, int16_t y, uint16_t w, uint16_t h,
+    ValueField<uint16_t>& countField,
+    ValueField<uint16_t>& timeField
+    )
+  : PairField<uint16_t, uint16_t>(x, y, w, h, countField, timeField,
+      { { 3, 2 }, { 2, 3 }, { 4, 3 }, { 5, 4 }, { 7, 4 }, { 7, 6 }}
+    )
+  { }
+
+protected:
+    virtual void redraw();
+};
+
+void TupletRatioField::redraw() {
+  display.setTextColor(foreColor());
+  centerText(":", x, y, w, h);
 }
 
 
@@ -329,7 +373,7 @@ Settings settings = { 4, 16, 16, 3, 2, 4 };
 
 
 auto fieldNumberMeasures
-  = ValueField<uint16_t>(18,  0, 10, 32,
+  = ValueField<uint16_t>(18,  0, 10, 31,
       settings.numberMeasures,
       { 1, 2, 3, 4, 5, 6, 7, 8 }
       );
@@ -341,36 +385,34 @@ auto fieldBeatsPerMeasure
       );
 
 auto fieldBeatUnit
-  = ValueField<uint16_t>(38, 18, 24, 14,
+  = ValueField<uint16_t>(38, 17, 24, 14,
       settings.beatUnit,
       { 1, 2, 4, 8, 16 }
       );
 
 auto commonTimeSignatures
-  = PairField<uint16_t, uint16_t>(38, 14, 24, 3,
-      fieldBeatsPerMeasure, fieldBeatUnit,
-      { { 4, 4 }, { 3, 4 }, { 2, 4 }, { 6, 8 }, { 12, 16 }, { 16, 16 }}
+  = TimeSignatureField(38, 14, 24, 3,
+      fieldBeatsPerMeasure, fieldBeatUnit
       );
 
 auto fieldTupletCount
-  = ValueField<uint16_t>(66,  0, 10, 32,
+  = ValueField<uint16_t>(66,  0, 12, 31,
       settings.tupletCount,
       { 2, 3, 4, 5, 6, 7, 8, 9 }
       );
 auto fieldTupletTime
-  = ValueField<uint16_t>(82,  0, 10, 32,
+  = ValueField<uint16_t>(84,  0, 12, 31,
       settings.tupletTime,
       { 2, 3, 4, 6, 8 }
       );
 
 auto commonTuplets
-  = PairField<uint16_t, uint16_t>(76, 0, 6, 32,
-      fieldTupletCount, fieldTupletTime,
-      { { 3, 2 }, { 2, 3 }, { 4, 3 }, { 5, 4 }, { 7, 4 }, { 7, 6 }}
+  = TupletRatioField(78, 0, 6, 31,
+      fieldTupletCount, fieldTupletTime
       );
 
 auto fieldTupletUnit
-  = BeatField(94, 2, 12, 28,
+  = BeatField(96, 2, 12, 28,
       settings.tupletUnit
       );
 
@@ -455,11 +497,13 @@ void drawSeparator(int16_t x) {
 void drawRepeat() {
   fieldNumberMeasures.render();
   fieldBeatsPerMeasure.render();
+  commonTimeSignatures.render();
   fieldBeatUnit.render();
 }
 
 void drawTuplet() {
   fieldTupletCount.render();
+  commonTuplets.render();
   fieldTupletTime.render();
   fieldTupletUnit.render();
 }
@@ -481,16 +525,12 @@ void drawFixed() {
   //    the x
   display.drawLine(30, 12, 36, 18, WHITE);
   display.drawLine(30, 18, 36, 12, WHITE);
-  //    the time signature dividing line
-  display.drawLine(38, 16, 62, 16, WHITE);
 
   drawSeparator(64);
 
   // Tuplet area
-  //    the :
-  centerText(":", 77, 0, 4, 32);
 
-  drawSeparator(108);
+  drawSeparator(109);
 
   // Memory area
 }
