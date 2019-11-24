@@ -1,24 +1,14 @@
 TODO
 
+[] why doesn't number of selectable fields work?
 
-[x] field menus:
-	measures: 1, 2, 3, 4, 5, 6, 7, 8
-	beats: 1 ~ 16
-	beatunit: 1, 2, 4, 8, 16
-	tupletcount: 3, 5, 7, 9
-	tupletspan: 2, 4, ?
-
-[x] dim OLED screen when idle
-
-
-[x] rhythmic unit images
-[x] rhythmic unit field
-	- menu of 1, 1/2, 1/4, 1/8, 1/16
+[-] compound select for common settings...
+	[x] of meter: 4/4, 3/4, 2/4, 6/8, 12/16
+	[x] of tuplets: 2:3, 3:2, 4:3, 5:4, 7:4, 7:6, 9:8
+	[ ] draw/select separators (— for meter, : for tuplets)
 
 
 [] speed up centerNumber by using the fixed size of digits in the font
-
-[] why doesn't number of selectable fields work?
 
 [] field render for BPM
 	- sideways
@@ -29,3 +19,12 @@ TODO
 	- like radio, or does editing save into current selected?
 	- select does pick
 	- long-select does write
+
+
+QUESTIONS
+
+? what tuplet options are useful
+	- "reasonable" ratios?
+	- any rations?
+	- 11:x ?
+
