@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <initializer_list>
+
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -65,43 +68,108 @@ void centerNumber(uint16_t n, uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
 }
 
 
-
 class Field {
 public:
-  Field(uint16_t& value, int16_t x, int16_t y, uint16_t w, uint16_t h)
-    : value(value), x(x), y(y), w(w), h(h), selected(false), lastDrawn(false)
+  Field(int16_t x, int16_t y, uint16_t w, uint16_t h)
+    : x(x), y(y), w(w), h(h), selected(false), needsUpdate(true)
     { };
 
-  uint16_t& value;
-
-  int16_t   x, y;
-  uint16_t  w, h;
-
-  bool      selected;
-
   void render();
+  void forceRender();
+
+  void select(bool);
+  inline void select() { select(true); };
+  inline void deselect() { select(false); };
+
+  virtual void update(int);
+
+protected:
+  inline void outOfDate() { needsUpdate = true; };
+  inline uint16_t foreColor() { return selected ? BLACK : WHITE; };
+  inline uint16_t backColor() { return selected ? WHITE : BLACK; };
+
+  virtual void redraw() = 0;
+
+  const     int16_t   x, y;
+  const     uint16_t  w, h;
 
 private:
-  bool      lastDrawn;
-  uint16_t  lastValue;
-  bool      lastSelected;
+  bool      selected;
+  bool      needsUpdate;
 };
 
 void Field::render() {
-  if (lastDrawn && value == lastValue && selected == lastSelected)
+  if (!needsUpdate)
     return;
 
-  uint16_t foreColor = selected ? BLACK : WHITE;
-  uint16_t backColor = selected ? WHITE : BLACK;
-
-  display.fillRect(x, y, w, h, backColor);
-  display.setTextColor(foreColor);
-  centerNumber(value, x, y, w, h);
-
-  lastDrawn = true;
-  lastValue = value;
-  lastSelected = selected;
+  forceRender();
 }
+
+void Field::forceRender() {
+  display.fillRect(x, y, w, h, backColor());
+  redraw();
+  needsUpdate = false;
+}
+
+void Field::select(bool s) {
+  if (selected != s) {
+    selected = s;
+    needsUpdate = true;
+  }
+}
+
+void Field::update(int dir) {
+}
+
+
+
+template< typename T >
+class ValueField : public Field {
+public:
+  ValueField(
+      int16_t x, int16_t y, uint16_t w, uint16_t h,
+      T& value, std::initializer_list<T> options
+      )
+    : Field(x, y, w, h), value(value),
+      options({}),
+      numOptions(min(maxOptions, (int)(options.size())))
+    {
+      std::copy(
+        options.begin(), options.begin() + numOptions,
+        const_cast<T*>(this->options));
+    };
+
+  virtual void update(int dir);
+
+protected:
+  virtual void redraw();
+
+  T&        value;
+
+  static const int maxOptions = 16;
+  const T          options[maxOptions];
+  const int        numOptions;
+};
+
+
+template< typename T >
+void ValueField<T>::update(int dir) {
+  int i;
+  for (i = 0; i < numOptions; i++) {
+    if (value == options[i]) break;
+  }
+  value = options[constrain(i + dir, 0, numOptions - 1)];
+  outOfDate();
+}
+
+template<>
+void ValueField< uint16_t >::redraw() {
+  display.setTextColor(foreColor());
+  centerNumber(value, x, y, w, h);
+  Serial.print("showing ");
+  Serial.println(value);
+}
+
 
 struct Settings {
   uint16_t    numberMeasures;
@@ -113,17 +181,37 @@ struct Settings {
   uint16_t    tupletUnit;
 };
 
-
 Settings settings = { 4, 16, 16, 3, 2, 4 };
 
 
-Field fieldNumberMeasures   = Field(settings.numberMeasures,    18,  0, 10, 32);
-Field fieldBeatsPerMeasure  = Field(settings.beatsPerMeasure,   38,  0, 24, 14);
-Field fieldBeatUnit         = Field(settings.beatUnit,          38, 18, 24, 14);
+auto fieldNumberMeasures
+  = ValueField<uint16_t>(18,  0, 10, 32,
+      settings.numberMeasures,
+      { 1, 2, 3, 4, 5, 6, 7, 8 }
+      );
 
-Field fieldTupletCount      = Field(settings.tupletCount,       66,  0, 10, 32);
-Field fieldTupletTime       = Field(settings.tupletTime,        82,  0, 10, 32);
+auto fieldBeatsPerMeasure
+  = ValueField<uint16_t>(38,  0, 24, 14,
+      settings.beatsPerMeasure,
+      { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }
+      );
 
+auto fieldBeatUnit
+  = ValueField<uint16_t>(38, 18, 24, 14,
+      settings.beatUnit,
+      { 1, 2, 4, 8, 16 }
+      );
+
+auto fieldTupletCount
+  = ValueField<uint16_t>(66,  0, 10, 32,
+      settings.tupletCount,
+      { 2, 3, 4, 5, 6, 7, 8, 9 }
+      );
+auto fieldTupletTime
+  = ValueField<uint16_t>(82,  0, 10, 32,
+      settings.tupletTime,
+      { 2, 3, 4, 6, 8 }
+      );
 
 Field *const selectableFields[] =
   { &fieldNumberMeasures,
@@ -132,6 +220,7 @@ Field *const selectableFields[] =
     &fieldTupletCount,
     &fieldTupletTime,
   };
+
 const int numberOfSelectableFields = 5;
   // sizeof(selectableFields) / sizeof(selectableFields[0]);
 
@@ -142,7 +231,7 @@ int selectedFieldIndex = 0;
 
 void resetSelection() {
   selectMode = selectNone;
-  selectableFields[selectedFieldIndex]->selected = false;
+  selectableFields[selectedFieldIndex]->deselect();
 }
 
 void updateSelection(int dir) {
@@ -150,18 +239,18 @@ void updateSelection(int dir) {
 
     case selectNone:
       selectMode = selectField;
-      selectableFields[selectedFieldIndex]->selected = true;
+      selectableFields[selectedFieldIndex]->select();
       break;
 
     case selectField:
-      selectableFields[selectedFieldIndex]->selected = false;
+      selectableFields[selectedFieldIndex]->deselect();
       selectedFieldIndex =
         constrain(selectedFieldIndex + dir, 0, numberOfSelectableFields - 1);
-      selectableFields[selectedFieldIndex]->selected = true;
+      selectableFields[selectedFieldIndex]->select();
       break;
 
     case selectValue:
-      selectableFields[selectedFieldIndex]->value += dir;
+      selectableFields[selectedFieldIndex]->update(dir);
       break;
   }
 }
@@ -171,7 +260,7 @@ void clickSelection() {
 
     case selectNone:
       selectMode = selectField;
-      selectableFields[selectedFieldIndex]->selected = true;
+      selectableFields[selectedFieldIndex]->select();
       break;
 
     case selectField:

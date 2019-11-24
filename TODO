@@ -1,12 +1,7 @@
 TODO
 
 
-[x] field selector should stay where it was even when idle
-
-[] speed up centerNumber by using the fixed size of digits in the font
-
-
-[] field menus:
+[x] field menus:
 	measures: 1, 2, 3, 4, 5, 6, 7, 8
 	beats: 1 ~ 16
 	beatunit: 1, 2, 4, 8, 16
@@ -16,6 +11,10 @@ TODO
 [] rhythmic unit images
 [] rhythmic unit field
 	- menu of 1, 1/2, 1/4, 1/8, 1/16
+
+[] dim OLED screen when idle
+
+[] speed up centerNumber by using the fixed size of digits in the font
 
 [] why doesn't number of selectable fields work?
 
