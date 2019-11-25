@@ -1,6 +1,6 @@
 TODO
 
-[] why doesn't number of selectable fields work?
+[x] why doesn't number of selectable fields work?
 
 [x] compound select for common settings...
 	[x] of meter: 4/4, 3/4, 2/4, 6/8, 12/16
@@ -22,9 +22,4 @@ TODO
 
 
 QUESTIONS
-
-? what tuplet options are useful
-	- "reasonable" ratios?
-	- any rations?
-	- 11:x ?
 

@@ -416,7 +416,7 @@ auto fieldTupletUnit
       settings.tupletUnit
       );
 
-Field *const selectableFields[] =
+const std::initializer_list<Field*> selectableFields =
   { &fieldNumberMeasures,
     &fieldBeatsPerMeasure,
     &commonTimeSignatures,
@@ -427,17 +427,24 @@ Field *const selectableFields[] =
     &fieldTupletUnit
   };
 
-const int numberOfSelectableFields = 8;
-  // sizeof(selectableFields) / sizeof(selectableFields[0]);
+int selectedFieldIndex = 0;
+void updateSelectedField(int dir) {
+  selectedFieldIndex =
+    constrain(selectedFieldIndex + dir, 0, selectableFields.size() - 1);
+}
+
+class Field* selectedField() {    // "class" needed due to auto-prototype gen.
+  return selectableFields.begin()[selectedFieldIndex];
+}
 
 enum SelectMode { selectNone, selectField, selectValue };
 
 SelectMode selectMode = selectNone;
-int selectedFieldIndex = 0;
+
 
 void resetSelection() {
   selectMode = selectNone;
-  selectableFields[selectedFieldIndex]->deselect();
+  selectedField()->deselect();
 }
 
 void updateSelection(int dir) {
@@ -445,18 +452,17 @@ void updateSelection(int dir) {
 
     case selectNone:
       selectMode = selectField;
-      selectableFields[selectedFieldIndex]->select();
+      selectedField()->select();
       break;
 
     case selectField:
-      selectableFields[selectedFieldIndex]->deselect();
-      selectedFieldIndex =
-        constrain(selectedFieldIndex + dir, 0, numberOfSelectableFields - 1);
-      selectableFields[selectedFieldIndex]->select();
+      selectedField()->deselect();
+      updateSelectedField(dir);
+      selectedField()->select();
       break;
 
     case selectValue:
-      selectableFields[selectedFieldIndex]->update(dir);
+      selectedField()->update(dir);
       break;
   }
 }
@@ -466,7 +472,7 @@ void clickSelection() {
 
     case selectNone:
       selectMode = selectField;
-      selectableFields[selectedFieldIndex]->select();
+      selectedField()->select();
       break;
 
     case selectField:
