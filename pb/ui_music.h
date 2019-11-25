@@ -1,7 +1,6 @@
 #ifndef _INCLUDE_UI_MUSIC_H_
 #define _INCLUDE_UI_MUSIC_H_
 
-#include "display.h"
 #include "ui_field.h"
 
 

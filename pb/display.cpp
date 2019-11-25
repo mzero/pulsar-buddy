@@ -1,9 +1,13 @@
 #include "display.h"
 
 #include <Adafruit_GFX.h>
-#include <Fonts/FreeSerifBold9pt7b.h>
 #include <Wire.h>
 
+#include <Fonts/FreeSerifBold9pt7b.h>
+
+#define FONT FreeSerifBold9pt7b
+#define DIGIT_WIDTH 9
+#define DIGIT_HEIGHT 12
 
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 

@@ -3,10 +3,6 @@
 
 #include <Adafruit_SSD1306.h>
 
-#define FONT FreeSerifBold9pt7b
-#define DIGIT_WIDTH 9
-#define DIGIT_HEIGHT 12
-
 #define WHITE SSD1306_WHITE
 #define BLACK SSD1306_BLACK
 

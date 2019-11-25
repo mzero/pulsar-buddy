@@ -1,6 +1,3 @@
-#include <initializer_list>
-#include <utility>
-
 #include "display.h"
 #include "layout.h"
 #include "state.h"
