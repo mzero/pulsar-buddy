@@ -1,6 +1,7 @@
 #include "display.h"
 #include "layout.h"
 #include "state.h"
+#include "timer_hw.h"
 #include "ui_input.h"
 
 
@@ -49,12 +50,15 @@ void setup() {
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
   drawAll(true);
+
+  initializeTimers(bpm);
 }
 
 void postAction() {
   drawAll(false);
   selectionTimeout.activity();
   dimTimeout.activity();
+  setTimerBpm(bpm);
 }
 
 void loop() {
@@ -75,14 +79,19 @@ void loop() {
   }
 
   if (oledButtonA.update()) {
-    clickSelection();
+    bpm += 10.0;
     postAction();
     return;
   }
 
   if (oledButtonB.update()) {
-    resetSelection();
+    bpm -= 10.0;
     postAction();
+    return;
+  }
+
+  if (oledButtonC.update()) {
+    dumpTimer();
     return;
   }
 

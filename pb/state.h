@@ -13,7 +13,7 @@ struct Settings {
   uint16_t    tupletUnit;
 };
 
-extern uint16_t bpm;
+extern double bpm;
 extern Settings settings;
 
 

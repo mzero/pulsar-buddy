@@ -22,6 +22,12 @@ TODO
 [] save memories to FLASH
 
 
+[] if no beats after X min... shut down display totally
+	- fire back on when beat detected
 
 QUESTIONS
+
+[] should BPM be kept in inverted form?
+	- for display we want BPM
+	- for calcs (see CpuClockDivisor()) we want inverted
 
