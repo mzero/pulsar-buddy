@@ -7,6 +7,9 @@
 
 
 namespace {
+  // NOTE: Be careful when adjusting the range of available
+  // settings, because they can produce timing periods that
+  // are too big for the timers.
 
   auto fieldNumberMeasures
     = ValueField<uint16_t>(18,  0, 10, 31,
@@ -23,7 +26,7 @@ namespace {
   auto fieldBeatUnit
     = ValueField<uint16_t>(38, 17, 24, 14,
         settings.beatUnit,
-        { 1, 2, 4, 8, 16 }
+        { 2, 4, 8, 16 }
         );
 
   auto commonTimeSignatures

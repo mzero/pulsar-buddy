@@ -3,6 +3,9 @@
 #include <Arduino.h>
 #include <wiring_private.h>
 
+#include "timing.h"
+
+
 // *** NOTE: This implementation is for the SAMD21 only.
 #if defined(__SAMD21__) || defined(TC4) || defined(TC5)
 
@@ -26,7 +29,6 @@ namespace {
 
   Tc* const quantumTc = TC4;
   Tc* const beatTc = TC5;
-
 
   // NOTE: All TC units are used in 16 bit mode.
 
@@ -59,13 +61,8 @@ void setTimerBpm(double bpm) {
   // would be more efficient to keep previous divisor so no need to sync
   // read it back from the timer again
 
-  uint16_t divisor = CpuClockDivisor(bpm);
-  quantumTc->COUNT16.CC[0].bit.CC = divisor;
+  quantumTc->COUNT16.CC[0].bit.CC = CpuClockDivisor(bpm);
   sync(quantumTc);
-
-  Serial.print(round(bpm));
-  Serial.print("bpm => divisor ");
-  Serial.println(divisor);
 }
 
 

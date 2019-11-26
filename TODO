@@ -8,6 +8,18 @@ TODO
 	[x] draw/select separators (— for meter, : for tuplets)
 
 
+[] generate reset pulse
+[] generate measure pulse
+[] generate tuplet pulse
+	? how to handle updates in UI
+	-
+
+
+[] lookup and store qPerBeatUnit when UI changes
+	beatUnit and tupletUnit - and as uint32_t
+
+
+
 [] speed up centerNumber by using the fixed size of digits in the font
 
 [] field render for BPM
@@ -27,7 +39,38 @@ TODO
 
 QUESTIONS
 
+[] if total reset length is kept under 4 x 4/4 (or even 8 x 8/1!)
+	then all cycle counts in q fit in 16 bits
+
 [] should BPM be kept in inverted form?
 	- for display we want BPM
 	- for calcs (see CpuClockDivisor()) we want inverted
 
+
+================
+
+Changes to settings and timing:
+
+- Sequence Length -
+
+setting:   n x c / u
+
+	measure length (m) = c x q(u)
+	total length (t) = n x c x q(u)
+
+	q(1/4 note) = 10080
+	q(1/8 note) =  5040
+	etc...
+
+
+state:
+	measure (s) in [0..m)
+	reset (r) in [0..t)
+
+change n:
+	s' = s
+	r' = r mod t'
+
+change c or u:
+	s' = s mod m'
+    r' = (r div m)*m' + s'
