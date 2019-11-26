@@ -1,3 +1,5 @@
+// #include <ZeroRegs.h>
+
 #include "display.h"
 #include "layout.h"
 #include "state.h"
@@ -45,6 +47,8 @@ Button oledButtonA(BUTTON_A);
 Button oledButtonB(BUTTON_B);
 Button oledButtonC(BUTTON_C);
 
+// ZeroRegOptions zeroOpts = { Serial, true };
+
 void setup() {
   Serial.begin(9600);
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
@@ -62,9 +66,6 @@ void postAction() {
 }
 
 void loop() {
-  // delay(10);
-  // yield();
-
   int dir = encoder.update();
   if (dir) {
     updateSelection(dir);
@@ -91,6 +92,7 @@ void loop() {
   }
 
   if (oledButtonC.update()) {
+    // printZeroRegs(zeroOpts);
     dumpTimer();
     return;
   }
