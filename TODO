@@ -7,18 +7,23 @@ TODO
 	[x] of tuplets: 2:3, 3:2, 4:3, 5:4, 7:4, 7:6, 9:8
 	[x] draw/select separators (— for meter, : for tuplets)
 
+[] don't futz with timers if nothing has changed
+	- selecting a field currently results in a call to updateTimers()
+	? delay call to updateTimers()
+		- so users can scroll from 16/16 to 4/4 and have no change
 
-[] generate reset pulse
-[] generate measure pulse
-[] generate tuplet pulse
-	? how to handle updates in UI
-	-
+[x] generate reset pulse
+[x] generate measure pulse
+[x] generate tuplet pulse
 
+[] time update code
 
-[] lookup and store qPerBeatUnit when UI changes
-	beatUnit and tupletUnit - and as uint32_t
+[] beat gets out of sync on BPM changes
+[] beat output should be based on time division
 
+[] check and Serial write (or other error) when periods out of range
 
+[] do we need pinMode() calls?
 
 [] speed up centerNumber by using the fixed size of digits in the font
 
@@ -26,6 +31,26 @@ TODO
 	- sideways
 	- select selects from source menu:
 		TAP - 1/4 - 1/16 - 24ppb 32ppb 48ppb
+
+
+-- Slave clock
+
+[] figure out how to use TC3 as a capture device
+	- or move tuplet to TC3, and use TCC0
+[] update and display bpm
+	? fractional bpm display?
+	? smoothing of display so user's don't freak out
+	? update display at lower rate than tracker
+
+[] master clock settings:
+	- 1p, 2p, 4p, 24ppb, 32ppb, 48ppb
+
+[] fixed BPM mode
+	? UI for both setting fixed, and then BPM? adjusting BPM quickly
+
+[] tap tempo
+	? separate mode? or just part of fixed?
+-- Memories
 
 [] field render of memories
 	- like radio, or does editing save into current selected?
@@ -46,6 +71,7 @@ QUESTIONS
 	- for display we want BPM
 	- for calcs (see CpuClockDivisor()) we want inverted
 
+[] why doesn't TCC1.WO1 on PAD_SPI_RX (pin 0, PA11) work?
 
 ================
 

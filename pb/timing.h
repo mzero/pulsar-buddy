@@ -21,6 +21,10 @@
 
 typedef uint32_t q_t;
 
+template< typename T >
+inline q_t qcast(const T& x) { return static_cast<q_t>(x); }
+
+
 struct Timing {
   q_t   measure;
   q_t   sequence;

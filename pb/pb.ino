@@ -56,13 +56,16 @@ void setup() {
   drawAll(true);
 
   initializeTimers(bpm);
+  resetTimers(settings);
 }
 
 void postAction() {
+  updateTimers(settings);
+  setTimerBpm(bpm);
+
   drawAll(false);
   selectionTimeout.activity();
   dimTimeout.activity();
-  setTimerBpm(bpm);
 }
 
 void loop() {
@@ -93,7 +96,7 @@ void loop() {
 
   if (oledButtonC.update()) {
     // printZeroRegs(zeroOpts);
-    dumpTimer();
+    resetTimers(settings);
     return;
   }
 

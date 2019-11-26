@@ -5,9 +5,6 @@
 
 namespace {
 
-  template< typename T >
-  inline q_t qcast(const T& x) { return static_cast<q_t>(x); }
-
   q_t qPerBeatUnit(uint16_t b) {
     switch (b) {
       case  1: return Q_PER_B * 4;  // whole note
