@@ -248,7 +248,6 @@ void initializeTimers(double bpm) {
 
   enable(beatTc);
 
-  pinMode(PIN_SPI_SCK, OUTPUT);
   pinPeripheral(PIN_SPI_SCK, PIO_TIMER);
     // Despite the Adafruit pinout diagram, this is actuall pin 30
     // on the Feather M0 Express. It is SAMD21's port PB11, and
@@ -256,17 +255,13 @@ void initializeTimers(double bpm) {
 
 
   initializeTcc(measureTcc);
-  pinMode(PAD_SPI_RX, OUTPUT);
   pinPeripheral(PAD_SPI_RX, PIO_TIMER);
-  pinMode(PAD_SPI_TX, OUTPUT);
   pinPeripheral(PAD_SPI_TX, PIO_TIMER);
 
   initializeTcc(sequenceTcc);
-  pinMode(PIN_SPI_MOSI, OUTPUT);
   pinPeripheral(PIN_SPI_MOSI, PIO_TIMER_ALT);
 
   initializeTcc(tupletTcc);
-  pinMode(PIN_SPI_MISO, OUTPUT);
   pinPeripheral(PIN_SPI_MISO, PIO_TIMER);
 }
 
