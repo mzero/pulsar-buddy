@@ -25,13 +25,16 @@ namespace {
 void computePeriods(const Settings& s, Timing& p) {
   p.measure = qcast(s.beatsPerMeasure) * qPerBeatUnit(s.beatUnit);
   p.sequence = qcast(s.numberMeasures) * p.measure;
-  p.tuplet = qcast(s.tupletTime) * qPerBeatUnit(s.tupletUnit)
-      / qcast(s.tupletCount);
+  p.beat = qPerBeatUnit(s.tupletUnit);
+  p.tuplet = qcast(s.tupletTime) * p.beat / qcast(s.tupletCount);
 }
 
 void adjustOffsets(const Timing& periods, Timing& offsets) {
-  offsets.sequence = offsets.sequence % periods.sequence;
-  offsets.measure = offsets.sequence % periods.measure;
-  offsets.tuplet = offsets.sequence % periods.tuplet;
+  q_t sequence = offsets.sequence % periods.sequence;
+
+  offsets.sequence = sequence % periods.sequence;
+  offsets.measure = sequence % periods.measure;
+  offsets.beat = sequence % periods.beat;
+  offsets.tuplet = sequence % periods.tuplet;
 }
 

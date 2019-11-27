@@ -127,27 +127,35 @@ namespace {
   void readCounts(Timing& counts) {
     counts.measure = measureTcc->COUNT.reg;
     counts.sequence = sequenceTcc->COUNT.reg;
+    counts.beat = qcast(beatTc->COUNT16.COUNT.reg);
     counts.tuplet = tupletTcc->COUNT.reg;
     syncAll(TCC_SYNCBUSY_COUNT);
+    sync(beatTc);
   }
 
   void writeCounts(Timing& counts) {
     measureTcc->COUNT.reg = counts.measure;
     sequenceTcc->COUNT.reg = counts.sequence;
+    beatTc->COUNT16.COUNT.reg = static_cast<uint16_t>(counts.beat);
     tupletTcc->COUNT.reg = counts.tuplet;
     syncAll(TCC_SYNCBUSY_COUNT);
+    sync(beatTc);
   }
 
   void writePeriods(Timing& counts) {
     measureTcc->PER.reg = counts.measure;
     sequenceTcc->PER.reg = counts.sequence;
+    beatTc->COUNT16.CC[0].reg = static_cast<uint16_t>(counts.beat);
     tupletTcc->PER.reg = counts.tuplet;
     syncAll(TCC_SYNCBUSY_PER);
+    sync(beatTc);
 
     measureTcc->CC[0].reg = min(Q_PER_B, counts.measure) / 4;
     sequenceTcc->CC[0].reg = min(Q_PER_B, counts.sequence) / 4;
-    tupletTcc->CC[0].reg = counts.tuplet / 4;
+    beatTc->COUNT16.CC[1].reg = static_cast<uint16_t>(counts.beat / 4);
+    tupletTcc->CC[0].reg = min(Q_PER_B, counts.tuplet) / 4;
     syncAll(TCC_SYNCBUSY_CC0);
+    sync(beatTc);
   }
 
   uint16_t  CpuClockDivisor(double bpm) {

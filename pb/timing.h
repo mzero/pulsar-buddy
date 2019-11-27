@@ -28,6 +28,7 @@ inline q_t qcast(const T& x) { return static_cast<q_t>(x); }
 struct Timing {
   q_t   measure;
   q_t   sequence;
+  q_t   beat;
   q_t   tuplet;
 };
 
