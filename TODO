@@ -1,29 +1,14 @@
 TODO
 
-[x] why doesn't number of selectable fields work?
-
-[x] compound select for common settings...
-	[x] of meter: 4/4, 3/4, 2/4, 6/8, 12/16
-	[x] of tuplets: 2:3, 3:2, 4:3, 5:4, 7:4, 7:6, 9:8
-	[x] draw/select separators (— for meter, : for tuplets)
-
 [] don't futz with timers if nothing has changed
 	- selecting a field currently results in a call to updateTimers()
 	? delay call to updateTimers()
 		- so users can scroll from 16/16 to 4/4 and have no change
 
-[x] generate reset pulse
-[x] generate measure pulse
-[x] generate tuplet pulse
-
-[] time update code
-
-[] beat gets out of sync on BPM changes
-[] beat output should be based on time division
+[x] time update code - 9ms
 
 [] check and Serial write (or other error) when periods out of range
 
-[] do we need pinMode() calls?
 
 [] speed up centerNumber by using the fixed size of digits in the font
 
@@ -31,6 +16,7 @@ TODO
 	- sideways
 	- select selects from source menu:
 		TAP - 1/4 - 1/16 - 24ppb 32ppb 48ppb
+
 
 
 -- Slave clock
@@ -50,6 +36,10 @@ TODO
 
 [] tap tempo
 	? separate mode? or just part of fixed?
+
+
+
+
 -- Memories
 
 [] field render of memories
