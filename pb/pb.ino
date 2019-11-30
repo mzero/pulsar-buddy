@@ -57,16 +57,18 @@ void noteMeasure() {
 
 void setup() {
   Serial.begin(9600);
+
+  initializeState();
+
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
   drawAll(true);
 
   initializeTimers(bpm, noteMeasure);
-  resetTimers(settings);
+  resetTimers(userSettings());
 }
 
 void postAction() {
-  updateTimers(settings);
   setTimerBpm(bpm);
 
   drawAll(false);
@@ -77,7 +79,11 @@ void postAction() {
 void loop() {
   if (measureEvent) {
     measureEvent = false;
-    Serial.println("measure");
+    if (pendingState()) {
+      commitState();
+      resetTimers(userSettings());
+      drawAll(false);
+    }
   }
 
   int dir = encoder.update();
@@ -107,7 +113,7 @@ void loop() {
 
   if (oledButtonC.update()) {
     // printZeroRegs(zeroOpts);
-    resetTimers(settings);
+    resetTimers(userSettings());
     return;
   }
 

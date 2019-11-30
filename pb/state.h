@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+/* SETTINGS */
+
 struct Settings {
   uint16_t    numberMeasures;
   uint16_t    beatsPerMeasure;
@@ -13,9 +15,54 @@ struct Settings {
   uint16_t    tupletUnit;
 };
 
-extern double bpm;
-extern Settings settings;
 
-extern int activeMemory;
+/* STATE */
+
+struct State {
+  int         memoryIndex;
+  Settings    settings;
+};
+
+// Actual state is buffered: The user may have made changes, but they aren't
+// active until the commited.
+
+State& userState();
+  // the state the user wants, can be freely modified by UI code
+
+const State& activeState();
+  // the state that is currently active, used by the timer engine
+
+inline       Settings& userSettings()   { return userState().settings; }
+inline const Settings& activeSettings() { return activeState().settings; }
+
+
+void commitState();
+  // make the user state the active state
+
+// These are true if the user state differs from the active state.
+bool pendingLoop();
+bool pendingTuplet();
+bool pendingMemory();
+bool pendingState();
+
+// BPM is conceptually part of the state, but it isn't buffered like State.
+extern double bpm;
+
+
+/* STORGE */
+
+void initializeState();
+
+// This is still a sketch for now...
+
+struct Storage {
+  uint32_t    magic;
+  uint32_t    version;
+  Settings    settings[4];
+};
+
+const uint32_t STORAGE_MAGIC = 1284161632;
+const uint32_t STORAGE_VERSION_1 = 1;
+
 
 #endif // _INCLUDE_STATE_H_
