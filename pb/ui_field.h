@@ -17,8 +17,8 @@ public:
     : x(x), y(y), w(w), h(h), selected(false), needsUpdate(true)
     { };
 
-  void render();
-  void forceRender();
+  void render(bool refresh);
+  inline void render() { render(false); };
 
   virtual void select(bool s);
   inline void select() { select(true); };

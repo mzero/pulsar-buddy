@@ -1,14 +1,10 @@
 #include "ui_field.h"
 
 
-void Field::render() {
-  if (!needsUpdate)
+void Field::render(bool force) {
+  if (!force && !needsUpdate)
     return;
 
-  forceRender();
-}
-
-void Field::forceRender() {
   display.fillRect(x, y, w, h, backColor());
   redraw();
   needsUpdate = false;

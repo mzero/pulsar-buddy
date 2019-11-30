@@ -87,6 +87,7 @@ namespace {
 
   SelectMode selectMode = selectNone;
 
+  bool fullRedrawPending = false;
 }
 
 void resetSelection() {
@@ -148,22 +149,22 @@ namespace {
     }
   }
 
-  void drawRepeat() {
-    fieldNumberMeasures.render();
-    fieldBeatsPerMeasure.render();
-    commonTimeSignatures.render();
-    fieldBeatUnit.render();
+  void drawRepeat(bool refresh) {
+    fieldNumberMeasures.render(refresh);
+    fieldBeatsPerMeasure.render(refresh);
+    commonTimeSignatures.render(refresh);
+    fieldBeatUnit.render(refresh);
   }
 
-  void drawTuplet() {
-    fieldTupletCount.render();
-    commonTuplets.render();
-    fieldTupletTime.render();
-    fieldTupletUnit.render();
+  void drawTuplet(bool refresh) {
+    fieldTupletCount.render(refresh);
+    commonTuplets.render(refresh);
+    fieldTupletTime.render(refresh);
+    fieldTupletUnit.render(refresh);
   }
 
-  void drawMemory() {
-    fieldMemory.render();
+  void drawMemory(bool refresh) {
+    fieldMemory.render(refresh);
   }
 
   void drawFixed() {
@@ -187,12 +188,18 @@ namespace {
 
 }
 
+void displayOutOfDate() {
+  fullRedrawPending = true;
+}
+
 void drawAll(bool refresh) {
   display.dim(false);
 
   unsigned long t0 = millis();
 
+  refresh |= fullRedrawPending;
   if (refresh) {
+    fullRedrawPending = false;
     display.clearDisplay();
 
     resetText();
@@ -200,9 +207,9 @@ void drawAll(bool refresh) {
   }
 
   drawBPM();
-  drawRepeat();
-  drawTuplet();
-  drawMemory();
+  drawRepeat(refresh);
+  drawTuplet(refresh);
+  drawMemory(refresh);
 
   unsigned long t1 = millis();
 
