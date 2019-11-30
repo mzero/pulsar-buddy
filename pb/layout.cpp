@@ -13,41 +13,45 @@ namespace {
   // are too big for the timers.
 
   auto fieldNumberMeasures
-    = ValueField<uint16_t>(18,  0, 10, 31,
+    = ValueField<uint16_t>(18,  5, 12, 20,
         userSettings().numberMeasures,
         { 1, 2, 3, 4, 5, 6, 7, 8 }
         );
 
   auto fieldBeatsPerMeasure
-    = ValueField<uint16_t>(38,  0, 24, 14,
+    = ValueField<uint16_t>(39,  0, 24, 14,
         userSettings().beatsPerMeasure,
         { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }
         );
 
   auto fieldBeatUnit
-    = ValueField<uint16_t>(38, 17, 24, 14,
+    = ValueField<uint16_t>(39, 17, 24, 14,
         userSettings().beatUnit,
         { 2, 4, 8, 16 }
         );
 
   auto commonTimeSignatures
-    = TimeSignatureField(38, 14, 24, 3,
+    = TimeSignatureField(39, 14, 24, 3,
         fieldBeatsPerMeasure, fieldBeatUnit
         );
 
+  auto pendingLoopIndicator
+    = PendingIndicator(18, 0, pendingLoop);
+
+
   auto fieldTupletCount
-    = ValueField<uint16_t>(66,  0, 12, 31,
+    = ValueField<uint16_t>(66,  5, 12, 20,
         userSettings().tupletCount,
         { 2, 3, 4, 5, 6, 7, 8, 9 }
         );
   auto fieldTupletTime
-    = ValueField<uint16_t>(84,  0, 12, 31,
+    = ValueField<uint16_t>(84,  5, 12, 20,
         userSettings().tupletTime,
         { 2, 3, 4, 6, 8 }
         );
 
   auto commonTuplets
-    = TupletRatioField(78, 0, 6, 31,
+    = TupletRatioField(78, 5, 6, 20,
         fieldTupletCount, fieldTupletTime
         );
 
@@ -56,10 +60,18 @@ namespace {
         userSettings().tupletUnit
         );
 
+  auto pendingTupletIndicator
+    = PendingIndicator(66, 0, pendingTuplet);
+
+
   auto fieldMemory
-    = MemoryField(111, 2, 17, 28,
+    = MemoryField(111, 5, 17, 23,
         userState().memoryIndex
         );
+
+  auto pendingMemoryIndicator
+    = PendingIndicator(111, 0, pendingMemory);
+
 
   const std::initializer_list<Field*> selectableFields =
     { &fieldNumberMeasures,
@@ -154,6 +166,8 @@ namespace {
     fieldBeatsPerMeasure.render(refresh);
     commonTimeSignatures.render(refresh);
     fieldBeatUnit.render(refresh);
+
+    pendingLoopIndicator.render(refresh);
   }
 
   void drawTuplet(bool refresh) {
@@ -161,10 +175,14 @@ namespace {
     commonTuplets.render(refresh);
     fieldTupletTime.render(refresh);
     fieldTupletUnit.render(refresh);
+
+    pendingTupletIndicator.render(refresh);
   }
 
   void drawMemory(bool refresh) {
     fieldMemory.render(refresh);
+
+    pendingMemoryIndicator.render(refresh);
   }
 
   void drawFixed() {
@@ -174,8 +192,8 @@ namespace {
 
     // Repeat area
     //    the x
-    display.drawLine(30, 12, 36, 18, WHITE);
-    display.drawLine(30, 18, 36, 12, WHITE);
+    display.drawLine(31, 12, 37, 18, WHITE);
+    display.drawLine(31, 18, 37, 12, WHITE);
 
     drawSeparator(64);
 

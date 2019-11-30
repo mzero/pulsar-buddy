@@ -9,7 +9,7 @@ namespace {
   };
 
   const Point spots[] =
-    { { 4, 9 }, { 12, 9 }, { 12, 19 }, { 4, 19 } };
+    { { 4, 6 }, { 12, 6 }, { 12, 16 }, { 4, 16 } };
 }
 
 
@@ -31,3 +31,20 @@ void MemoryField::update(int dir) {
   memory = constrain(memory + dir, 1, 4);
   outOfDate();
 }
+
+
+
+void PendingIndicator::render(bool refresh) {
+  bool pending = queryFunction();
+  if (refresh || lastPending != pending) {
+    lastPending = pending;
+
+    display.fillTriangle(
+        x,     y,
+        x + 3, y,
+        x,     y + 3,
+        pending ? WHITE : BLACK);
+  }
+}
+
+

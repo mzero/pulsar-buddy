@@ -21,4 +21,20 @@ private:
 };
 
 
+class PendingIndicator {
+public:
+  PendingIndicator(int16_t x, int16_t y, bool(*f)())
+    : x(x), y(y), queryFunction(f), lastPending(false)
+    { }
+
+  void render(bool refresh);
+
+private:
+  int16_t x;
+  int16_t y;
+  bool (*const queryFunction)();
+
+  bool lastPending;
+};
+
 #endif // _INCLUDE_UI_MEMORY_H_
