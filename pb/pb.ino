@@ -49,13 +49,19 @@ Button oledButtonC(BUTTON_C);
 
 // ZeroRegOptions zeroOpts = { Serial, true };
 
+bool measureEvent = false;
+
+void noteMeasure() {
+  measureEvent = true;
+}
+
 void setup() {
   Serial.begin(9600);
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
   drawAll(true);
 
-  initializeTimers(bpm);
+  initializeTimers(bpm, noteMeasure);
   resetTimers(settings);
 }
 
@@ -69,6 +75,11 @@ void postAction() {
 }
 
 void loop() {
+  if (measureEvent) {
+    measureEvent = false;
+    Serial.println("measure");
+  }
+
   int dir = encoder.update();
   if (dir) {
     updateSelection(dir);

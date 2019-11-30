@@ -4,7 +4,7 @@
 #import "state.h"
 
 
-extern void initializeTimers(double);
+extern void initializeTimers(double, void (*onMeasure)());
 
 extern void setTimerBpm(double);
 

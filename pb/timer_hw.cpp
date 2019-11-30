@@ -29,6 +29,9 @@
 
 namespace {
 
+  void defaultCallback() { }
+  void (*tcc1callback)() = defaultCallback;
+
 #define QUANTUM_EVENT_CHANNEL   5
 
   void startQuantumEvents() {
@@ -93,7 +96,7 @@ namespace {
     while(tcc->SYNCBUSY.reg & mask);
   }
 
-  void initializeTcc(Tcc* tcc) {
+  void initializeTcc(Tcc* tcc, bool enableInterrupts) {
     tcc->CTRLA.bit.ENABLE = 0;
     sync(tcc, TCC_SYNCBUSY_ENABLE);
 
@@ -106,6 +109,10 @@ namespace {
       = TCC_EVCTRL_TCEI0
       | TCC_EVCTRL_EVACT0_COUNTEV
       ;
+
+    if (enableInterrupts) {
+      tcc->INTENSET.reg = TCC_INTENSET_OVF;
+    }
 
     tcc->WEXCTRL.reg
       = TCC_WEXCTRL_OTMX(2);  // use CC[0] for all outputs
@@ -175,7 +182,10 @@ void setTimerBpm(double bpm) {
 }
 
 
-void initializeTimers(double bpm) {
+void initializeTimers(double bpm, void (*onMeasure)()) {
+
+  tcc1callback = onMeasure;
+
 
   /** POWER **/
 
@@ -254,14 +264,16 @@ void initializeTimers(double bpm) {
     // configuring it for function "E" (PIO_TIMER) maps it to TC5.WO1.
 
 
-  initializeTcc(measureTcc);
+  initializeTcc(measureTcc, true);
   pinPeripheral(PAD_SPI_RX, PIO_TIMER);
   pinPeripheral(PAD_SPI_TX, PIO_TIMER);
+  NVIC_SetPriority(TCC1_IRQn, 0);
+  NVIC_EnableIRQ(TCC1_IRQn);
 
-  initializeTcc(sequenceTcc);
+  initializeTcc(sequenceTcc, false);
   pinPeripheral(PIN_SPI_MOSI, PIO_TIMER_ALT);
 
-  initializeTcc(tupletTcc);
+  initializeTcc(tupletTcc, false);
   pinPeripheral(PIN_SPI_MISO, PIO_TIMER);
 }
 
@@ -299,6 +311,15 @@ void dumpTimer() {
   Serial.print(quantumCount);
   Serial.print(", b count = ");
   Serial.println(beatCount);
+}
+
+
+
+void TCC1_Handler() {
+  if (TCC1->INTFLAG.bit.OVF) {
+    tcc1callback();
+    TCC1->INTFLAG.bit.OVF = 1;  // writing 1 clears the flag
+  }
 }
 
 #endif // __SAMD21__ and used TC and TCC units
