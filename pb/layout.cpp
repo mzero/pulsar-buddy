@@ -3,6 +3,7 @@
 #include "display.h"
 #include "state.h"
 #include "ui_field.h"
+#include "ui_memory.h"
 #include "ui_music.h"
 
 
@@ -55,6 +56,11 @@ namespace {
         settings.tupletUnit
         );
 
+  auto fieldMemory
+    = MemoryField(111, 2, 17, 28,
+        activeMemory
+        );
+
   const std::initializer_list<Field*> selectableFields =
     { &fieldNumberMeasures,
       &fieldBeatsPerMeasure,
@@ -63,7 +69,8 @@ namespace {
       &fieldTupletCount,
       &commonTuplets,
       &fieldTupletTime,
-      &fieldTupletUnit
+      &fieldTupletUnit,
+      &fieldMemory
     };
 
   int selectedFieldIndex = 0;
@@ -156,11 +163,7 @@ namespace {
   }
 
   void drawMemory() {
-    display.fillCircle(115, 11, 3, WHITE);
-    display.fillCircle(115, 11, 2, BLACK);
-    display.fillCircle(115, 21, 3, WHITE);
-    display.fillCircle(123, 11, 3, WHITE);
-    display.fillCircle(123, 21, 3, WHITE);
+    fieldMemory.render();
   }
 
   void drawFixed() {
@@ -206,8 +209,8 @@ void drawAll(bool refresh) {
   display.display();
 
   unsigned long t2 = millis();
-  Serial.print("draw ms: ");
-  Serial.print(t1 - t0);
-  Serial.print(", disp ms: ");
-  Serial.println(t2 - t1);
+  // Serial.print("draw ms: ");
+  // Serial.print(t1 - t0);
+  // Serial.print(", disp ms: ");
+  // Serial.println(t2 - t1);
 }

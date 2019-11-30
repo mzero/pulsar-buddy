@@ -30,6 +30,7 @@ protected:
   inline void outOfDate() { needsUpdate = true; };
   inline uint16_t foreColor() { return selected ? BLACK : WHITE; };
   inline uint16_t backColor() { return selected ? WHITE : BLACK; };
+  inline bool isSelected() { return selected; }
 
   virtual void redraw() = 0;
 

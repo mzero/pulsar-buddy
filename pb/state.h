@@ -16,5 +16,6 @@ struct Settings {
 extern double bpm;
 extern Settings settings;
 
+extern int activeMemory;
 
 #endif // _INCLUDE_STATE_H_
