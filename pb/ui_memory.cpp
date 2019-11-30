@@ -19,17 +19,10 @@ void MemoryField::redraw() {
     const auto cx = x + s.x;
     const auto cy = y + s.y;
 
-    if (isSelected()) {
-      if (memory == static_cast<int>(i)) {
-        display.fillCircle(cx, cy, 3, foreColor());
-      } else {
-        display.drawCircle(cx, cy, 3, foreColor());
-      }
-    } else {
+    if (memory == static_cast<int>(i) == isSelected()) {
       display.fillCircle(cx, cy, 3, foreColor());
-      if (memory == static_cast<int>(i)) {
-        display.fillCircle(cx, cy, 2, backColor());
-      }
+    } else {
+      display.drawCircle(cx, cy, 3, foreColor());
     }
   }
 }
