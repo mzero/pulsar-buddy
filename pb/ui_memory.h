@@ -7,10 +7,12 @@
 class MemoryField : public Field {
 public:
   MemoryField(int16_t x, int16_t y, uint16_t w, uint16_t h, int& m)
-    : Field(x, y, w, h), memory(m)
+    : Field(x, y, w, h), doLoad(false), doSave(false), memory(m)
     { }
 
-    virtual void select(bool);
+    virtual void enter(bool);
+    virtual void exit();
+
     virtual bool click(ButtonState);
     virtual void update(int);
 
@@ -19,7 +21,8 @@ protected:
 
 private:
     int selection;
-    bool justWritten;
+    bool doLoad;
+    bool doSave;
     int& memory;
 };
 
