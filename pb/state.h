@@ -49,20 +49,10 @@ bool pendingState();
 extern double bpm;
 
 
-/* STORGE */
+void loadFromMemory(int index);
+void storeToMemory(int index);
+  // memory indexes are numbered from 1, because that's how users roll.
 
 void initializeState();
-
-// This is still a sketch for now...
-
-struct Storage {
-  uint32_t    magic;
-  uint32_t    version;
-  Settings    settings[4];
-};
-
-const uint32_t STORAGE_MAGIC = 1284161632;
-const uint32_t STORAGE_VERSION_1 = 1;
-
 
 #endif // _INCLUDE_STATE_H_

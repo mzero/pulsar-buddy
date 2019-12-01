@@ -1,6 +1,7 @@
 #include "ui_memory.h"
 
-#include <Arduino.h>
+#include "layout.h"
+#include "state.h"
 
 namespace {
   struct Point {
@@ -51,13 +52,12 @@ bool MemoryField::click(ButtonState s) {
       memory = selection;
       justWritten = true;
       outOfDate();
-      Serial.print("memory save into ");
-      Serial.println(memory);
+      storeToMemory(selection);
       return true;
     case buttonUp:
       memory = selection;
-      Serial.print("memory load from ");
-      Serial.println(memory);
+      loadFromMemory(selection);
+      displayOutOfDate();
       return false;
     case buttonUpLong:
       return false;
