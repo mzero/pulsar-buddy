@@ -8,6 +8,8 @@ double bpm = 128;
 namespace {
   State _userState;
   State _activeState;
+  State _savedUserState;
+  bool previewActive = false;
 }
 
 State& userState() { return _userState; }
@@ -18,6 +20,7 @@ void commitState() {
 }
 
 bool pendingLoop() {
+  if (previewActive) return false;
   return
        _userState.settings.numberMeasures  != _activeState.settings.numberMeasures
     || _userState.settings.beatsPerMeasure != _activeState.settings.beatsPerMeasure
@@ -26,6 +29,7 @@ bool pendingLoop() {
 }
 
 bool pendingTuplet() {
+  if (previewActive) return false;
   return
        _userState.settings.tupletCount != _activeState.settings.tupletCount
     || _userState.settings.tupletTime  != _activeState.settings.tupletTime
@@ -34,11 +38,13 @@ bool pendingTuplet() {
 }
 
 bool pendingMemory() {
+  if (previewActive) return false;
   return
       _userState.memoryIndex != _activeState.memoryIndex;
 }
 
 bool pendingState() {
+  if (previewActive) return false;
   return pendingLoop() || pendingTuplet() || pendingMemory();
 }
 
@@ -106,8 +112,6 @@ void loadFromMemory(int index) {
 
   _userState.memoryIndex = index;
   _userState.settings = storage().settings[index-1];
-  Serial.print("memory load from ");
-  Serial.println(index);
 }
 
 void storeToMemory(int index) {
@@ -119,6 +123,21 @@ void storeToMemory(int index) {
   // FIXME: write to flash here
   Serial.print("memory save into ");
   Serial.println(index);
+}
+
+void showMemoryPreview(int index) {
+  if (!previewActive) {
+    _savedUserState = _userState;
+    previewActive = true;
+  }
+  loadFromMemory(index);
+}
+
+void endMemoryPreview() {
+  if (previewActive) {
+    _userState = _savedUserState;
+    previewActive = false;
+  }
 }
 
 void initializeState() {

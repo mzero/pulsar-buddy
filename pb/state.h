@@ -53,6 +53,9 @@ void loadFromMemory(int index);
 void storeToMemory(int index);
   // memory indexes are numbered from 1, because that's how users roll.
 
+void showMemoryPreview(int index);
+void endMemoryPreview();
+
 void initializeState();
 
 #endif // _INCLUDE_STATE_H_
