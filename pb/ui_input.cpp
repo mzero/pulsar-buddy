@@ -45,33 +45,64 @@ int Encoder::update() {
   return r;
 }
 
-
 Button::Button(uint32_t pin)
   : pin(pin)
 {
   pinMode(pin, INPUT_PULLUP);   // 1 is off, 0 is pressed
-  lastState = 1;
   lastRead = -1;        // will cause first update to always set it
   validAtTime = 0;
+
+  state = buttonUp;
+  longAtTime = 0;
 }
 
-bool Button::update()
+ButtonState Button::update()
 {
   int read = digitalRead(pin);
   if (read != lastRead) {
+    // pin changed, wait for it to be stable
     lastRead = read;
     validAtTime = millis() + 50;
-    return false;
+    return buttonNoChange;
   }
-  if (lastRead == lastState) {
-    return false;
-  }
+
   uint32_t now = millis();
-  if (now >= validAtTime) {
-    lastState = lastRead;
-    return lastState == 0;
+  if (now < validAtTime) {
+    // pin stable, not not long enough
+    return buttonNoChange;
   }
-  return false;
+
+  ButtonState prevState = state;
+
+  switch (state) {
+    case buttonUp:
+    case buttonUpLong:
+      if (lastRead == LOW) {
+        state = buttonDown;
+        longAtTime = now + 3000;
+      }
+      break;
+
+    case buttonDown:
+      if (lastRead == LOW) {  // still down?
+        if (now > longAtTime) {
+          state = buttonDownLong;
+          break;
+        }
+      }
+      // fall through
+
+    case buttonDownLong:
+      if (lastRead == HIGH) {
+        state = (prevState == buttonDownLong) ? buttonUpLong : buttonUp;
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  return (state != prevState) ? state : buttonNoChange;
 }
 
 

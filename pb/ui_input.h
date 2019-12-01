@@ -20,17 +20,38 @@ private:
 };
 
 
+enum ButtonState {
+  buttonNoChange = 0,   // returned from update() if no change
+  buttonDown,
+  buttonDownLong,
+  buttonUp,
+  buttonUpLong
+};
+
+/* Buttons follow one of two cycles:
+
+  Down -> Up
+or
+  Down -> DownLong -> UpLong
+
+  There may be any number of NoChange states anywhere during these.
+*/
+
 class Button {
 public:
     Button(uint32_t pin);
-    bool update();    // reports true on press
+    ButtonState update();    // reports any action
+    inline bool active()
+      { return state == buttonDown || state == buttonDownLong; }
 
 private:
     const uint32_t pin;
 
-    int lastState;
     int lastRead;
     unsigned long validAtTime;
+
+    ButtonState state;
+    unsigned long longAtTime;
 };
 
 

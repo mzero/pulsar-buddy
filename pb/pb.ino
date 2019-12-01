@@ -68,12 +68,15 @@ void setup() {
   resetTimers(userSettings());
 }
 
-void postAction() {
-  setTimerBpm(bpm);
-
-  drawAll(false);
+void activity() {
   selectionTimeout.activity();
   dimTimeout.activity();
+}
+
+void postAction() {
+  setTimerBpm(bpm);
+  drawAll(false);
+  activity();
 }
 
 void loop() {
@@ -93,27 +96,36 @@ void loop() {
     return;
   }
 
-  if (encoderButton.update()) {
+  if (encoderButton.update() == buttonDown) {
     clickSelection();
     postAction();
     return;
   }
 
-  if (oledButtonA.update()) {
+  if (oledButtonA.update() == buttonDown) {
     bpm += 10.0;
     postAction();
     return;
   }
 
-  if (oledButtonB.update()) {
+  if (oledButtonB.update() == buttonDown) {
     bpm -= 10.0;
     postAction();
     return;
   }
 
-  if (oledButtonC.update()) {
+  switch (oledButtonC.update()) {
+    case buttonDown:      Serial.println("button C: down"); break;
+    case buttonDownLong:  Serial.println("button C: down long"); break;
+    case buttonUp:        Serial.println("button C: up"); break;
+    case buttonUpLong:    Serial.println("button C: up long"); break;
     // printZeroRegs(zeroOpts);
-    resetTimers(userSettings());
+    // resetTimers(userSettings());
+    return;
+  }
+
+  if (encoderButton.active()) {
+    activity();
     return;
   }
 
