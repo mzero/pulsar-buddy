@@ -127,20 +127,29 @@ void updateSelection(int dir) {
   }
 }
 
-void clickSelection() {
+void clickSelection(ButtonState s) {
   switch (selectMode) {
 
     case selectNone:
-      selectMode = selectField;
-      selectedField()->select();
+      if (s == buttonUp || s == buttonUpLong) {
+        selectMode = selectField;
+        selectedField()->select();
+      }
       break;
 
     case selectField:
-      selectMode = selectValue;
+      if (s == buttonUp || s == buttonUpLong) {
+        selectMode = selectValue;
+      }
       break;
 
     case selectValue:
-      selectMode = selectField;
+      if (selectedField()->click(s)) {
+        break;
+      }
+      if (s == buttonUp || s == buttonUpLong) {
+        selectMode = selectField;
+      }
       break;
   }
 }

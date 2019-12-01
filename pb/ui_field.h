@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "display.h"
+#include "ui_input.h"
 
 /**
  **  Field
@@ -24,6 +25,7 @@ public:
   inline void select() { select(true); };
   inline void deselect() { select(false); };
 
+  virtual bool click(ButtonState s);
   virtual void update(int);
 
 protected:

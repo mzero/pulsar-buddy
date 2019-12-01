@@ -17,6 +17,10 @@ void Field::select(bool s) {
   }
 }
 
+bool Field::click(ButtonState s) {
+  return false;
+}
+
 void Field::update(int dir) {
 }
 

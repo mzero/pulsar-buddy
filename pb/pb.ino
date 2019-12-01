@@ -96,8 +96,9 @@ void loop() {
     return;
   }
 
-  if (encoderButton.update() == buttonDown) {
-    clickSelection();
+  ButtonState s = encoderButton.update();
+  if (s != buttonNoChange) {
+    clickSelection(s);
     postAction();
     return;
   }

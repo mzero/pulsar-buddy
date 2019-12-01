@@ -27,6 +27,24 @@ void MemoryField::redraw() {
   }
 }
 
+bool MemoryField::click(ButtonState s) {
+  switch (s) {
+    case buttonDown:
+      return true;
+    case buttonDownLong:
+      Serial.print("memory save into ");
+      Serial.println(memory);
+      return true;
+    case buttonUp:
+      Serial.print("memory load from ");
+      Serial.println(memory);
+      return false;
+    case buttonUpLong:
+      return false;
+    default:
+      return false;
+  }
+}
 void MemoryField::update(int dir) {
   memory = constrain(memory + dir, 1, 4);
   outOfDate();

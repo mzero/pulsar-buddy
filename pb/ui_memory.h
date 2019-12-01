@@ -10,13 +10,13 @@ public:
     : Field(x, y, w, h), memory(m)
     { }
 
+    virtual bool click(ButtonState);
     virtual void update(int);
 
 protected:
     virtual void redraw();
 
 private:
-
     int& memory;
 };
 
