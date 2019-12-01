@@ -19,12 +19,28 @@ void MemoryField::redraw() {
     const auto cx = x + s.x;
     const auto cy = y + s.y;
 
-    if (memory == static_cast<int>(i) == isSelected()) {
+    bool fill =
+      isSelected()
+        ? (selection == static_cast<int>(i))
+        : (memory != static_cast<int>(i))
+        ;
+
+    if (fill) {
       display.fillCircle(cx, cy, 3, foreColor());
     } else {
-      display.drawCircle(cx, cy, 3, foreColor());
+      if (!(isSelected() && justWritten)) {
+        display.drawCircle(cx, cy, 3, foreColor());
+      }
     }
   }
+}
+
+void MemoryField::select(bool s) {
+  if (s) {
+    selection = memory;
+    justWritten = false;
+  }
+  Field::select(s);
 }
 
 bool MemoryField::click(ButtonState s) {
@@ -32,10 +48,14 @@ bool MemoryField::click(ButtonState s) {
     case buttonDown:
       return true;
     case buttonDownLong:
+      memory = selection;
+      justWritten = true;
+      outOfDate();
       Serial.print("memory save into ");
       Serial.println(memory);
       return true;
     case buttonUp:
+      memory = selection;
       Serial.print("memory load from ");
       Serial.println(memory);
       return false;
@@ -46,7 +66,7 @@ bool MemoryField::click(ButtonState s) {
   }
 }
 void MemoryField::update(int dir) {
-  memory = constrain(memory + dir, 1, 4);
+  selection = constrain(selection + dir, 1, 4);
   outOfDate();
 }
 
