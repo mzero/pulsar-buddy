@@ -25,6 +25,9 @@ public:
   inline void select() { select(true); };
   inline void deselect() { select(false); };
 
+  virtual void enter(bool alternate);
+  virtual void exit();
+
   virtual bool click(ButtonState s);
   virtual void update(int);
 

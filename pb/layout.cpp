@@ -103,6 +103,9 @@ namespace {
 }
 
 void resetSelection() {
+  if (selectMode == selectValue)
+    selectedField()->exit();
+
   selectMode = selectNone;
   selectedField()->deselect();
 }
@@ -138,8 +141,16 @@ void clickSelection(ButtonState s) {
       break;
 
     case selectField:
-      if (s == buttonUp || s == buttonUpLong) {
-        selectMode = selectValue;
+      switch (s) {
+        case buttonDownLong:
+          selectedField()->enter(true);
+          break;
+        case buttonUp:
+          selectedField()->enter(false);
+          // fall through
+        case buttonUpLong:
+          selectMode = selectValue;
+          break;
       }
       break;
 
@@ -148,6 +159,7 @@ void clickSelection(ButtonState s) {
         break;
       }
       if (s == buttonUp || s == buttonUpLong) {
+        selectedField()->exit();
         selectMode = selectField;
       }
       break;

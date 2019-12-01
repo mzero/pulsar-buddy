@@ -17,13 +17,11 @@ void Field::select(bool s) {
   }
 }
 
-bool Field::click(ButtonState s) {
-  return false;
-}
+void Field::enter(bool alternate) { }
+void Field::exit() { }
 
-void Field::update(int dir) {
-}
-
+bool Field::click(ButtonState s) { return false; }
+void Field::update(int dir) { }
 
 
 template<>
