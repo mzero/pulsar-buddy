@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "flash.h"
 
 double bpm = 128;
 
@@ -74,19 +75,27 @@ namespace {
     uint32_t      version;
     union {
       Storage_v1  v1;
+      uint8_t     spacer[72];
+        // If this code ever needs a Storage version that exceeds this
+        // size, then MAGIC has to change, and no updates from older
+        // versions are possible.
+        // Current sizeof(Storage_v1) is 50, so there is room to grow.
     };
   };
 
   const uint32_t STORAGE_MAGIC = 1284161632;
 
   StorageContainer container;
+
   inline Storage& storage() { return container.v1; }
   bool checkIndex(int i) {
     return 1 <= i && i <= Storage::numSlots;
   }
 
+  auto saveContainer = Persistent<StorageContainer>(container, 128, 64);
+
   void initializeStorage() {
-    // FIXME: read storage from Flash here....
+    saveContainer.begin();
 
     if (container.magic == STORAGE_MAGIC) {
       if (container.version == Storage::version)
@@ -120,9 +129,11 @@ void storeToMemory(int index) {
 
   _userState.memoryIndex = index;
   storage().settings[index-1] = _userState.settings;
-  // FIXME: write to flash here
+
   Serial.print("memory save into ");
   Serial.println(index);
+
+  saveContainer.save();
 }
 
 void showMemoryPreview(int index) {

@@ -56,7 +56,8 @@ void noteMeasure() {
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
+  while ( !Serial ) delay(10);   // wait for native usb
 
   initializeState();
 
@@ -115,11 +116,8 @@ void loop() {
     return;
   }
 
-  switch (oledButtonC.update()) {
-    case buttonDown:      Serial.println("button C: down"); break;
-    case buttonDownLong:  Serial.println("button C: down long"); break;
-    case buttonUp:        Serial.println("button C: up"); break;
-    case buttonUpLong:    Serial.println("button C: up long"); break;
+  if (oledButtonC.update() == buttonDown) {
+    storeToMemory(1);
     // printZeroRegs(zeroOpts);
     // resetTimers(userSettings());
     return;
