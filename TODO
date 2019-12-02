@@ -1,14 +1,14 @@
 TODO
 
-[] don't futz with timers if nothing has changed
+[x] don't futz with timers if nothing has changed
 	- selecting a field currently results in a call to updateTimers()
 	? delay call to updateTimers()
 		- so users can scroll from 16/16 to 4/4 and have no change
+	[] handled by only updating if a pending difference on measure boundries
 
-[x] time update code - 9ms
+[x] time update code - 9 micro s
 
 [] check and Serial write (or other error) when periods out of range
-
 
 [] speed up centerNumber by using the fixed size of digits in the font
 
@@ -42,11 +42,21 @@ TODO
 
 -- Memories
 
-[] field render of memories
-	- like radio, or does editing save into current selected?
-	- select does pick
-	- long-select does write
-[] save memories to FLASH
+[x] field render of memories
+[x] memory selection on select
+[x] memory save on long press
+[x] save memories to FLASH
+
+
+[] time startup
+[] time write
+[] review hash
+[] factor out write calls
+[] review LOG calls
+[] speed up first bitmap check
+	- short circuit when non-zero
+
+
 
 
 [] if no beats after X min... shut down display totally
@@ -56,6 +66,10 @@ QUESTIONS
 
 [] if total reset length is kept under 4 x 4/4 (or even 8 x 8/1!)
 	then all cycle counts in q fit in 16 bits
+
+[] should tuplet load be sync'd to measure or full sequence?
+[] should sequence length, when reloaded, be reset to first measure?
+
 
 [] should BPM be kept in inverted form?
 	- for display we want BPM

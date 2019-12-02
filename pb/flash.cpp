@@ -53,22 +53,64 @@ namespace {
   Adafruit_SPIFlash flash(&flashTransport);
   bool flashBegun = false;
 
-
-  static const uint32_t magicSeed = 1176328692;
-
   uint32_t computeMagicValue(uint32_t a, uint32_t b, uint32_t c) {
     return
-      magicSeed
-      ^ (a >> 4) ^ a ^ (a << 5) ^ (a << 11) ^ (a << 18) ^ (a << 26)
-      ^ (b >> 8) ^ b ^ (b << 9) ^ (b << 19) ^ (b << 30)
-      ^ (c >> 6) ^ c ^ (c << 7) ^ (c << 15) ^ (c << 24)
+      1176328692
+      ^ a * 0x1010701
+      ^ b * 0x2345678
+      ^ c * 0x1003017
       ;
   }
+
+/* Layout
+
+  Each sector starts with a 4-byte magic number, which is used
+  as a guard against reading random data as valid. And a serial number
+  of the sector, so that after wrapping one can find which is the newest
+  sector (since all will be valid).
+
+  Then comes a bit map, where 0 means valid.
+
+  Then comes n copies of the entry.
+*/
 
   struct Header {
     uint32_t magic;
     uint32_t serial;
   };
+
+  const uint32_t notFoundSerial = 0;    // must be smallest value
+  const uint32_t firstSerial = 1;
+
+  struct Layout {
+    const uint32_t dataLength;
+    const uint32_t entriesPerSector;
+    const uint32_t bitmapLength;
+
+    Layout(uint32_t dataLength);
+
+    static const uint32_t maxDataLength
+      = SFLASH_SECTOR_SIZE - sizeof(Header) - 1;
+
+    static inline uint32_t headerAddress(uint32_t sector)
+      { return sector * SFLASH_SECTOR_SIZE; }
+
+    static inline uint32_t bitmapAddress(uint32_t sector)
+      { return headerAddress(sector) + sizeof(Header); }
+
+    inline uint32_t dataAddress(uint32_t sector, uint32_t index) const {
+      { return bitmapAddress(sector) + bitmapLength + index * dataLength; }
+    }
+  };
+
+  Layout::Layout(uint32_t dataLength)
+    : dataLength(dataLength),
+      entriesPerSector(
+        (8 * (SFLASH_SECTOR_SIZE - sizeof(Header))
+        / (8 * dataLength + 1))),
+      bitmapLength((entriesPerSector + 7) / 8)
+    { }
+
 }
 
 
@@ -77,14 +119,14 @@ FlashMemoryLog::FlashMemoryLog(
     uint32_t regionStartSector,
     uint32_t regionSectorCount
   )
-  : entryLength(dataLength + sizeof(Header)),
+  : dataLength(dataLength),
     regionStartSector(regionStartSector),
     regionEndSector(regionStartSector + regionSectorCount),
     regionMagicValue(
-      computeMagicValue(entryLength, regionStartSector, regionSectorCount)),
-    currentSerial(0),   // 0 means no value found in log at all
+      computeMagicValue(dataLength, regionStartSector, regionSectorCount)),
+    currentSerial(notFoundSerial),
     currentSector(0),
-    currentAddress(0)
+    currentIndex(0)
   { }
 
 bool FlashMemoryLog::begin()
@@ -99,7 +141,7 @@ bool FlashMemoryLog::begin()
   }
 
 
-  if (entryLength > SFLASH_SECTOR_SIZE) {
+  if (dataLength > Layout::maxDataLength) {
     LOGLN("data length too big");
     return false;
   }
@@ -121,13 +163,17 @@ bool FlashMemoryLog::begin()
     return false;
   }
 
+  auto layout = Layout(dataLength);
+
+  currentSerial = notFoundSerial;
+  currentSector = 0;
 
   for (uint32_t sector = regionStartSector;
        sector < regionEndSector;
        ++sector)
   {
     Header header;
-    if (flash.readBuffer(sector * SFLASH_SECTOR_SIZE,
+    if (flash.readBuffer(layout.headerAddress(sector),
           reinterpret_cast<uint8_t*>(&header),
           sizeof(header))
         != sizeof(header))
@@ -140,130 +186,149 @@ bool FlashMemoryLog::begin()
     if (header.magic != regionMagicValue)
       // can't be our data from here on after
       break;
+    if (header.serial < currentSerial)
+      // older sector, as will be all that follow
+      break;
 
-    if (header.serial > currentSerial) {
-      currentSerial = header.serial;
-      currentSector = sector;
-      currentAddress = currentSector * SFLASH_SECTOR_SIZE;
-    }
+    currentSerial = header.serial;
+    currentSector = sector;
   }
 
-  if (currentSerial > 0) {
-    uint32_t lastSectorAddress =
-      currentAddress + SFLASH_SECTOR_SIZE - entryLength + 1;
+  if (currentSerial != notFoundSerial) {
+    currentIndex = 0;
 
-    for (uint32_t probeAddress = currentAddress + entryLength;
-        probeAddress < lastSectorAddress;
-        probeAddress += entryLength)
+    uint8_t bitMap[layout.bitmapLength];
+    if (flash.readBuffer(layout.bitmapAddress(currentSector),
+          bitMap, layout.bitmapLength)
+        != layout.bitmapLength)
     {
-      Header header;
-      if (flash.readBuffer(probeAddress,
-            reinterpret_cast<uint8_t*>(&header),
-            sizeof(header))
-          != sizeof(header))
-      {
-        LOG("flash read failure at address ");
-        LOGLN(probeAddress);
-        return false;
-      }
+      LOG("flash read failure of bitmap ");
+      LOGLN(currentSector);
+      return false;
+    }
 
-      if (header.magic != regionMagicValue)
-        break;
-
-      if (header.serial > currentSerial) {
-        currentSerial = header.serial;
-        currentAddress = probeAddress;
+    for (uint32_t mapIndex = 0; mapIndex < layout.bitmapLength; mapIndex++)
+    {
+      switch (bitMap[mapIndex]) {
+        case 0x00:  currentIndex = mapIndex * 8 + 7; break;
+        case 0x80:  currentIndex = mapIndex * 8 + 6; break;
+        case 0xc0:  currentIndex = mapIndex * 8 + 5; break;
+        case 0xe0:  currentIndex = mapIndex * 8 + 4; break;
+        case 0xf0:  currentIndex = mapIndex * 8 + 3; break;
+        case 0xf8:  currentIndex = mapIndex * 8 + 2; break;
+        case 0xfc:  currentIndex = mapIndex * 8 + 1; break;
+        case 0xfe:  currentIndex = mapIndex * 8    ; break;
+        case 0xff:  break;
+        default:
+          // something is very amiss
+          // reset region
+          LOG("bitmap was ill formed in sector  ");
+          LOGLN(currentSector);
+          currentSector = notFoundSerial;
       }
     }
   }
 
   LOGLN("FlashMemoryLog begin:");
-  LOG("   entry length =   "); LOGLN(entryLength);
-  LOG("   current serial = "); LOGLN(currentSerial);
-  LOG("   current sector = "); LOGLN(currentSector);
-  LOG("   current offset = "); LOGLN(currentAddress & (SFLASH_SECTOR_SIZE - 1));
+  LOG("   data length        = "); LOGLN(layout.dataLength);
+  LOG("   entries per sector = "); LOGLN(layout.entriesPerSector);
+  LOG("   bitmap length      = "); LOGLN(layout.bitmapLength);
+  LOG("   current serial     = "); LOGLN(currentSerial);
+  LOG("   current sector     = "); LOGLN(currentSector);
+  LOG("   current index      = "); LOGLN(currentIndex);
   return true;
 }
 
 
 bool FlashMemoryLog::readCurrent(uint8_t* buf)
 {
-  uint32_t dataLength = entryLength - sizeof(Header);
+  if (currentSerial == notFoundSerial)
+    return false;
+
+  auto layout = Layout(dataLength);
 
   return
-    flash.readBuffer(currentAddress + sizeof(Header), buf, dataLength)
+    flash.readBuffer(layout.dataAddress(currentSector, currentIndex),
+      buf, dataLength)
     == dataLength;
 }
 
 bool FlashMemoryLog::writeNext(const uint8_t* buf)
 {
-  uint32_t nextSerial = currentSerial + 1;
+  auto layout = Layout(dataLength);
 
-  if (nextSerial == 0) {
-    LOG("serial number wrapped... inconcievable!");
-    return false;
-  }
-
-  bool needsErase = false;
+  uint32_t nextSerial = currentSerial;
   uint32_t nextSector;
-  uint32_t nextAddress;
+  uint32_t nextIndex;
 
-  if (nextSerial == 1) {
-    needsErase = true;
+  if (nextSerial == notFoundSerial) {
+    nextSerial = firstSerial;
     nextSector = regionStartSector;
-    nextAddress = nextSector * SFLASH_SECTOR_SIZE;
+    nextIndex = 0;
   } else {
     nextSector = currentSector;
-    nextAddress = currentAddress + entryLength;
+    nextIndex = currentIndex + 1;
 
-    if ((nextAddress + entryLength - 1) / SFLASH_SECTOR_SIZE != currentSector) {
-      needsErase = true;
-      nextSector = currentSector + 1;
+    if (nextIndex >= layout.entriesPerSector) {
+      nextSerial = nextSerial + 1;
+      nextSector = nextSector + 1;
+      nextIndex = 0;
+
       if (nextSector >= regionEndSector) {
         nextSector = regionStartSector;   // wrap
       }
-      nextAddress = nextSector * SFLASH_SECTOR_SIZE;
     }
   }
-  if (needsErase) {
+
+  if (nextIndex == 0) {
     if (!flash.eraseSector(nextSector)) {
       LOG("sector failed to erase: ");
       LOGLN(nextSector);
       return false;
     }
+
+    Header header;
+    header.magic = regionMagicValue;
+    header.serial = nextSerial;
+
+    if (writeBuffer(flash, layout.headerAddress(nextSector),
+          reinterpret_cast<uint8_t*>(&header), sizeof(Header))
+      != sizeof(Header))
+    {
+      LOG("header write of failed to address: ");
+      LOGLN(layout.headerAddress(nextSector));
+      return false;
+    }
   }
 
-  Header header;
-  header.magic = regionMagicValue;
-  header.serial = nextSerial;
-
-  if (writeBuffer(flash, nextAddress, reinterpret_cast<uint8_t*>(&header), sizeof(Header))
-    != sizeof(Header))
-  {
-    LOG("header write of failed to address: ");
-    LOGLN(nextAddress);
-    return false;
-  }
-
-  uint32_t dataLength = entryLength - sizeof(Header);
-
-  if (writeBuffer(flash, nextAddress + sizeof(Header), buf, dataLength)
+  if (writeBuffer(flash, layout.dataAddress(nextSector, nextIndex),
+        buf, dataLength)
       != dataLength)
   {
     LOG("data write of failed to address: ");
-    LOGLN(nextAddress);
+    LOGLN(layout.dataAddress(nextSector, nextIndex));
+    return false;
+  }
+
+  uint8_t bitmapByte = 0xff << ((nextIndex & 0x07) + 1);
+
+  if (writeBuffer(flash, layout.bitmapAddress(nextSector) + nextIndex / 8,
+      &bitmapByte, 1)
+      != 1)
+  {
+    LOG("bitmap write failed to address: ");
+    LOGLN(layout.bitmapAddress(nextSector) + nextIndex / 8);
     return false;
   }
 
   currentSerial = nextSerial;
   currentSector = nextSector;
-  currentAddress = nextAddress;
+  currentIndex = nextIndex;
 
   LOGLN("FlashMemoryLog wrote:");
-  LOG("   entry length =   "); LOGLN(entryLength);
-  LOG("   current serial = "); LOGLN(currentSerial);
-  LOG("   current sector = "); LOGLN(currentSector);
-  LOG("   current offset = "); LOGLN(currentAddress & (SFLASH_SECTOR_SIZE - 1));
+  LOG("   current serial     = "); LOGLN(currentSerial);
+  LOG("   current sector     = "); LOGLN(currentSector);
+  LOG("   current index      = "); LOGLN(currentIndex);
   return true;
 }
 

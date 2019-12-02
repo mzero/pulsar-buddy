@@ -19,16 +19,15 @@ public:
     bool writeNext(const uint8_t* buf);
 
 private:
-  const uint32_t entryLength;
+  const uint32_t dataLength;
 
   const uint32_t regionStartSector;
   const uint32_t regionEndSector;
-
   const uint32_t regionMagicValue;
 
   uint32_t currentSerial;
   uint32_t currentSector;
-  uint32_t currentAddress;
+  uint32_t currentIndex;
 };
 
 
