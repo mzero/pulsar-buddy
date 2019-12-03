@@ -13,7 +13,7 @@ namespace {
     { { 4, 6 }, { 12, 6 }, { 12, 16 }, { 4, 16 } };
 }
 
-int MemoryField::index() {
+uint8_t MemoryField::index() {
   return (mode == displayCurrent) ? memory : selection;
 }
 
@@ -25,9 +25,9 @@ bool MemoryField::isOutOfDate() {
 }
 
 void MemoryField::redraw() {
-  int i = index();
+  uint8_t i = index();
 
-  for (int j = 1; j <= 4; ++j) {
+  for (uint8_t j = 1; j <= 4; ++j) {
     const Point& s = spots[j-1];
     const auto cx = x + s.x;
     const auto cy = y + s.y;

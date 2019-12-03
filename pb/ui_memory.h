@@ -1,12 +1,14 @@
 #ifndef _INCLUDE_UI_MEMORY_H_
 #define _INCLUDE_UI_MEMORY_H_
 
+#include <stdint.h>
+
 #include "ui_field.h"
 
 
 class MemoryField : public Field {
 public:
-  MemoryField(int16_t x, int16_t y, uint16_t w, uint16_t h, int& m)
+  MemoryField(int16_t x, int16_t y, uint16_t w, uint16_t h, uint8_t& m)
     : Field(x, y, w, h), mode(displayCurrent), memory(m)
     { }
 
@@ -22,14 +24,14 @@ protected:
 
 private:
     enum Mode { displayCurrent, selectLoad, selectSave };
-    int index();
+    uint8_t index();
 
     Mode mode;
-    int& memory;
-    int selection;
+    uint8_t& memory;
+    uint8_t selection;
 
     Mode modeAsDrawn;
-    int indexAsDrawn;
+    uint8_t indexAsDrawn;
 };
 
 

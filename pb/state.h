@@ -19,8 +19,11 @@ struct Settings {
 /* STATE */
 
 struct State {
-  int         memoryIndex;
   Settings    settings;
+  uint8_t     memoryIndex;
+  uint8_t     syncMode;     // not used yet
+  uint16_t    userBpm;      // not used yet
+  uint16_t    reserved;
 };
 
 // Actual state is buffered: The user may have made changes, but they aren't
