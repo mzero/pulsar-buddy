@@ -57,7 +57,10 @@ void noteMeasure() {
 
 void setup() {
   Serial.begin(115200);
-  while ( !Serial ) delay(10);   // wait for native usb
+  while (!Serial);
+     // wait for native usb, there is a delay in that call
+     // so no need for one here
+     // FIXME: Take this out for production
 
   initializeState();
 

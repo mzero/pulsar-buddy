@@ -48,19 +48,34 @@ TODO
 [x] save memories to FLASH
 
 
-[] time startup
-[] time write
-[] review hash
-[] factor out write calls
-[] review LOG calls
-[] speed up first bitmap check
+[x] time startup - fast
+[x] time write - fast, unless erase is needed, in which
+	case takes 42ms.
+
+[x] review hash
+[x] speed up first bitmap check
 	- short circuit when non-zero
+
+
+[] tighten up the size of State
+[] save State on every commit
+[] save Settings becomes just the four memories
+
 
 
 
 
 [] if no beats after X min... shut down display totally
 	- fire back on when beat detected
+
+
+
+--- Later
+
+[] Figure out production / debug build method
+	[] review LOG calls in flash.cpp
+
+
 
 QUESTIONS
 

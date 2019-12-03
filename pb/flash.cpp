@@ -54,12 +54,12 @@ namespace {
   bool flashBegun = false;
 
   uint32_t computeMagicValue(uint32_t a, uint32_t b, uint32_t c) {
-    return
-      1176328692
-      ^ a * 0x1010701
-      ^ b * 0x2345678
-      ^ c * 0x1003017
-      ;
+    return (
+      1176328692                // tracking number of my first Adafruit order
+      ^ (a + 123) * 0x08040201  // spread out every 9 bits
+      ^ (b + 456) * 0x20100401  // spread out every 10 bits
+      ^ (c + 789) * 0x10204081  // spread out every 7 bits
+      ) & ~0x1;                 // must have at least one zero
   }
 
 /* Layout
@@ -211,22 +211,25 @@ bool FlashMemoryLog::begin()
     {
       switch (bitMap[mapIndex]) {
         case 0x00:  currentIndex = mapIndex * 8 + 7; break;
-        case 0x80:  currentIndex = mapIndex * 8 + 6; break;
-        case 0xc0:  currentIndex = mapIndex * 8 + 5; break;
-        case 0xe0:  currentIndex = mapIndex * 8 + 4; break;
-        case 0xf0:  currentIndex = mapIndex * 8 + 3; break;
-        case 0xf8:  currentIndex = mapIndex * 8 + 2; break;
-        case 0xfc:  currentIndex = mapIndex * 8 + 1; break;
-        case 0xfe:  currentIndex = mapIndex * 8    ; break;
-        case 0xff:  break;
+        case 0x80:  currentIndex = mapIndex * 8 + 6; goto found;
+        case 0xc0:  currentIndex = mapIndex * 8 + 5; goto found;
+        case 0xe0:  currentIndex = mapIndex * 8 + 4; goto found;
+        case 0xf0:  currentIndex = mapIndex * 8 + 3; goto found;
+        case 0xf8:  currentIndex = mapIndex * 8 + 2; goto found;
+        case 0xfc:  currentIndex = mapIndex * 8 + 1; goto found;
+        case 0xfe:  currentIndex = mapIndex * 8    ; goto found;
+        case 0xff:  goto found;
         default:
           // something is very amiss
           // reset region
           LOG("bitmap was ill formed in sector  ");
           LOGLN(currentSector);
           currentSector = notFoundSerial;
+          goto found;
       }
     }
+found:    // sometimes, a goto is just the thing!
+    ;
   }
 
   LOGLN("FlashMemoryLog begin:");
