@@ -87,9 +87,9 @@ void loop() {
   if (measureEvent) {
     measureEvent = false;
     if (pendingState()) {
-      commitState();
       resetTimers(userSettings());
       drawAll(false);
+      commitState();
     }
   }
 

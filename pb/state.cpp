@@ -11,6 +11,8 @@ namespace {
   State _activeState;
   State _savedUserState;
   bool previewActive = false;
+
+  FlashLog<State> stateLog;
 }
 
 State& userState() { return _userState; }
@@ -18,6 +20,7 @@ const State& activeState() { return _activeState; }
 
 void commitState() {
   _activeState = _userState;
+  stateLog.save(_activeState);
 }
 
 bool pendingLoop() {
@@ -95,7 +98,6 @@ namespace {
   FlashLog<StorageContainer> containerLog;
 
   void initializeStorage() {
-    containerLog.begin(128, 64);
     containerLog.load(container);
 
     if (container.magic == STORAGE_MAGIC) {
@@ -153,8 +155,16 @@ void endMemoryPreview() {
 }
 
 void initializeState() {
+  stateLog.begin(10, 4);
+  containerLog.begin(20, 4);
+
   initializeStorage();
-  loadFromMemory(1);
-  commitState();
+
+  if (stateLog.load(_activeState)) {
+    _userState = _activeState;
+  } else {
+    loadFromMemory(1);
+    commitState();
+  }
 }
 
