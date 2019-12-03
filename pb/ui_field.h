@@ -150,6 +150,12 @@ protected:
   T valueAsDrawn;
 };
 
+template< typename T >
+void ValueField<T>::redraw() {
+  display.setTextColor(this->foreColor());
+  centerNumber(value, this->x, this->y, this->w, this->h);
+  valueAsDrawn = value;
+}
 
 /**
  **  PairField

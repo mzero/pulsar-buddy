@@ -5,10 +5,10 @@
 
 TimeSignatureField::TimeSignatureField(
   int16_t x, int16_t y, uint16_t w, uint16_t h,
-  ValueField<uint16_t>& numberField,
-  ValueField<uint16_t>& beatField
+  ValueField<uint8_t>& numberField,
+  ValueField<uint8_t>& beatField
   )
-  : PairField<uint16_t, uint16_t>(x, y, w, h, numberField, beatField,
+  : PairField<uint8_t, uint8_t>(x, y, w, h, numberField, beatField,
     { { 4, 4 }, { 3, 4 }, { 2, 4 }, { 6, 8 }, { 12, 16 }, { 16, 16 }}
   )
   { }
@@ -21,10 +21,10 @@ void TimeSignatureField::redraw() {
 
 TupletRatioField::TupletRatioField(
   int16_t x, int16_t y, uint16_t w, uint16_t h,
-  ValueField<uint16_t>& countField,
-  ValueField<uint16_t>& timeField
+  ValueField<uint8_t>& countField,
+  ValueField<uint8_t>& timeField
   )
-  : PairField<uint16_t, uint16_t>(x, y, w, h, countField, timeField,
+  : PairField<uint8_t, uint8_t>(x, y, w, h, countField, timeField,
       { { 3, 2 }, { 2, 3 }, { 4, 3 }, { 5, 4 }, { 7, 4 }, { 7, 6 }}
     )
   { }
@@ -67,7 +67,7 @@ namespace {
 
 BeatField::BeatField(
     int16_t x, int16_t y, uint16_t w, uint16_t h,
-    uint16_t& value
+    uint8_t& value
     )
     : ValueField(x, y, w, h, value, {16, 8, 4})
     { }
@@ -81,7 +81,7 @@ void BeatField::redraw() {
     case  4:    bitmap = imageNote4;    break;
  // case  2:    bitmap = imageNote2;    break;
     default:
-      ValueField<uint16_t>::redraw();
+      ValueField<uint8_t>::redraw();
       return;
   }
 

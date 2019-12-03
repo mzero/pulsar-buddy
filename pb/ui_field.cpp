@@ -22,10 +22,3 @@ void Field::update(int dir) { }
 
 bool Field::isOutOfDate() { return selectedAsDrawn != selected; }
 
-template<>
-void ValueField< uint16_t >::redraw() {
-  display.setTextColor(foreColor());
-  centerNumber(value, x, y, w, h);
-  valueAsDrawn = value;
-}
-

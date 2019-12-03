@@ -13,19 +13,19 @@ namespace {
   // are too big for the timers.
 
   auto fieldNumberMeasures
-    = ValueField<uint16_t>(18,  5, 12, 20,
+    = ValueField<uint8_t>(18,  5, 12, 20,
         userSettings().numberMeasures,
         { 1, 2, 3, 4, 5, 6, 7, 8 }
         );
 
   auto fieldBeatsPerMeasure
-    = ValueField<uint16_t>(39,  0, 24, 14,
+    = ValueField<uint8_t>(39,  0, 24, 14,
         userSettings().beatsPerMeasure,
         { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }
         );
 
   auto fieldBeatUnit
-    = ValueField<uint16_t>(39, 17, 24, 14,
+    = ValueField<uint8_t>(39, 17, 24, 14,
         userSettings().beatUnit,
         { 2, 4, 8, 16 }
         );
@@ -40,12 +40,12 @@ namespace {
 
 
   auto fieldTupletCount
-    = ValueField<uint16_t>(66,  5, 12, 20,
+    = ValueField<uint8_t>(66,  5, 12, 20,
         userSettings().tupletCount,
         { 2, 3, 4, 5, 6, 7, 8, 9 }
         );
   auto fieldTupletTime
-    = ValueField<uint16_t>(84,  5, 12, 20,
+    = ValueField<uint8_t>(84,  5, 12, 20,
         userSettings().tupletTime,
         { 2, 3, 4, 6, 8 }
         );

@@ -28,7 +28,9 @@ void centerText(const char* s, int16_t x, int16_t y, uint16_t w, uint16_t h) {
   );
   display.print(s);
 }
-void centerNumber(uint16_t n, uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+void centerNumber(unsigned int n,
+  uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+{
   char buf[8];
   utoa(n, buf, 10);
   centerText(buf, x, y, w, h);

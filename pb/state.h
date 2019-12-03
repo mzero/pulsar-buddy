@@ -6,13 +6,13 @@
 /* SETTINGS */
 
 struct Settings {
-  uint16_t    numberMeasures;
-  uint16_t    beatsPerMeasure;
-  uint16_t    beatUnit;
+  uint8_t numberMeasures;
+  uint8_t beatsPerMeasure;
+  uint8_t beatUnit;
 
-  uint16_t    tupletCount;
-  uint16_t    tupletTime;
-  uint16_t    tupletUnit;
+  uint8_t tupletCount;
+  uint8_t tupletTime;
+  uint8_t tupletUnit;
 };
 
 

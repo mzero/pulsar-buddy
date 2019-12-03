@@ -4,12 +4,12 @@
 #include "ui_field.h"
 
 
-class TimeSignatureField : public PairField<uint16_t, uint16_t> {
+class TimeSignatureField : public PairField<uint8_t, uint8_t> {
 public:
   TimeSignatureField(
     int16_t x, int16_t y, uint16_t w, uint16_t h,
-    ValueField<uint16_t>& numberField,
-    ValueField<uint16_t>& beatField
+    ValueField<uint8_t>& numberField,
+    ValueField<uint8_t>& beatField
     );
 
 protected:
@@ -17,12 +17,12 @@ protected:
 };
 
 
-class TupletRatioField : public PairField<uint16_t, uint16_t> {
+class TupletRatioField : public PairField<uint8_t, uint8_t> {
 public:
   TupletRatioField(
     int16_t x, int16_t y, uint16_t w, uint16_t h,
-    ValueField<uint16_t>& countField,
-    ValueField<uint16_t>& timeField
+    ValueField<uint8_t>& countField,
+    ValueField<uint8_t>& timeField
     );
 
 protected:
@@ -30,11 +30,11 @@ protected:
 };
 
 
-class BeatField : public ValueField<uint16_t> {
+class BeatField : public ValueField<uint8_t> {
 public:
   BeatField(
       int16_t x, int16_t y, uint16_t w, uint16_t h,
-      uint16_t& value
+      uint8_t& value
       );
 
 protected:
