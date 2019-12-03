@@ -24,34 +24,21 @@ namespace {
     #endif
   #endif
 
-  // Wrapper for Adafruit_SPIFlash::writeBuffer() that
-  // correctly handles non-page aligned addresses
-  uint32_t writeBuffer (
-    Adafruit_SPIFlash& flash,
-    uint32_t address, uint8_t const *buffer, uint32_t len)
-  {
-    uint32_t remain = len;
-
-    // write one page at a time
-    while(remain)
-    {
-      uint32_t const leftOnPage
-        = SFLASH_PAGE_SIZE - (address & (SFLASH_PAGE_SIZE - 1));
-
-      uint32_t const toWrite = min(remain, leftOnPage);
-
-      if (flash.writeBuffer(address, buffer, toWrite) != toWrite) break;
-
-      remain -= toWrite;
-      buffer += toWrite;
-      address += toWrite;
-    }
-
-    return len - remain;
-  }
-
-  Adafruit_SPIFlash flash(&flashTransport);
+  Adafruit_SPIFlashCore flash(&flashTransport);
   bool flashBegun = false;
+
+  /* Header
+
+    The header of each sector starts with a 4-byte magic number, which is used
+    as a guard against reading random data as valid. And a serial number
+    of the sector, so that after wrapping one can find which is the newest
+    sector (since all will be valid).
+
+  */
+  struct Header {
+    uint32_t magic;
+    uint32_t serial;
+  };
 
   uint32_t computeMagicValue(uint32_t a, uint32_t b, uint32_t c) {
     return (
@@ -62,25 +49,16 @@ namespace {
       ) & ~0x1;                 // must have at least one zero
   }
 
-/* Layout
-
-  Each sector starts with a 4-byte magic number, which is used
-  as a guard against reading random data as valid. And a serial number
-  of the sector, so that after wrapping one can find which is the newest
-  sector (since all will be valid).
-
-  Then comes a bit map, where 0 means valid.
-
-  Then comes n copies of the entry.
-*/
-
-  struct Header {
-    uint32_t magic;
-    uint32_t serial;
-  };
-
   const uint32_t notFoundSerial = 0;    // must be smallest value
   const uint32_t firstSerial = 1;
+
+
+  /* Layout
+    Each sector has this layout:
+
+      [Header|bitmap|entry0|entry1|...|entry n]
+  */
+
 
   struct Layout {
     const uint32_t dataLength;
@@ -286,7 +264,7 @@ bool FlashMemoryLog::writeNext(const uint8_t* buf)
     header.magic = regionMagicValue;
     header.serial = nextSerial;
 
-    if (writeBuffer(flash, layout.headerAddress(nextSector),
+    if (flash.writeBuffer(layout.headerAddress(nextSector),
           reinterpret_cast<uint8_t*>(&header), sizeof(Header))
       != sizeof(Header))
     {
@@ -296,7 +274,7 @@ bool FlashMemoryLog::writeNext(const uint8_t* buf)
     }
   }
 
-  if (writeBuffer(flash, layout.dataAddress(nextSector, nextIndex),
+  if (flash.writeBuffer(layout.dataAddress(nextSector, nextIndex),
         buf, dataLength)
       != dataLength)
   {
@@ -307,7 +285,7 @@ bool FlashMemoryLog::writeNext(const uint8_t* buf)
 
   uint8_t bitmapByte = 0xff << ((nextIndex & 0x07) + 1);
 
-  if (writeBuffer(flash, layout.bitmapAddress(nextSector) + nextIndex / 8,
+  if (flash.writeBuffer(layout.bitmapAddress(nextSector) + nextIndex / 8,
       &bitmapByte, 1)
       != 1)
   {
