@@ -92,10 +92,11 @@ namespace {
     return 1 <= i && i <= Storage::numSlots;
   }
 
-  auto saveContainer = Persistent<StorageContainer>(container, 128, 64);
+  FlashLog<StorageContainer> containerLog;
 
   void initializeStorage() {
-    saveContainer.begin();
+    containerLog.begin(128, 64);
+    containerLog.load(container);
 
     if (container.magic == STORAGE_MAGIC) {
       if (container.version == Storage::version)
@@ -133,7 +134,7 @@ void storeToMemory(int index) {
   Serial.print("memory save into ");
   Serial.println(index);
 
-  saveContainer.save();
+  containerLog.save(container);
 }
 
 void showMemoryPreview(int index) {

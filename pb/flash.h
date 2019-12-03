@@ -7,23 +7,20 @@
 
 class FlashMemoryLog {
 public:
-    FlashMemoryLog(
-      uint32_t dataLength,
-      uint32_t regionStartSector,
-      uint32_t regionSectorCount
-      );
+    FlashMemoryLog(uint32_t dataLength)
+      : dataLength(dataLength)
+      { }
 
-    bool begin();
-
+    bool begin(uint32_t startSector, uint32_t sectorCount);
     bool readCurrent(uint8_t* buf);
     bool writeNext(const uint8_t* buf);
 
 private:
   const uint32_t dataLength;
 
-  const uint32_t regionStartSector;
-  const uint32_t regionEndSector;
-  const uint32_t regionMagicValue;
+  uint32_t regionStartSector;
+  uint32_t regionEndSector;
+  uint32_t regionMagicValue;
 
   uint32_t currentSerial;
   uint32_t currentSector;
@@ -32,24 +29,20 @@ private:
 
 
 template< typename T >
-class Persistent {
+class FlashLog : FlashMemoryLog {
 public:
-    Persistent(
-      T& t,
-      uint32_t startSector,
-      uint32_t sectorCount)
-      : data(reinterpret_cast<uint8_t*>(&t)),
-        memoryLog(sizeof(T), startSector, sectorCount)
-      { }
+    FlashLog()
+      : FlashMemoryLog(sizeof(T))
+      {}
 
-    inline bool begin()
-      { return memoryLog.begin() && memoryLog.readCurrent(data); }
+    inline bool begin(uint32_t startSector, uint32_t sectorCount)
+      { return FlashMemoryLog::begin(startSector, sectorCount); }
 
-    inline bool save() { return memoryLog.writeNext(data); }
+    inline bool load(T& data)
+      { return FlashMemoryLog::readCurrent(reinterpret_cast<uint8_t*>(&data)); }
 
-private:
-    uint8_t* data;
-    FlashMemoryLog memoryLog;
+    inline bool save(const T& data)
+      { return FlashMemoryLog::writeNext(reinterpret_cast<const uint8_t*>(&data)); }
 };
 
 

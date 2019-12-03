@@ -72,6 +72,11 @@ TODO
 
 --- Later
 
+
+[] port fix to Adafruit_SerialFlash project
+	[] remove / conditionalize helper function
+	[] split class
+
 [] Figure out production / debug build method
 	[] review LOG calls in flash.cpp
 

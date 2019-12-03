@@ -114,23 +114,15 @@ namespace {
 }
 
 
-FlashMemoryLog::FlashMemoryLog(
-    uint32_t dataLength,
-    uint32_t regionStartSector,
-    uint32_t regionSectorCount
-  )
-  : dataLength(dataLength),
-    regionStartSector(regionStartSector),
-    regionEndSector(regionStartSector + regionSectorCount),
-    regionMagicValue(
-      computeMagicValue(dataLength, regionStartSector, regionSectorCount)),
-    currentSerial(notFoundSerial),
-    currentSector(0),
-    currentIndex(0)
-  { }
-
-bool FlashMemoryLog::begin()
+bool FlashMemoryLog::begin(uint32_t startSector, uint32_t sectorCount)
 {
+  regionStartSector = startSector;
+  regionEndSector = startSector + sectorCount;
+  regionMagicValue = computeMagicValue(dataLength, startSector, sectorCount);
+  currentSerial = notFoundSerial;
+  currentSector = 0;
+  currentIndex = 0;
+
   if (!flashBegun) {
     if (!flash.begin()) {
       LOGLN("flash begin failure");
