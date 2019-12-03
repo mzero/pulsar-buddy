@@ -98,8 +98,6 @@ namespace {
   enum SelectMode { selectNone, selectField, selectValue };
 
   SelectMode selectMode = selectNone;
-
-  bool fullRedrawPending = false;
 }
 
 void resetSelection() {
@@ -227,18 +225,12 @@ namespace {
 
 }
 
-void displayOutOfDate() {
-  fullRedrawPending = true;
-}
-
 void drawAll(bool refresh) {
   display.dim(false);
 
   unsigned long t0 = millis();
 
-  refresh |= fullRedrawPending;
   if (refresh) {
-    fullRedrawPending = false;
     display.clearDisplay();
 
     resetText();

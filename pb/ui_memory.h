@@ -7,7 +7,7 @@
 class MemoryField : public Field {
 public:
   MemoryField(int16_t x, int16_t y, uint16_t w, uint16_t h, int& m)
-    : Field(x, y, w, h), doLoad(false), doSave(false), memory(m)
+    : Field(x, y, w, h), mode(displayCurrent), memory(m)
     { }
 
     virtual void enter(bool);
@@ -17,13 +17,19 @@ public:
     virtual void update(int);
 
 protected:
+    virtual bool isOutOfDate();
     virtual void redraw();
 
 private:
-    int selection;
-    bool doLoad;
-    bool doSave;
+    enum Mode { displayCurrent, selectLoad, selectSave };
+    int index();
+
+    Mode mode;
     int& memory;
+    int selection;
+
+    Mode modeAsDrawn;
+    int indexAsDrawn;
 };
 
 

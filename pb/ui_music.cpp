@@ -86,4 +86,5 @@ void BeatField::redraw() {
   }
 
   display.drawBitmap(x, y, bitmap, 12, 28, foreColor());
+  valueAsDrawn = value;
 }

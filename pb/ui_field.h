@@ -15,7 +15,8 @@
 class Field {
 public:
   Field(int16_t x, int16_t y, uint16_t w, uint16_t h)
-    : x(x), y(y), w(w), h(h), selected(false), needsUpdate(true)
+    : x(x), y(y), w(w), h(h),
+      selected(false), selectedAsDrawn(false)
     { };
 
   void render(bool refresh);
@@ -32,10 +33,11 @@ public:
   virtual void update(int);
 
 protected:
-  inline void outOfDate() { needsUpdate = true; };
+  virtual bool isOutOfDate();
+  inline bool isSelected() { return selected; }
+
   inline uint16_t foreColor() { return selected ? BLACK : WHITE; };
   inline uint16_t backColor() { return selected ? WHITE : BLACK; };
-  inline bool isSelected() { return selected; }
 
   virtual void redraw() = 0;
 
@@ -43,8 +45,9 @@ protected:
   const     uint16_t  w, h;
 
 private:
-  bool      selected;
-  bool      needsUpdate;
+  bool selected;
+
+  bool selectedAsDrawn;
 };
 
 
@@ -91,8 +94,10 @@ private:
 template< typename T >
 void OptionField<T>::select(bool s) {
   Field::select(s);
-  entryValue = getValue();
-  entryValueIsOption = findOptionIndex(entryValue) >= 0;
+  if (s) {
+    entryValue = getValue();
+    entryValueIsOption = findOptionIndex(entryValue) >= 0;
+  }
 }
 
 template< typename T >
@@ -130,16 +135,19 @@ public:
       int16_t x, int16_t y, uint16_t w, uint16_t h,
       T& value, std::initializer_list<T> options
       )
-    : OptionField<T>(x, y, w, h, options), value(value)
+    : OptionField<T>(x, y, w, h, options), value(value), valueAsDrawn(value)
       { };
 
   virtual T    getValue()           { return value; }
-  virtual void setValue(const T& v) { value = v; this->outOfDate(); }
+  virtual void setValue(const T& v) { value = v; }
 
 protected:
+  virtual bool isOutOfDate()
+    { return valueAsDrawn != value || OptionField<T>::isOutOfDate(); }
   virtual void redraw();
 
   T& value;
+  T valueAsDrawn;
 };
 
 

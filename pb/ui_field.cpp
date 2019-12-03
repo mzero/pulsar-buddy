@@ -2,19 +2,16 @@
 
 
 void Field::render(bool force) {
-  if (!force && !needsUpdate)
+  if (!force && !isOutOfDate())
     return;
 
   display.fillRect(x, y, w, h, backColor());
   redraw();
-  needsUpdate = false;
+  selectedAsDrawn = selected;
 }
 
 void Field::select(bool s) {
-  if (selected != s) {
-    selected = s;
-    needsUpdate = true;
-  }
+  selected = s;
 }
 
 void Field::enter(bool alternate) { }
@@ -23,10 +20,12 @@ void Field::exit() { }
 bool Field::click(ButtonState s) { return false; }
 void Field::update(int dir) { }
 
+bool Field::isOutOfDate() { return selectedAsDrawn != selected; }
 
 template<>
 void ValueField< uint16_t >::redraw() {
   display.setTextColor(foreColor());
   centerNumber(value, x, y, w, h);
+  valueAsDrawn = value;
 }
 

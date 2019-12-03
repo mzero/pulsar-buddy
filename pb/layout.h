@@ -8,7 +8,6 @@ void resetSelection();
 void updateSelection(int dir);
 void clickSelection(ButtonState);
 
-void displayOutOfDate();
 void drawAll(bool refresh);
 
 #endif // _INCLUDE_LAYOUT_H_

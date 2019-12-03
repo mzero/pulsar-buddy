@@ -13,16 +13,27 @@ namespace {
     { { 4, 6 }, { 12, 6 }, { 12, 16 }, { 4, 16 } };
 }
 
+int MemoryField::index() {
+  return (mode == displayCurrent) ? memory : selection;
+}
+
+bool MemoryField::isOutOfDate() {
+  return
+    modeAsDrawn != mode
+    || indexAsDrawn != index()
+    || Field::isOutOfDate();
+}
 
 void MemoryField::redraw() {
-  for (int16_t i = 1; i <= 4; ++i) {
-    const Point& s = spots[i-1];
+  int i = index();
+
+  for (int j = 1; j <= 4; ++j) {
+    const Point& s = spots[j-1];
     const auto cx = x + s.x;
     const auto cy = y + s.y;
 
-    int index = (doLoad || doSave) ? selection : memory;
-    bool active = index == static_cast<int>(i);
-    if (!active && doSave)
+    bool active = i == j;
+    if (!active && mode == selectSave)
       // don't draw other slots while saving
       continue;
 
@@ -34,32 +45,24 @@ void MemoryField::redraw() {
       display.drawCircle(cx, cy, 3, foreColor());
     }
   }
+
+  modeAsDrawn = mode;
+  indexAsDrawn = i;
 }
 
 void MemoryField::enter(bool alternate) {
+  mode = alternate ? selectSave : selectLoad;
   selection = memory;
-  doLoad = !alternate;
-  doSave = alternate;
 
-  if (doLoad) {
+  if (mode == selectLoad)
     showMemoryPreview(selection);
-    displayOutOfDate();
-  }
-  if (doSave) {
-    outOfDate();
-  }
 }
 
 void MemoryField::exit() {
-  if (doLoad) {
-    doLoad = false;
+  if (mode == selectLoad)
     endMemoryPreview();
-    displayOutOfDate();
-  }
-  if (doSave) {
-    doSave = false;
-    outOfDate();
-  }
+
+  mode = displayCurrent;
 }
 
 bool MemoryField::click(ButtonState s) {
@@ -69,16 +72,19 @@ bool MemoryField::click(ButtonState s) {
       return true;
 
     case buttonUp:
-      if (doSave) {
-        memory = selection;
-        outOfDate();
-        storeToMemory(selection);
-      }
-      if (doLoad) {
-        endMemoryPreview();
-        memory = selection;
-        loadFromMemory(selection);
-        displayOutOfDate();
+      switch (mode) {
+        case selectLoad:
+          endMemoryPreview();
+          loadFromMemory(selection);
+          mode = displayCurrent;
+          memory = selection;
+          break;
+
+        case selectSave:
+          storeToMemory(selection);
+          mode = displayCurrent;
+          memory = selection;
+          break;
       }
       return false;
 
@@ -89,14 +95,12 @@ bool MemoryField::click(ButtonState s) {
       return false;
   }
 }
+
 void MemoryField::update(int dir) {
   selection = constrain(selection + dir, 1, 4);
-  outOfDate();
 
-  if (doLoad) {
+  if (mode == selectLoad)
     showMemoryPreview(selection);
-    displayOutOfDate();
-  }
 }
 
 
