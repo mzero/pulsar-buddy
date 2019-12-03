@@ -1,13 +1,5 @@
 TODO
 
-[x] don't futz with timers if nothing has changed
-	- selecting a field currently results in a call to updateTimers()
-	? delay call to updateTimers()
-		- so users can scroll from 16/16 to 4/4 and have no change
-	[] handled by only updating if a pending difference on measure boundries
-
-[x] time update code - 9 micro s
-
 [] check and Serial write (or other error) when periods out of range
 
 [] speed up centerNumber by using the fixed size of digits in the font
@@ -16,7 +8,6 @@ TODO
 	- sideways
 	- select selects from source menu:
 		TAP - 1/4 - 1/16 - 24ppb 32ppb 48ppb
-
 
 
 -- Slave clock
@@ -38,48 +29,27 @@ TODO
 	? separate mode? or just part of fixed?
 
 
-
-
 -- Memories
 
-[x] field render of memories
-[x] memory selection on select
-[x] memory save on long press
-[x] save memories to FLASH
+[x] tighten up the size of State
+[x] tighten up memoryIndex
 
+[x] save State on every commit
+[x] save Settings becomes just the four memories
 
-[x] time startup - fast
-[x] time write - fast, unless erase is needed, in which
-	case takes 42ms.
-
-[x] review hash
-[x] speed up first bitmap check
-	- short circuit when non-zero
-
-
-[] tighten up the size of State
-[] save State on every commit
-[] save Settings becomes just the four memories
-
-
-
-
-
-[] if no beats after X min... shut down display totally
-	- fire back on when beat detected
-
+[x] sizing
 
 
 --- Later
 
-
-[] port fix to Adafruit_SerialFlash project
-	[] remove / conditionalize helper function
-	[] split class
-
 [] Figure out production / debug build method
 	[] review LOG calls in flash.cpp
 
+[] if no beats after X min... shut down display totally
+	- fire back on when beat detected
+
+[] make enums be uint8_t based
+	- probably not really worth it
 
 
 QUESTIONS

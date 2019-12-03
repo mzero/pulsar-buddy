@@ -78,7 +78,7 @@ namespace {
     uint32_t      version;
     union {
       Storage_v1  v1;
-      uint8_t     spacer[72];
+      uint8_t     spacer[112];
         // If this code ever needs a Storage version that exceeds this
         // size, then MAGIC has to change, and no updates from older
         // versions are possible.
@@ -98,6 +98,7 @@ namespace {
   FlashLog<StorageContainer> containerLog;
 
   void initializeStorage() {
+    memset(&container, 0, sizeof(container));
     containerLog.load(container);
 
     if (container.magic == STORAGE_MAGIC) {
@@ -155,8 +156,12 @@ void endMemoryPreview() {
 }
 
 void initializeState() {
-  stateLog.begin(10, 4);
-  containerLog.begin(20, 4);
+  stateLog.begin(0, 8);
+  containerLog.begin(8, 8);
+    // The Feather M0 Express has 2MB of Flash, or 512 pages.
+    // But 64KB units are cheap and common, so this is sized to fit into
+    // just 16 pages. Still, at expected update rates, these will take 100
+    // years to reach the minimum supported erase cycles of the chips.
 
   initializeStorage();
 
