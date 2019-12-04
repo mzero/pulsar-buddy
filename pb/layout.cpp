@@ -5,12 +5,16 @@
 #include "ui_field.h"
 #include "ui_memory.h"
 #include "ui_music.h"
+#include "ui_sync.h"
 
 
 namespace {
   // NOTE: Be careful when adjusting the range of available
   // settings, because they can produce timing periods that
   // are too big for the timers.
+
+  auto fieldBpm
+    = SyncField(0, 0, 14, 32, userState());
 
   auto fieldNumberMeasures
     = ValueField<uint8_t>(18,  5, 12, 20,
@@ -74,7 +78,8 @@ namespace {
 
 
   const std::initializer_list<Field*> selectableFields =
-    { &fieldNumberMeasures,
+    { &fieldBpm,
+      &fieldNumberMeasures,
       &fieldBeatsPerMeasure,
       &commonTimeSignatures,
       &fieldBeatUnit,
@@ -85,7 +90,8 @@ namespace {
       &fieldMemory
     };
 
-  int selectedFieldIndex = 0;
+  int selectedFieldIndex = 1;   // start on number of measures
+
   void updateSelectedField(int dir) {
     selectedFieldIndex =
       constrain(selectedFieldIndex + dir, 0, selectableFields.size() - 1);
@@ -166,12 +172,8 @@ void clickSelection(ButtonState s) {
 
 namespace {
 
-  void drawBPM() {
-    display.setRotation(3);
-    display.fillRect(0, 0, 32, 14, BLACK);
-    display.setTextColor(WHITE);
-    centerNumber(bpm, 0, 0, 32, 14);
-    display.setRotation(0);
+  void drawBPM(bool refresh) {
+    fieldBpm.render(refresh);
   }
 
   void drawSeparator(int16_t x) {
@@ -237,7 +239,7 @@ void drawAll(bool refresh) {
     drawFixed();
   }
 
-  drawBPM();
+  drawBPM(refresh);
   drawRepeat(refresh);
   drawTuplet(refresh);
   drawMemory(refresh);
