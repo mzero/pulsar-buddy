@@ -7,6 +7,8 @@
 extern void initializeTimers(double, void (*onMeasure)());
 
 extern void setTimerBpm(double);
+extern void resetSync(SyncMode);
+extern void syncBPM();
 
 extern void resetTimers(const Settings&);
 extern void updateTimers(const Settings&);

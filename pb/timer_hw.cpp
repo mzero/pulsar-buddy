@@ -189,6 +189,32 @@ namespace {
     return round(factor / bpm);
   }
 
+
+  SyncMode captureSync = syncFixed;
+  const int captureBufferSize = 64;
+  q_t captureBuffer[captureBufferSize];
+  int captureNext = 0;
+  int capturesPerBeat = 0;
+  int capturesNeeded = 0;
+  const q_t qMod = 4 * Q_PER_B;
+
+  void capture(q_t sample) {
+    if (capturesPerBeat == 0)
+      return;
+
+    captureBuffer[captureNext] = sample % qMod;
+    captureNext = (captureNext + 1) % captureBufferSize;
+    if (capturesNeeded > 0)
+      capturesNeeded -= 1;
+      return;
+  }
+
+  void clearCapture(int perBeat) {
+    capturesPerBeat = 0;
+    captureNext = 0;
+    capturesNeeded = perBeat;
+    capturesPerBeat = perBeat;
+  }
 }
 
 void setTimerBpm(double bpm) {
@@ -199,6 +225,53 @@ void setTimerBpm(double bpm) {
   quantumTc->COUNT16.CC[0].bit.CC = CpuClockDivisor(bpm);
   sync(quantumTc);
 }
+
+void resetSync(SyncMode sync) {
+  if (captureSync == sync)
+    return;
+  captureSync = sync;
+
+  int perBeat = 0;
+  switch (sync) {
+    case syncFixed: perBeat = 0; break;
+    case syncTap: perBeat = 1; break;
+    default:
+      if (sync & syncExternalFlag) {
+        perBeat = sync & syncPPQNMask;
+      } else {
+        perBeat = 0;
+      }
+  }
+
+  clearCapture(perBeat);
+}
+
+void syncBPM() {
+  if (capturesNeeded > 0) {
+    Serial.printf("still need %d captures\n", capturesNeeded);
+    return;
+  }
+
+  int i = (captureNext + captureBufferSize - 1) % captureBufferSize;
+  int j = (i + captureBufferSize - capturesPerBeat) % captureBufferSize;
+
+  q_t qdiff = (captureBuffer[i] + qMod - captureBuffer[j]) % qMod;
+
+  Serial.printf("from %d to %d -> %dq\n", j, i, qdiff);
+  if (qdiff <= 0)
+    return;
+
+  double extbpm = bpm * (double)Q_PER_B / (double)qdiff;
+  double newbpm = (bpm + 15 * extbpm) / 16;
+
+  Serial.printf("calc bpm %d, update bpm %d, delta %dppm\n",
+      round(extbpm), round(newbpm), round(1000000*abs(extbpm-bpm)/bpm));
+
+  bpm = newbpm;
+  setTimerBpm(bpm);
+  // clearCapture(capturesPerBeat);
+}
+
 
 
 void initializeTimers(double bpm, void (*onMeasure)()) {
@@ -352,22 +425,7 @@ void dumpTimer() {
   Serial.println(beatCount);
 }
 
-namespace {
-  const int captureBufferSize = 100;
-  uint32_t captureBuffer[captureBufferSize];
-  int captureNext = 0;
-
-  void capture(uint32_t sample) {
-    if (captureNext < captureBufferSize)
-      captureBuffer[captureNext++] = sample;
-  }
-}
-
 void dumpCapture() {
-  if (captureNext < captureBufferSize) {
-    Serial.println("Capture buffer not full yet");
-    return;
-  }
 
   int32_t sumOfDeltas = 0;
   uint32_t n = 0;
@@ -376,18 +434,21 @@ void dumpCapture() {
     int32_t delta = (i == 0) ? -1 : captureBuffer[i] - captureBuffer[i-1];
 
     if (delta < 0) {
-      Serial.printf("[%3d] %8d\n", i, captureBuffer[i]);
+      Serial.printf("[%2d] %8d\n", i, captureBuffer[i]);
     } else {
       sumOfDeltas += delta;
       n += 1;
-      Serial.printf("[%3d] %8d (+%8d)\n", i, captureBuffer[i], delta);
+      Serial.printf("[%2d] %8d (+%8d)\n", i, captureBuffer[i], delta);
     }
   }
 
   if (n > 0)
     Serial.printf("Average: %8d\n\n", sumOfDeltas / n);
 
-  captureNext = 0;
+  if (capturesPerBeat == 0)
+    return;
+
+  Serial.printf("captureNext = %d\n", captureNext);
 }
 
 void TCC0_Handler() {

@@ -70,6 +70,7 @@ void setup() {
 
   initializeTimers(bpm, noteMeasure);
   resetTimers(userSettings());
+  resetSync(userState().syncMode);
 }
 
 void activity() {
@@ -79,11 +80,20 @@ void activity() {
 
 void postAction() {
   setTimerBpm(bpm);
+  resetSync(userState().syncMode);
   drawAll(false);
   activity();
 }
 
 void loop() {
+  static auto tLast = millis();
+  auto tNow = millis();
+  if (tNow > tLast + 1000) {
+    tLast = tNow;
+    syncBPM();
+    drawAll(false);
+  }
+
   if (measureEvent) {
     measureEvent = false;
     if (pendingState()) {
