@@ -33,6 +33,7 @@ namespace {
   void (*tcc1callback)() = defaultCallback;
 
 #define QUANTUM_EVENT_CHANNEL   5
+#define EXTCLK_EVENT_CHANNEL    6
 
   void startQuantumEvents() {
     EVSYS->CHANNEL.reg
@@ -64,6 +65,16 @@ namespace {
         ;
     }
     startQuantumEvents();
+
+    EVSYS->USER.reg
+      = EVSYS_USER_USER(EVSYS_ID_USER_TCC0_MC_1)
+      | EVSYS_USER_CHANNEL(EXTCLK_EVENT_CHANNEL + 1)
+      ;
+    EVSYS->CHANNEL.reg
+      = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
+      | EVSYS_CHANNEL_EVGEN(EVSYS_ID_GEN_EIC_EXTINT_8)
+      | EVSYS_CHANNEL_PATH_ASYNCHRONOUS
+      ;
   }
 
 
@@ -96,7 +107,7 @@ namespace {
     while(tcc->SYNCBUSY.reg & mask);
   }
 
-  void initializeTcc(Tcc* tcc, bool enableInterrupts) {
+  void initializeTcc(Tcc* tcc) {
     tcc->CTRLA.bit.ENABLE = 0;
     sync(tcc, TCC_SYNCBUSY_ENABLE);
 
@@ -105,13 +116,21 @@ namespace {
 
     tcc->CTRLA.bit.RUNSTDBY = 1;
 
+    if (tcc == sequenceTcc) {
+      tcc->CTRLA.bit.CPTEN1 = 1;
+    }
+
     tcc->EVCTRL.reg
       = TCC_EVCTRL_TCEI0
       | TCC_EVCTRL_EVACT0_COUNTEV
+      | ((tcc == sequenceTcc) ? TCC_EVCTRL_MCEI1 : 0)
       ;
 
-    if (enableInterrupts) {
+    if (tcc == measureTcc) {
       tcc->INTENSET.reg = TCC_INTENSET_OVF;
+    }
+    if (tcc == sequenceTcc) {
+      tcc->INTENSET.reg = TCC_INTENSET_MC1;
     }
 
     tcc->WEXCTRL.reg
@@ -189,6 +208,9 @@ void initializeTimers(double bpm, void (*onMeasure)()) {
 
   /** POWER **/
 
+  PM->APBAMASK.reg
+    |= PM_APBAMASK_EIC;
+
   PM->APBCMASK.reg
     |= PM_APBCMASK_EVSYS
     | PM_APBCMASK_TCC0
@@ -200,7 +222,7 @@ void initializeTimers(double bpm, void (*onMeasure)()) {
 
   /** CLOCKS **/
 
-  for ( uint16_t id : { GCM_TCC0_TCC1, GCM_TCC2_TC3, GCM_TC4_TC5 }) {
+  for ( uint16_t id : { GCM_EIC, GCM_TCC0_TCC1, GCM_TCC2_TC3, GCM_TC4_TC5 }) {
     GCLK->CLKCTRL.reg
       = GCLK_CLKCTRL_CLKEN
       | GCLK_CLKCTRL_GEN_GCLK0
@@ -212,6 +234,19 @@ void initializeTimers(double bpm, void (*onMeasure)()) {
   /** EVENTS **/
 
   initializeEvents();
+
+
+  /** EXTERNAL INTERRUPT **/
+
+  EIC->CTRL.reg = EIC_CTRL_SWRST;
+  while (EIC->STATUS.bit.SYNCBUSY);
+  EIC->EVCTRL.reg
+    |= EIC_EVCTRL_EXTINTEO8;
+  EIC->CONFIG[1].bit.FILTEN0 = 1;
+  EIC->CONFIG[1].bit.SENSE0 = EIC_CONFIG_SENSE0_RISE_Val;
+  EIC->CTRL.reg = EIC_CTRL_ENABLE;
+  while (EIC->STATUS.bit.SYNCBUSY);
+
 
   /** QUANTUM TIMER **/
 
@@ -264,16 +299,20 @@ void initializeTimers(double bpm, void (*onMeasure)()) {
     // configuring it for function "E" (PIO_TIMER) maps it to TC5.WO1.
 
 
-  initializeTcc(measureTcc, true);
+  initializeTcc(measureTcc);
   pinPeripheral(PAD_SPI_RX, PIO_TIMER);
   pinPeripheral(PAD_SPI_TX, PIO_TIMER);
   NVIC_SetPriority(TCC1_IRQn, 0);
   NVIC_EnableIRQ(TCC1_IRQn);
 
-  initializeTcc(sequenceTcc, false);
+  initializeTcc(sequenceTcc);
   pinPeripheral(PIN_SPI_MOSI, PIO_TIMER_ALT);
+  pinMode(PIN_A1, INPUT_PULLUP);
+  pinPeripheral(PIN_A1, PIO_EXTINT);
+  NVIC_SetPriority(TCC0_IRQn, 0);
+  NVIC_EnableIRQ(TCC0_IRQn);
 
-  initializeTcc(tupletTcc, false);
+  initializeTcc(tupletTcc);
   pinPeripheral(PIN_SPI_MISO, PIO_TIMER);
 }
 
@@ -313,12 +352,55 @@ void dumpTimer() {
   Serial.println(beatCount);
 }
 
+namespace {
+  const int captureBufferSize = 100;
+  uint32_t captureBuffer[captureBufferSize];
+  int captureNext = 0;
 
+  void capture(uint32_t sample) {
+    if (captureNext < captureBufferSize)
+      captureBuffer[captureNext++] = sample;
+  }
+}
+
+void dumpCapture() {
+  if (captureNext < captureBufferSize) {
+    Serial.println("Capture buffer not full yet");
+    return;
+  }
+
+  int32_t sumOfDeltas = 0;
+  uint32_t n = 0;
+
+  for (int i = 0; i < captureBufferSize; ++i) {
+    int32_t delta = (i == 0) ? -1 : captureBuffer[i] - captureBuffer[i-1];
+
+    if (delta < 0) {
+      Serial.printf("[%3d] %8d\n", i, captureBuffer[i]);
+    } else {
+      sumOfDeltas += delta;
+      n += 1;
+      Serial.printf("[%3d] %8d (+%8d)\n", i, captureBuffer[i], delta);
+    }
+  }
+
+  if (n > 0)
+    Serial.printf("Average: %8d\n\n", sumOfDeltas / n);
+
+  captureNext = 0;
+}
+
+void TCC0_Handler() {
+  if (TCC0->INTFLAG.reg & TCC_INTFLAG_MC1) {
+    capture(TCC0->CC[1].reg);
+  }
+  TCC0->INTFLAG.reg = TCC_INTFLAG_MC1;    // writing 1 clears the flag
+}
 
 void TCC1_Handler() {
-  if (TCC1->INTFLAG.bit.OVF) {
+  if (TCC1->INTFLAG.reg & TCC_INTFLAG_OVF) {
     tcc1callback();
-    TCC1->INTFLAG.bit.OVF = 1;  // writing 1 clears the flag
+    TCC1->INTFLAG.reg = TCC_INTFLAG_OVF;  // writing 1 clears the flag
   }
 }
 

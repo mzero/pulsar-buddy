@@ -12,5 +12,6 @@ extern void resetTimers(const Settings&);
 extern void updateTimers(const Settings&);
 
 extern void dumpTimer();
+extern void dumpCapture();
 
 #endif // _INCLUDE_TIMER_HW_H_

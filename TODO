@@ -4,11 +4,16 @@ TODO
 
 [] speed up centerNumber by using the fixed size of digits in the font
 
-[] field render for BPM
+[x] field render for BPM
 	- sideways
 	- select selects from source menu:
 		TAP - 1/4 - 1/16 - 24ppb 32ppb 48ppb
 
+
+[] All of State needs to be checked, not just the
+	pending functions, for when to commit it.
+
+[] recconcile manual BPM and sync'd BPM
 
 -- Slave clock
 
@@ -19,25 +24,12 @@ TODO
 	? smoothing of display so user's don't freak out
 	? update display at lower rate than tracker
 
-[] master clock settings:
-	- 1p, 2p, 4p, 24ppb, 32ppb, 48ppb
-
 [] fixed BPM mode
 	? UI for both setting fixed, and then BPM? adjusting BPM quickly
+	[] display "sync" when trying to change BPM in a sync'd mode?
 
 [] tap tempo
 	? separate mode? or just part of fixed?
-
-
--- Memories
-
-[x] tighten up the size of State
-[x] tighten up memoryIndex
-
-[x] save State on every commit
-[x] save Settings becomes just the four memories
-
-[x] sizing
 
 
 --- Later

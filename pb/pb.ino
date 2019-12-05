@@ -108,21 +108,18 @@ void loop() {
   }
 
   if (oledButtonA.update() == buttonDown) {
-    bpm += 10.0;
-    postAction();
+    resetTimers(userSettings());
     return;
   }
 
   if (oledButtonB.update() == buttonDown) {
-    bpm -= 10.0;
-    postAction();
+    //printZeroRegs(zeroOpts);
     return;
   }
 
   if (oledButtonC.update() == buttonDown) {
-    storeToMemory(1);
-    // printZeroRegs(zeroOpts);
-    // resetTimers(userSettings());
+    // storeToMemory(1);
+    dumpCapture();
     return;
   }
 
