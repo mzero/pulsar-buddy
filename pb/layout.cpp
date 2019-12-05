@@ -14,7 +14,7 @@ namespace {
   // are too big for the timers.
 
   auto fieldBpm
-    = SyncField(0, 0, 14, 32, userState());
+    = SyncField(0, 0, 15, 32, userState());
 
   auto fieldNumberMeasures
     = ValueField<uint8_t>(18,  5, 12, 20,
@@ -172,85 +172,52 @@ void clickSelection(ButtonState s) {
 
 namespace {
 
-  void drawBPM(bool refresh) {
-    fieldBpm.render(refresh);
-  }
-
   void drawSeparator(int16_t x) {
     for (int16_t y = 0; y < 32; y += 2) {
       display.drawPixel(x, y, WHITE);
     }
   }
-
-  void drawRepeat(bool refresh) {
-    fieldNumberMeasures.render(refresh);
-    fieldBeatsPerMeasure.render(refresh);
-    commonTimeSignatures.render(refresh);
-    fieldBeatUnit.render(refresh);
-
-    pendingLoopIndicator.render(refresh);
-  }
-
-  void drawTuplet(bool refresh) {
-    fieldTupletCount.render(refresh);
-    commonTuplets.render(refresh);
-    fieldTupletTime.render(refresh);
-    fieldTupletUnit.render(refresh);
-
-    pendingTupletIndicator.render(refresh);
-  }
-
-  void drawMemory(bool refresh) {
-    fieldMemory.render(refresh);
-
-    pendingMemoryIndicator.render(refresh);
-  }
-
-  void drawFixed() {
-    // BPM area
-
-    drawSeparator(16);
-
-    // Repeat area
-    //    the x
-    display.drawLine(31, 12, 37, 18, WHITE);
-    display.drawLine(31, 18, 37, 12, WHITE);
-
-    drawSeparator(64);
-
-    // Tuplet area
-
-    drawSeparator(109);
-
-    // Memory area
-  }
-
 }
 
 void drawAll(bool refresh) {
   display.dim(false);
 
-  unsigned long t0 = millis();
-
   if (refresh) {
     display.clearDisplay();
-
     resetText();
-    drawFixed();
   }
 
-  drawBPM(refresh);
-  drawRepeat(refresh);
-  drawTuplet(refresh);
-  drawMemory(refresh);
+  // BPM area
+  fieldBpm.render(refresh);
 
-  unsigned long t1 = millis();
+  if (refresh) drawSeparator(16);
+
+  // Repeat area
+  fieldNumberMeasures.render(refresh);
+  if (refresh) {
+    // the x
+    display.drawLine(31, 12, 37, 18, WHITE);
+    display.drawLine(31, 18, 37, 12, WHITE);
+  }
+  fieldBeatsPerMeasure.render(refresh);
+  commonTimeSignatures.render(refresh);
+  fieldBeatUnit.render(refresh);
+  pendingLoopIndicator.render(refresh);
+
+  if (refresh) drawSeparator(64);
+
+  // Tuplet area
+  fieldTupletCount.render(refresh);
+  commonTuplets.render(refresh);
+  fieldTupletTime.render(refresh);
+  fieldTupletUnit.render(refresh);
+  pendingTupletIndicator.render(refresh);
+
+  if (refresh) drawSeparator(109);
+
+  // Memory area
+  fieldMemory.render(refresh);
+  pendingMemoryIndicator.render(refresh);
 
   display.display();
-
-  unsigned long t2 = millis();
-  // Serial.print("draw ms: ");
-  // Serial.print(t1 - t0);
-  // Serial.print(", disp ms: ");
-  // Serial.println(t2 - t1);
 }
