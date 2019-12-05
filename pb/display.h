@@ -10,6 +10,7 @@
 extern Adafruit_SSD1306 display;
 
 void resetText();
+void smallText();
 void centerText(const char* s, int16_t x, int16_t y, uint16_t w, uint16_t h);
 
 void centerNumber(unsigned int n,

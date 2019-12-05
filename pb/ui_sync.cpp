@@ -39,10 +39,10 @@ namespace {
     { syncTap,    "Tap" },
     { sync1ppqn,  "1/4" },
     { sync2ppqn,  "1/8" },
-    { sync4ppqn,  "16t" },
-    { sync8ppqn,  "32t" },
-    { sync24ppqn, "24d" },
-    { sync48ppqn, "48d" }
+    { sync4ppqn,  "1/16" },
+    { sync8ppqn,  "1/32" },
+    { sync24ppqn, "D 24" },
+    { sync48ppqn, "D 48" }
   };
 
   const int numSyncOptions = sizeof(syncOptions) / sizeof(syncOptions[0]);
@@ -87,10 +87,12 @@ void SyncField::redraw() {
       break;
 
     case displaySync:
+      smallText();
       int i = findSyncModeIndex(state.syncMode);
       const char* s = i < 0 ? "???" : syncOptions[i].text;
       centerText(s, xr, yr, wr, hr);
       syncAsDrawn = state.syncMode;
+      resetText();
       break;
   }
   modeAsDrawn = mode;

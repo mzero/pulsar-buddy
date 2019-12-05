@@ -17,6 +17,11 @@ void resetText() {
   display.setTextColor(WHITE);
   display.setTextWrap(false);
 }
+
+void smallText() {
+  display.setFont();
+}
+
 void centerText(const char* s, int16_t x, int16_t y, uint16_t w, uint16_t h) {
   int16_t bx, by;
   uint16_t bw, bh;
