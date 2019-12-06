@@ -1,38 +1,40 @@
 TODO
 
-[] check and Serial write (or other error) when periods out of range
-
-[] speed up centerNumber by using the fixed size of digits in the font
-
-[x] field render for BPM
-	- sideways
-	- select selects from source menu:
-		TAP - 1/4 - 1/16 - 24ppb 32ppb 48ppb
-
-
-[] All of State needs to be checked, not just the
+[x] All of State needs to be checked, not just the
 	pending functions, for when to commit it.
 
-[] recconcile manual BPM and sync'd BPM
+[] review sync of capture variables
 
--- Slave clock
+[] rename capture variables
+[] account for various lengths of the sequence
+	- what about when sequence is very short?!?!?!
 
-[] figure out how to use TC3 as a capture device
-	- or move tuplet to TC3, and use TCC0
-[] update and display bpm
-	? fractional bpm display?
-	? smoothing of display so user's don't freak out
-	? update display at lower rate than tracker
+[] switch to explicit timing of external clock?
 
-[] fixed BPM mode
-	? UI for both setting fixed, and then BPM? adjusting BPM quickly
-	[] display "sync" when trying to change BPM in a sync'd mode?
+[] how to stay sync'd to the one?
+
+
+[-] update and display bpm
+	[] smoothing of display so user's don't freak out
+	[x] commit sync'd BPM to storage when it has been stable for n-ms
+		- and only if changed.
+	[] commit should be based on displayed (smoothed) BPM
+
+[] don't update sync until exit field?
+
+
+[] handle total sync drop gracefully
+	- restart as if from scratch
+	- display no-sync?
+
+
+--- Later
 
 [] tap tempo
 	? separate mode? or just part of fixed?
 
+[] images for sync modes
 
---- Later
 
 [] Figure out production / debug build method
 	[] review LOG calls in flash.cpp
@@ -42,6 +44,16 @@ TODO
 
 [] make enums be uint8_t based
 	- probably not really worth it
+
+[] need a UI for "apply right now!"
+[] need a UI for "really, reset the whole dang thing!"
+
+[] calibration? I bet xtal isn't exactly 48MHz!
+
+[] check and Serial write (or other error) when periods out of range
+
+[] speed up centerNumber by using the fixed size of digits in the font
+
 
 
 QUESTIONS
