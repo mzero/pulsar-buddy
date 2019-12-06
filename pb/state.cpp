@@ -6,21 +6,24 @@
 
 
 namespace {
-  State _userState;
-  State _activeState;
-  State _savedUserState;
+  State _userState;             // displayed in UI
+  State _activeState;           // running on timers
+
+  State _savedUserState;        // previous state, while displaying memories
   bool previewActive = false;
 
+  State _flashState;            // state pending write to flash
+  unsigned long writeFlashAt = 0;
+
   FlashLog<State> stateLog;
+
+  bool sameState(const State& a, const State& b) {
+    return memcmp(&a, &b, sizeof(State)) == 0;
+  }
 }
 
 State& userState() { return _userState; }
 const State& activeState() { return _activeState; }
-
-void commitState() {
-  _activeState = _userState;
-  stateLog.save(_activeState);
-}
 
 bool pendingLoop() {
   if (previewActive) return false;
@@ -49,6 +52,30 @@ bool pendingMemory() {
 bool pendingState() {
   if (previewActive) return false;
   return pendingLoop() || pendingTuplet() || pendingMemory();
+}
+
+void commitState() {
+  _activeState = _userState;
+
+  _flashState = _userState;
+  stateLog.save(_flashState);
+  writeFlashAt = 0;
+}
+
+void persistState() {
+  if (previewActive)
+    return;
+
+  if (!sameState(_flashState, _userState)) {
+    _flashState = _userState;
+    writeFlashAt = millis() + 2000;
+    return;
+  }
+
+  if (writeFlashAt && writeFlashAt <= millis()) {
+    stateLog.save(_flashState);
+    writeFlashAt = 0;
+  }
 }
 
 
@@ -117,6 +144,7 @@ namespace {
     storage() = defaultStorage;
   }
 }
+
 
 void loadFromMemory(int index) {
   if (!checkIndex(index))

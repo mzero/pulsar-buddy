@@ -4,7 +4,7 @@
 #import "state.h"
 #import "timing.h"
 
-void initializeTimers(bpm_t, void (*onMeasure)());
+void initializeTimers(const State&, void (*onMeasure)());
 
 
 

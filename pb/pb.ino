@@ -63,87 +63,76 @@ void setup() {
      // FIXME: Take this out for production
 
   initializeState();
+  initializeTimers(userState(), noteMeasure);
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
   drawAll(true);
-
-  initializeTimers(userState().userBpm, noteMeasure);
-  resetTimers(userSettings());
-  setBpm(userState().userBpm);
-  setSync(userState().syncMode);
 }
 
-void activity() {
-  selectionTimeout.activity();
-  dimTimeout.activity();
-}
-
-void postAction() {
-  drawAll(false);
-  activity();
-}
 
 void loop() {
+  bool active = false;
+
   if (measureEvent) {
     measureEvent = false;
     if (pendingState()) {
       resetTimers(userSettings());
-      drawAll(false);
       commitState();
+      active = true;
     }
+  } else {
+    auto bpm = currentBpm();
+    if (userState().userBpm != bpm) {
+      userState().userBpm = bpm;
+      active = true;
+    }
+    persistState();
   }
 
   int dir = encoder.update();
   if (dir) {
     updateSelection(dir);
-    postAction();
-    return;
+    active = true;
   }
 
   ButtonState s = encoderButton.update();
   if (s != buttonNoChange) {
     clickSelection(s);
-    postAction();
-    return;
+    active = true;
+  }
+
+  if (encoderButton.active()) {
+    active = true;
   }
 
   if (oledButtonA.update() == buttonDown) {
     resetTimers(userSettings());
-    return;
+    active = true;
   }
 
   if (oledButtonB.update() == buttonDown) {
     //printZeroRegs(zeroOpts);
-    return;
+    active = true;
   }
 
   if (oledButtonC.update() == buttonDown) {
     // storeToMemory(1);
     dumpCapture();
-    return;
+    active = true;
   }
 
-  if (encoderButton.active()) {
-    activity();
-    return;
-  }
-
-  if (selectionTimeout.update()) {
-    resetSelection();
+  if (active) {
+    selectionTimeout.activity();
+    dimTimeout.activity();
     drawAll(false);
-    return;
-  }
-
-  if (dimTimeout.update()) {
-    display.dim(true);
-    return;
-  }
-
-  static auto tLast = millis();
-  auto tNow = millis();
-  if (tNow > tLast + 250) {
-    tLast = tNow;
-    drawAll(false);
+  } else {
+    if (selectionTimeout.update()) {
+      resetSelection();
+      drawAll(false);
+    }
+    if (dimTimeout.update()) {
+      display.dim(true);
+    }
   }
 }

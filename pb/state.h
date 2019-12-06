@@ -44,8 +44,11 @@ struct State {
   uint16_t    reserved;
 };
 
-// Actual state is buffered: The user may have made changes, but they aren't
-// active until the commited.
+// Settings and the memory index are buffered:
+//  - the user version reflects what the user has choosen in the UI
+//  - the active version reflects what is playing on the timers
+// Normally, pending changes in the user version are committed to the activer
+// version on a measure boundary.
 
 State& userState();
   // the state the user wants, can be freely modified by UI code
@@ -56,15 +59,23 @@ const State& activeState();
 inline       Settings& userSettings()   { return userState().settings; }
 inline const Settings& activeSettings() { return activeState().settings; }
 
-
-void commitState();
-  // make the user state the active state
-
 // These are true if the user state differs from the active state.
 bool pendingLoop();
 bool pendingTuplet();
 bool pendingMemory();
 bool pendingState();
+
+void commitState();
+  // make the user state the active state
+
+// Settings are also saved to Flash so that they can be restored on start
+// up. All user settings are saved a few seconds after they have changed
+// but are stable. This conserves Flash by not writing on every UI change.
+// When user state is committed to active state, it is also saved immediately.
+
+void persistState();
+  // simply call this repeatedly in loop()
+
 
 
 void loadFromMemory(int index);

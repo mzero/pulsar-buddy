@@ -306,7 +306,7 @@ void setSync(SyncMode sync) {
 
 
 
-void initializeTimers(bpm_t bpm, void (*onMeasure)()) {
+void initializeTimers(const State& state, void (*onMeasure)()) {
 
   tcc1callback = onMeasure;
 
@@ -370,7 +370,8 @@ void initializeTimers(bpm_t bpm, void (*onMeasure)()) {
     = TC_EVCTRL_OVFEO
     ;
 
-  setBpm(bpm);
+  setBpm(state.userBpm);
+  setSync(state.syncMode);
 
   enable(quantumTc);
 
@@ -419,6 +420,8 @@ void initializeTimers(bpm_t bpm, void (*onMeasure)()) {
 
   initializeTcc(tupletTcc);
   pinPeripheral(PIN_SPI_MISO, PIO_TIMER);
+
+  resetTimers(state.settings);
 }
 
 void resetTimers(const Settings& settings) {
