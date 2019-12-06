@@ -1,5 +1,7 @@
 #include "ui_sync.h"
 
+#include "timer_hw.h"
+
 
 bool SyncField::isOutOfDate() {
   if (modeAsDrawn != mode)
@@ -7,7 +9,7 @@ bool SyncField::isOutOfDate() {
 
   switch (mode) {
     case displayBPM:
-      if (bpmAsDrawn != bpm)
+      if (bpmAsDrawn != currentBpm())
         return true;
       break;
 
@@ -59,13 +61,14 @@ namespace {
 void SyncField::update(int dir) {
   switch (mode) {
     case displayBPM:
-      bpm += dir;
+      setBpm(currentBpm() + dir);
       break;
 
     case displaySync:
       int i = findSyncModeIndex(state.syncMode);
       int j = constrain(i + dir, 0, numSyncOptions - 1);
       state.syncMode = syncOptions[j].mode;
+      setSync(state.syncMode);
       break;
   }
 }
@@ -82,8 +85,8 @@ void SyncField::redraw() {
 
   switch (mode) {
     case displayBPM:
-      centerNumber(bpm, xr, yr, wr, hr);
-      bpmAsDrawn = bpm;
+      bpmAsDrawn = currentBpm();
+      centerNumber(bpmAsDrawn, xr, yr, wr, hr);
       break;
 
     case displaySync:

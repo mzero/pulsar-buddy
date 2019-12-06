@@ -66,9 +66,6 @@ bool pendingTuplet();
 bool pendingMemory();
 bool pendingState();
 
-// BPM is conceptually part of the state, but it isn't buffered like State.
-extern double bpm;
-
 
 void loadFromMemory(int index);
 void storeToMemory(int index);

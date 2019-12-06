@@ -2,18 +2,23 @@
 #define _INCLUDE_TIMER_HW_H_
 
 #import "state.h"
+#import "timing.h"
+
+void initializeTimers(bpm_t, void (*onMeasure)());
 
 
-extern void initializeTimers(double, void (*onMeasure)());
 
-extern void setTimerBpm(double);
-extern void resetSync(SyncMode);
-extern void syncBPM();
+bpm_t currentBpm();
+void setBpm(bpm_t);
+  // if sync'd, this resets the current BPM, but system will immediately try to
+  // sync back to externally driven tempo.
+void setSync(SyncMode);
 
-extern void resetTimers(const Settings&);
-extern void updateTimers(const Settings&);
 
-extern void dumpTimer();
-extern void dumpCapture();
+void resetTimers(const Settings&);
+void updateTimers(const Settings&);
+
+void dumpTimer();
+void dumpCapture();
 
 #endif // _INCLUDE_TIMER_HW_H_

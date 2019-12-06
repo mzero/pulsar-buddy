@@ -39,4 +39,12 @@ void adjustOffsets(
   Timing& offsets);
 
 
+
+typedef uint16_t bpm_t;
+
+const bpm_t bpmMin = 30;
+const bpm_t bpmMax = 300;
+
+
+
 #endif // _INCLUDE_TIMING_H_

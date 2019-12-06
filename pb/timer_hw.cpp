@@ -182,11 +182,40 @@ namespace {
     tupletTcc->CC[0].reg = min(Q_PER_B, counts.tuplet) / 4;
     syncAll(TCC_SYNCBUSY_CC0);
     sync(beatTc);
+
+
+  // TC4 has a 16 bit counter
+  typedef uint16_t divisor_t;
+  const double cpuFactor = 60.0 * F_CPU / Q_PER_B;
+
+  bpm_t divisorToBpm(divisor_t divisor) {
+    return round(cpuFactor / (double)divisor);
   }
 
-  uint16_t  CpuClockDivisor(double bpm) {
-    static const double factor = 60.0 * F_CPU / Q_PER_B;
-    return round(factor / bpm);
+  divisor_t divisorFromBpm(bpm_t bpm) {
+    return round(cpuFactor / (double)bpm);
+  }
+
+  constexpr divisor_t divisorMin = 952;
+  constexpr divisor_t divisorMax = 9524;
+
+
+  divisor_t activeDivisor = 0;  // so it will be set the first time
+  bpm_t activeBpm = 0;
+  bool activeBpmValid = false;
+
+  divisor_t externalDivisor = 0;
+
+  void setDivisor(divisor_t divisor) {
+    if (divisor == activeDivisor)
+      return;
+
+    // FIXME: would be better to adjust count to match remaining fration used
+    // would be more efficient to keep previous divisor so no need to sync
+    // read it back from the timer again
+    quantumTc->COUNT16.CC[0].bit.CC = divisor;
+    activeDivisor = divisor;
+    activeBpmValid = false;
   }
 
 
@@ -202,11 +231,26 @@ namespace {
     if (capturesPerBeat == 0)
       return;
 
-    captureBuffer[captureNext] = sample % qMod;
+    sample %= qMod;
+    captureBuffer[captureNext] = sample;
     captureNext = (captureNext + 1) % captureBufferSize;
-    if (capturesNeeded > 0)
+    if (capturesNeeded > 0) {
       capturesNeeded -= 1;
       return;
+    }
+
+    int k = captureNext + captureBufferSize - 1;
+    int i = k % captureBufferSize;
+    int j = (k - capturesPerBeat) % captureBufferSize;
+
+    q_t qdiff = (captureBuffer[i] + qMod - captureBuffer[j]) % qMod;
+
+    divisor_t dNext =
+      ((uint32_t)activeDivisor * (uint32_t)qdiff / (uint32_t)Q_PER_B);
+    dNext = constrain(dNext, divisorMin, divisorMax);
+    divisor_t dFilt = (15 * activeDivisor + dNext) / 16;
+    externalDivisor = dNext;
+    setDivisor(dFilt);
   }
 
   void clearCapture(int perBeat) {
@@ -217,16 +261,21 @@ namespace {
   }
 }
 
-void setTimerBpm(double bpm) {
-  // FIXME: would be better to adjust count to match remaining fration used
-  // would be more efficient to keep previous divisor so no need to sync
-  // read it back from the timer again
 
-  quantumTc->COUNT16.CC[0].bit.CC = CpuClockDivisor(bpm);
-  sync(quantumTc);
+bpm_t currentBpm() {
+  if (!activeBpmValid) {
+    activeBpm = divisorToBpm(activeDivisor);
+    activeBpmValid = true;
+  }
+  return activeBpm;
 }
 
-void resetSync(SyncMode sync) {
+void setBpm(bpm_t bpm) {
+  bpm = constrain(bpm, bpmMin, bpmMax);
+  setDivisor(divisorFromBpm(bpm));
+}
+
+void setSync(SyncMode sync) {
   if (captureSync == sync)
     return;
   captureSync = sync;
@@ -246,35 +295,9 @@ void resetSync(SyncMode sync) {
   clearCapture(perBeat);
 }
 
-void syncBPM() {
-  if (capturesNeeded > 0) {
-    Serial.printf("still need %d captures\n", capturesNeeded);
-    return;
-  }
-
-  int i = (captureNext + captureBufferSize - 1) % captureBufferSize;
-  int j = (i + captureBufferSize - capturesPerBeat) % captureBufferSize;
-
-  q_t qdiff = (captureBuffer[i] + qMod - captureBuffer[j]) % qMod;
-
-  Serial.printf("from %d to %d -> %dq\n", j, i, qdiff);
-  if (qdiff <= 0)
-    return;
-
-  double extbpm = bpm * (double)Q_PER_B / (double)qdiff;
-  double newbpm = (bpm + 15 * extbpm) / 16;
-
-  Serial.printf("calc bpm %d, update bpm %d, delta %dppm\n",
-      round(extbpm), round(newbpm), round(1000000*abs(extbpm-bpm)/bpm));
-
-  bpm = newbpm;
-  setTimerBpm(bpm);
-  // clearCapture(capturesPerBeat);
-}
 
 
-
-void initializeTimers(double bpm, void (*onMeasure)()) {
+void initializeTimers(bpm_t bpm, void (*onMeasure)()) {
 
   tcc1callback = onMeasure;
 
@@ -338,7 +361,7 @@ void initializeTimers(double bpm, void (*onMeasure)()) {
     = TC_EVCTRL_OVFEO
     ;
 
-  setTimerBpm(bpm);
+  setBpm(bpm);
 
   enable(quantumTc);
 
@@ -445,10 +468,32 @@ void dumpCapture() {
   if (n > 0)
     Serial.printf("Average: %8d\n\n", sumOfDeltas / n);
 
+  Serial.printf("captures per beat: %d\n", capturesPerBeat);
+  Serial.printf("captures needed: %d\n", capturesNeeded);
   if (capturesPerBeat == 0)
     return;
 
   Serial.printf("captureNext = %d\n", captureNext);
+
+  Serial.printf("active:   %d bpm - %d divisor\n",
+    divisorToBpm(activeDivisor), activeDivisor);
+  Serial.printf("external: %d bpm - %d divisor\n",
+    divisorToBpm(externalDivisor), externalDivisor);
+
+
+  int k = captureNext + captureBufferSize - 1;
+  int i = k % captureBufferSize;
+  int j = (k - capturesPerBeat) % captureBufferSize;
+
+  q_t qdiff = (captureBuffer[i] + qMod - captureBuffer[j]) % qMod;
+
+  divisor_t dNext =
+    ((uint32_t)activeDivisor * (uint32_t)qdiff / (uint32_t)Q_PER_B);
+  divisor_t dFilt = (15 * activeDivisor + dNext) / 16;
+
+  Serial.printf("*[%d] - *[%d] = %d\n", i, j, qdiff);
+  Serial.printf("next: %d bpm, %d divisor\n", divisorToBpm(dNext), dNext);
+  Serial.printf("filt: %d bpm, %d divisor\n", divisorToBpm(dFilt), dFilt);
 }
 
 void TCC0_Handler() {

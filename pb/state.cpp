@@ -4,7 +4,6 @@
 
 #include "flash.h"
 
-double bpm = 128;
 
 namespace {
   State _userState;

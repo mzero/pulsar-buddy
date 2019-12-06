@@ -2,6 +2,7 @@
 #define _INCLUDE_UI_SYNC_H_
 
 #include "state.h"
+#include "timing.h"
 #include "ui_field.h"
 
 
@@ -27,7 +28,7 @@ private:
     Mode mode;
 
     Mode modeAsDrawn;
-    double bpmAsDrawn;
+    bpm_t bpmAsDrawn;
     SyncMode syncAsDrawn;
 };
 
