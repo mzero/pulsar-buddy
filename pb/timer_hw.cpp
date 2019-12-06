@@ -220,56 +220,52 @@ namespace {
 
 
   SyncMode captureSync = syncFixed;
-  const int captureBufferSize = 64;
-  q_t captureBuffer[captureBufferSize];
-  int captureNext = 0;
   int capturesPerBeat = 0;
-  int capturesNeeded = 0;
-  const q_t qMod = 4 * Q_PER_B;
 
+  const int captureBufferSize = 64;
+  uint32_t captureBuffer[captureBufferSize];
+  int captureNext = 0;
+  uint32_t captureSum = 0;
+  int captureCount = 0;
+
+
+  const q_t qMod = 4 * Q_PER_B;
   q_t lastSample = 0;
 
   void capture(q_t sample) {
-    if (capturesPerBeat == 0)
+    if (capturesPerBeat == 0)     // not sync'd
       return;
-#if 0
-    sample %= qMod;
-    captureBuffer[captureNext] = sample;
-    captureNext = (captureNext + 1) % captureBufferSize;
-    if (capturesNeeded > 0) {
-      capturesNeeded -= 1;
-      return;
-    }
-
-    int k = captureNext + captureBufferSize - 1;
-    int i = k % captureBufferSize;
-    int j = (k - capturesPerBeat) % captureBufferSize;
-
-    q_t qdiff = (captureBuffer[i] + qMod - captureBuffer[j]) % qMod;
-#else
-    if (capturesNeeded > 0) {
-      lastSample = sample % qMod;
-      capturesNeeded = 0;
-      return;
-    }
 
     sample %= qMod;
-    q_t qdiff = ((sample + qMod - lastSample) % qMod) * capturesPerBeat;
+    if (lastSample > 0) {
+      q_t qdiff = ((sample + qMod - lastSample) % qMod) * capturesPerBeat;
+      uint32_t dNext =
+        ((uint32_t)activeDivisor * (uint32_t)qdiff / (uint32_t)Q_PER_B);
+      dNext = constrain(dNext, divisorMin, divisorMax);
+
+      captureSum += dNext;
+      if (captureCount >= capturesPerBeat) {
+        captureSum -= captureBuffer[captureNext];
+      } else {
+        captureCount += 1;
+      }
+      captureBuffer[captureNext] = dNext;
+      captureNext = (captureNext + 1) % capturesPerBeat;
+
+      uint32_t dFilt = captureSum / captureCount;
+      externalDivisor = static_cast<divisor_t>(dNext);
+      setDivisor(static_cast<divisor_t>(dFilt));
+    }
+
     lastSample = sample;
-#endif
-
-    divisor_t dNext =
-      ((uint32_t)activeDivisor * (uint32_t)qdiff / (uint32_t)Q_PER_B);
-    dNext = constrain(dNext, divisorMin, divisorMax);
-    divisor_t dFilt = (3 * activeDivisor + dNext) / 4;
-    externalDivisor = dNext;
-    setDivisor(dFilt);
   }
 
   void clearCapture(int perBeat) {
     capturesPerBeat = 0;
     captureNext = 0;
-    capturesNeeded = perBeat;
+    captureSum = 0;
+    captureCount = 0;
+    lastSample = 0;
     capturesPerBeat = perBeat;
   }
 }
@@ -462,51 +458,28 @@ void dumpTimer() {
 }
 
 void dumpCapture() {
-
-  int32_t sumOfDeltas = 0;
-  uint32_t n = 0;
-
-  for (int i = 0; i < captureBufferSize; ++i) {
-    int32_t delta = (i == 0) ? -1 : captureBuffer[i] - captureBuffer[i-1];
-
-    if (delta < 0) {
-      Serial.printf("[%2d] %8d\n", i, captureBuffer[i]);
-    } else {
-      sumOfDeltas += delta;
-      n += 1;
-      Serial.printf("[%2d] %8d (+%8d)\n", i, captureBuffer[i], delta);
-    }
-  }
-
-  if (n > 0)
-    Serial.printf("Average: %8d\n\n", sumOfDeltas / n);
-
   Serial.printf("captures per beat: %d\n", capturesPerBeat);
-  Serial.printf("captures needed: %d\n", capturesNeeded);
+  Serial.printf("capture count: %d\n", captureCount);
   if (capturesPerBeat == 0)
     return;
 
+  int32_t sum = 0;
+
+  for (int i = 0; i < captureCount; ++i) {
+    sum += captureBuffer[i];
+    Serial.printf("[%2d] %8d\n", i, captureBuffer[i]);
+  }
+
+  if (captureCount > 0)
+    Serial.printf("Sum: %8d, Average: %8d\n\n", sum, sum / captureCount);
+
+  Serial.printf("captureSum = %d\n", captureSum);
   Serial.printf("captureNext = %d\n", captureNext);
 
   Serial.printf("active:   %d bpm - %d divisor\n",
     divisorToBpm(activeDivisor), activeDivisor);
   Serial.printf("external: %d bpm - %d divisor\n",
     divisorToBpm(externalDivisor), externalDivisor);
-
-
-  int k = captureNext + captureBufferSize - 1;
-  int i = k % captureBufferSize;
-  int j = (k - capturesPerBeat) % captureBufferSize;
-
-  q_t qdiff = (captureBuffer[i] + qMod - captureBuffer[j]) % qMod;
-
-  divisor_t dNext =
-    ((uint32_t)activeDivisor * (uint32_t)qdiff / (uint32_t)Q_PER_B);
-  divisor_t dFilt = (15 * activeDivisor + dNext) / 16;
-
-  Serial.printf("*[%d] - *[%d] = %d\n", i, j, qdiff);
-  Serial.printf("next: %d bpm, %d divisor\n", divisorToBpm(dNext), dNext);
-  Serial.printf("filt: %d bpm, %d divisor\n", divisorToBpm(dFilt), dFilt);
 }
 
 void TCC0_Handler() {
