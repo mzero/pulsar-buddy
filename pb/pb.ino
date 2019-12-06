@@ -68,9 +68,10 @@ void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
   drawAll(true);
 
-  initializeTimers(bpm, noteMeasure);
+  initializeTimers(userState().userBpm, noteMeasure);
   resetTimers(userSettings());
-  resetSync(userState().syncMode);
+  setBpm(userState().userBpm);
+  setSync(userState().syncMode);
 }
 
 void activity() {
@@ -79,21 +80,11 @@ void activity() {
 }
 
 void postAction() {
-  setTimerBpm(bpm);
-  resetSync(userState().syncMode);
   drawAll(false);
   activity();
 }
 
 void loop() {
-  static auto tLast = millis();
-  auto tNow = millis();
-  if (tNow > tLast + 1000) {
-    tLast = tNow;
-    syncBPM();
-    drawAll(false);
-  }
-
   if (measureEvent) {
     measureEvent = false;
     if (pendingState()) {
@@ -147,5 +138,12 @@ void loop() {
   if (dimTimeout.update()) {
     display.dim(true);
     return;
+  }
+
+  static auto tLast = millis();
+  auto tNow = millis();
+  if (tNow > tLast + 250) {
+    tLast = tNow;
+    drawAll(false);
   }
 }

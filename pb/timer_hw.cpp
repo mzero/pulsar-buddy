@@ -227,10 +227,12 @@ namespace {
   int capturesNeeded = 0;
   const q_t qMod = 4 * Q_PER_B;
 
+  q_t lastSample = 0;
+
   void capture(q_t sample) {
     if (capturesPerBeat == 0)
       return;
-
+#if 0
     sample %= qMod;
     captureBuffer[captureNext] = sample;
     captureNext = (captureNext + 1) % captureBufferSize;
@@ -244,11 +246,22 @@ namespace {
     int j = (k - capturesPerBeat) % captureBufferSize;
 
     q_t qdiff = (captureBuffer[i] + qMod - captureBuffer[j]) % qMod;
+#else
+    if (capturesNeeded > 0) {
+      lastSample = sample % qMod;
+      capturesNeeded = 0;
+      return;
+    }
+
+    sample %= qMod;
+    q_t qdiff = ((sample + qMod - lastSample) % qMod) * capturesPerBeat;
+    lastSample = sample;
+#endif
 
     divisor_t dNext =
       ((uint32_t)activeDivisor * (uint32_t)qdiff / (uint32_t)Q_PER_B);
     dNext = constrain(dNext, divisorMin, divisorMax);
-    divisor_t dFilt = (15 * activeDivisor + dNext) / 16;
+    divisor_t dFilt = (3 * activeDivisor + dNext) / 4;
     externalDivisor = dNext;
     setDivisor(dFilt);
   }
