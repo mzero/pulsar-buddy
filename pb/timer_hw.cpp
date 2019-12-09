@@ -136,6 +136,18 @@ namespace {
     tcc->WEXCTRL.reg
       = TCC_WEXCTRL_OTMX(2);  // use CC[0] for all outputs
 
+    tcc->DRVCTRL.reg
+      = TCC_DRVCTRL_INVEN0
+      | TCC_DRVCTRL_INVEN1
+      | TCC_DRVCTRL_INVEN2
+      | TCC_DRVCTRL_INVEN3
+      | TCC_DRVCTRL_INVEN4
+      | TCC_DRVCTRL_INVEN5
+      | TCC_DRVCTRL_INVEN6
+      | TCC_DRVCTRL_INVEN7;
+      // inverted, because output buffer swaps
+      // some times
+
     tcc->WAVE.reg
       = TCC_WAVE_WAVEGEN_NPWM;
     sync(tcc, TCC_SYNCBUSY_WAVE);
@@ -388,6 +400,10 @@ void initializeTimers(const State& state, void (*onMeasure)()) {
     | TC_CTRLA_PRESCSYNC_GCLK
     ;
   sync(beatTc);
+
+  beatTc->COUNT16.CTRLC.reg
+    = TC_CTRLC_INVEN0
+    | TC_CTRLC_INVEN1;
 
   beatTc->COUNT16.EVCTRL.reg
     = TC_EVCTRL_TCEI

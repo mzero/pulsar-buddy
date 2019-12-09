@@ -27,6 +27,8 @@ TODO
 	- restart as if from scratch
 	- display no-sync?
 
+[] beat & tuplet seem to drift from seq & measure
+
 
 --- Later
 
@@ -53,6 +55,41 @@ TODO
 [] check and Serial write (or other error) when periods out of range
 
 [] speed up centerNumber by using the fixed size of digits in the font
+
+
+
+
+HARDWARE
+--------
+
+[] new inverted output driver
+[] add 12V regulator & connector & jumper
+[] layout for breadboard
+[] build and check breadboard
+[] order parts
+[] layout for PCB
+
+
+Power
+	- tap 12V supply of Pulsar or Digitakt
+	- would be nice to support 9V as well
+	[] need barrel splitter or tap
+	[] barrel connector for board
+	[] voltage regulator circuit
+	[] pin header and jumper for USB vs. 12V
+
+Trigger Output
+	[] use Infovore's 1 NPN circuit design
+
+Physical
+	? based on feather boards? or SMD direct?
+		- M0 board with more flexible power?
+	? how to assemble?
+	? alternate / better encoder?
+	? encoder cap
+	? box
+
+
 
 
 
