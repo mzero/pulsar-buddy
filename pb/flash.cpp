@@ -1,6 +1,6 @@
 #include "flash.h"
 
-#include "Adafruit_SPIFlash.h"
+#include "Adafruit_SPIFlashBase.h"
 
 
 #define DEBUG 1
@@ -24,7 +24,7 @@ namespace {
     #endif
   #endif
 
-  Adafruit_SPIFlashCore flash(&flashTransport);
+  Adafruit_SPIFlashBase flash(&flashTransport);
   bool flashBegun = false;
 
   /* Header
@@ -302,6 +302,7 @@ bool FlashMemoryLog::writeNext(const uint8_t* buf)
   LOG("   current serial     = "); LOGLN(currentSerial);
   LOG("   current sector     = "); LOGLN(currentSector);
   LOG("   current index      = "); LOGLN(currentIndex);
+
   return true;
 }
 
