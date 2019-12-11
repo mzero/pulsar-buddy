@@ -5,13 +5,17 @@ TODO
 
 [x] why commiting on startup?
 
-[] review sync of capture variables
+[x] review sync of capture variables
+	[x] rename capture variables
+
+
+[] don't update sync until exit field?
 
 [] beat & tuplet seem to drift from seq & measure
 
-[] rename capture variables
 [] account for various lengths of the sequence
 	- what about when sequence is very short?!?!?!
+	[] bug on capture at sequence boundry!
 
 [] how to stay sync'd to the one?
 
@@ -19,12 +23,13 @@ TODO
 [] smooth display of bpm so user's don't freak out
 	[] commit should be based on displayed (smoothed) BPM
 
-[] don't update sync until exit field?
 
 [] handle total sync drop gracefully
 	- restart as if from scratch
 	- display no-sync?
 
+
+[] accelleration of encoder when setting BPM?
 
 
 --- Later

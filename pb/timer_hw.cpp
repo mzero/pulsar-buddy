@@ -231,26 +231,43 @@ namespace {
   }
 
 
-  SyncMode captureSync = syncFixed;
-  int capturesPerBeat = 0;
+  // These are used to communicate changes in the clocking to the interrupt
+  // service routine.
+  volatile int externalClocksPerBeat = 0;
+  volatile bool pendingExternalClocksPerBeatChange = false;
 
+  // These variables "belong" to the capture() interrupt service routine.
+  // They should not be modified, or even read, outside of it. They are
+  // defined here only so debugging code can dump them.
+  int capturesPerBeat = 0;
   const int captureBufferSize = 64;
   uint32_t captureBuffer[captureBufferSize];
   int captureNext = 0;
   uint32_t captureSum = 0;
   int captureCount = 0;
 
-
   const q_t qMod = 4 * Q_PER_B;
-  q_t lastSample = 0;
+  q_t captureLastSample = 0;
 
   void capture(q_t sample) {
+    if (pendingExternalClocksPerBeatChange) {
+      if (capturesPerBeat != externalClocksPerBeat) {
+        capturesPerBeat = externalClocksPerBeat;
+        captureNext = 0;
+        captureSum = 0;
+        captureCount = 0;
+        captureLastSample = 0;
+      }
+      pendingExternalClocksPerBeatChange = false;
+    }
+
     if (capturesPerBeat == 0)     // not sync'd
       return;
 
     sample %= qMod;
-    if (lastSample > 0) {
-      q_t qdiff = ((sample + qMod - lastSample) % qMod) * capturesPerBeat;
+    if (captureLastSample > 0) {
+      q_t qdiff =
+        ((sample + qMod - captureLastSample) % qMod) * capturesPerBeat;
       uint32_t dNext =
         ((uint32_t)activeDivisor * (uint32_t)qdiff / (uint32_t)Q_PER_B);
       dNext = constrain(dNext, divisorMin, divisorMax);
@@ -269,16 +286,14 @@ namespace {
       setDivisor(static_cast<divisor_t>(dFilt));
     }
 
-    lastSample = sample;
+    captureLastSample = sample;
   }
 
-  void clearCapture(int perBeat) {
-    capturesPerBeat = 0;
-    captureNext = 0;
-    captureSum = 0;
-    captureCount = 0;
-    lastSample = 0;
-    capturesPerBeat = perBeat;
+  void resetCapture(int perBeat) {
+    // noInterrupts();  // shouldn't be needed given the access pattern
+    externalClocksPerBeat = perBeat;
+    pendingExternalClocksPerBeatChange = true;
+    // interrupts();
   }
 }
 
@@ -297,23 +312,19 @@ void setBpm(bpm_t bpm) {
 }
 
 void setSync(SyncMode sync) {
-  if (captureSync == sync)
-    return;
-  captureSync = sync;
-
-  int perBeat = 0;
+  int clocksPerBeat = 0;
   switch (sync) {
-    case syncFixed: perBeat = 0; break;
-    case syncTap: perBeat = 1; break;
+    case syncFixed: clocksPerBeat = 0; break;
+    case syncTap: clocksPerBeat = 1; break;
     default:
       if (sync & syncExternalFlag) {
-        perBeat = sync & syncPPQNMask;
+        clocksPerBeat = sync & syncPPQNMask;
       } else {
-        perBeat = 0;
+        clocksPerBeat = 0;
       }
   }
 
-  clearCapture(perBeat);
+  resetCapture(clocksPerBeat);
 }
 
 
