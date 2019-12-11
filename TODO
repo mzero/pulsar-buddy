@@ -3,34 +3,33 @@ TODO
 [x] All of State needs to be checked, not just the
 	pending functions, for when to commit it.
 
+[x] why commiting on startup?
+
 [] review sync of capture variables
+
+[] beat & tuplet seem to drift from seq & measure
 
 [] rename capture variables
 [] account for various lengths of the sequence
 	- what about when sequence is very short?!?!?!
 
-[] switch to explicit timing of external clock?
-
 [] how to stay sync'd to the one?
 
 
-[-] update and display bpm
-	[] smoothing of display so user's don't freak out
-	[x] commit sync'd BPM to storage when it has been stable for n-ms
-		- and only if changed.
+[] smooth display of bpm so user's don't freak out
 	[] commit should be based on displayed (smoothed) BPM
 
 [] don't update sync until exit field?
-
 
 [] handle total sync drop gracefully
 	- restart as if from scratch
 	- display no-sync?
 
-[] beat & tuplet seem to drift from seq & measure
 
 
 --- Later
+
+[] switch to explicit timing of external clock?
 
 [] tap tempo
 	? separate mode? or just part of fixed?
@@ -62,28 +61,10 @@ TODO
 HARDWARE
 --------
 
-[] new inverted output driver
-[] add 12V regulator & connector & jumper
-[] layout for breadboard
-[] build and check breadboard
-[] order parts
-[] layout for PCB
-
-
 Power
-	- tap 12V supply of Pulsar or Digitakt
-	- would be nice to support 9V as well
 	[] need barrel splitter or tap
-	[] barrel connector for board
-	[] voltage regulator circuit
-	[] pin header and jumper for USB vs. 12V
-
-Trigger Output
-	[] use Infovore's 1 NPN circuit design
 
 Physical
-	? based on feather boards? or SMD direct?
-		- M0 board with more flexible power?
 	? how to assemble?
 	? alternate / better encoder?
 	? encoder cap
@@ -102,36 +83,7 @@ QUESTIONS
 [] should sequence length, when reloaded, be reset to first measure?
 
 
-[] should BPM be kept in inverted form?
-	- for display we want BPM
-	- for calcs (see CpuClockDivisor()) we want inverted
-
 [] why doesn't TCC1.WO1 on PAD_SPI_RX (pin 0, PA11) work?
 
-================
-
-Changes to settings and timing:
-
-- Sequence Length -
-
-setting:   n x c / u
-
-	measure length (m) = c x q(u)
-	total length (t) = n x c x q(u)
-
-	q(1/4 note) = 10080
-	q(1/8 note) =  5040
-	etc...
 
 
-state:
-	measure (s) in [0..m)
-	reset (r) in [0..t)
-
-change n:
-	s' = s
-	r' = r mod t'
-
-change c or u:
-	s' = s mod m'
-    r' = (r div m)*m' + s'

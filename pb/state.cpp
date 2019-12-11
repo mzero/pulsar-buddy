@@ -192,8 +192,8 @@ void initializeState() {
 
   initializeStorage();
 
-  if (stateLog.load(_activeState)) {
-    _userState = _activeState;
+  if (stateLog.load(_flashState)) {
+    _userState = _activeState = _flashState;
   } else {
     loadFromMemory(1);
     commitState();
