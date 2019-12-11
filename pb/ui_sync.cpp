@@ -14,7 +14,7 @@ bool SyncField::isOutOfDate() {
       break;
 
     case displaySync:
-      if (syncAsDrawn != state.syncMode)
+      if (syncAsDrawn != pendingSync)
         return true;
       break;
   }
@@ -24,10 +24,15 @@ bool SyncField::isOutOfDate() {
 
 void SyncField::enter(bool alternate) {
   mode = alternate ? displaySync : displayBPM;
+  pendingSync = state.syncMode;
 }
 
 void SyncField::exit() {
-  mode = displayBPM;
+  if (mode == displaySync) {
+    state.syncMode = pendingSync;
+    setSync(state.syncMode);
+    mode = displayBPM;
+  }
 }
 
 namespace {
@@ -65,10 +70,9 @@ void SyncField::update(int dir) {
       break;
 
     case displaySync:
-      int i = findSyncModeIndex(state.syncMode);
+      int i = findSyncModeIndex(pendingSync);
       int j = constrain(i + dir, 0, numSyncOptions - 1);
-      state.syncMode = syncOptions[j].mode;
-      setSync(state.syncMode);
+      pendingSync = syncOptions[j].mode;
       break;
   }
 }
@@ -91,10 +95,10 @@ void SyncField::redraw() {
 
     case displaySync:
       smallText();
-      int i = findSyncModeIndex(state.syncMode);
+      int i = findSyncModeIndex(pendingSync);
       const char* s = i < 0 ? "???" : syncOptions[i].text;
       centerText(s, xr, yr, wr, hr);
-      syncAsDrawn = state.syncMode;
+      syncAsDrawn = pendingSync;
       resetText();
       break;
   }

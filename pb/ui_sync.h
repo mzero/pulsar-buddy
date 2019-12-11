@@ -29,6 +29,7 @@ private:
 
     Mode modeAsDrawn;
     bpm_t bpmAsDrawn;
+    SyncMode pendingSync;
     SyncMode syncAsDrawn;
 };
 

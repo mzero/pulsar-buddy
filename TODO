@@ -2,14 +2,10 @@ TODO
 
 [x] All of State needs to be checked, not just the
 	pending functions, for when to commit it.
-
 [x] why commiting on startup?
-
 [x] review sync of capture variables
 	[x] rename capture variables
-
-
-[] don't update sync until exit field?
+[x] don't update sync until exit field?
 
 [] beat & tuplet seem to drift from seq & measure
 
