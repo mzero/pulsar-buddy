@@ -118,7 +118,8 @@ void loop() {
 
   if (oledButtonC.update() == buttonDown) {
     // storeToMemory(1);
-    dumpCapture();
+    // dumpCapture();
+    dumpTimer();
     active = true;
   }
 

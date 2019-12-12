@@ -25,12 +25,22 @@
                       +--> TUPLET --> waveform
                            (TCC2)
 
+  Note on synchonization:
+
+  TC units: No sync is required by the MCU as the bus and CPU will just stall
+    until things are ready. This is fine. The only sync done here is to ensure
+    that something is complete before proceeding.
+
+  TCC units: Sync is required because access while not sync'd will cause a HW
+    interrupt. Post write sync isn't required, except to ensure completion
+    before proceeding.
 */
 
 namespace {
 
   void defaultCallback() { }
   void (*tcc1callback)() = defaultCallback;
+
 
 #define QUANTUM_EVENT_CHANNEL   5
 #define EXTCLK_EVENT_CHANNEL    6
@@ -86,11 +96,11 @@ namespace {
 
   // NOTE: All TC units are used in 16 bit mode.
 
-  void sync(Tc* tc) {
+  inline void sync(Tc* tc) {
     while(tc->COUNT16.STATUS.bit.SYNCBUSY);
   }
 
-  void disableAndReset(Tc* tc) {
+  inline void disableAndReset(Tc* tc) {
     tc->COUNT16.CTRLA.reg &= ~TC_CTRLA_ENABLE;
     sync(tc);
 
@@ -98,19 +108,22 @@ namespace {
     sync(tc);
   }
 
-  void enable(Tc* tc) {
+  inline void enable(Tc* tc) {
+    sync(tc);   // make sure all changes are sync'd before enabling
     tc->COUNT16.CTRLA.reg |= TC_CTRLA_ENABLE;
     sync(tc);
   }
 
-  void sync(Tcc* tcc, uint32_t mask) {
+  inline void sync(Tcc* tcc, uint32_t mask) {
     while(tcc->SYNCBUSY.reg & mask);
   }
 
   void initializeTcc(Tcc* tcc) {
+    sync(tcc, TCC_SYNCBUSY_ENABLE);
     tcc->CTRLA.bit.ENABLE = 0;
     sync(tcc, TCC_SYNCBUSY_ENABLE);
 
+    sync(tcc, TCC_SYNCBUSY_SWRST);
     tcc->CTRLA.bit.SWRST = 1;
     sync(tcc, TCC_SYNCBUSY_SWRST);
 
@@ -148,52 +161,68 @@ namespace {
       // inverted, because output buffer swaps
       // some times
 
+    sync(tcc, TCC_SYNCBUSY_WAVE);
     tcc->WAVE.reg
       = TCC_WAVE_WAVEGEN_NPWM;
     sync(tcc, TCC_SYNCBUSY_WAVE);
 
+    sync(tcc, TCC_SYNCBUSY_ENABLE);
     tcc->CTRLA.bit.ENABLE = 1;
     sync(tcc, TCC_SYNCBUSY_ENABLE);
   }
 
-  void syncAll( uint32_t mask) {
-    sync(measureTcc, mask);
-    sync(sequenceTcc, mask);
-    sync(tupletTcc, mask);
-  }
-
   void readCounts(Timing& counts) {
+    // request read sync, with command written to ctrlb
+    sync(measureTcc, TCC_SYNCBUSY_CTRLB);
+    sync(sequenceTcc, TCC_SYNCBUSY_CTRLB);
+    sync(tupletTcc, TCC_SYNCBUSY_CTRLB);
+    measureTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
+    sequenceTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
+    tupletTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
+
+    // wait for command to complete
+    while (measureTcc->CTRLBSET.bit.CMD);
+    while (sequenceTcc->CTRLBSET.bit.CMD);
+    while (tupletTcc->CTRLBSET.bit.CMD);
+
+    // sync for count (probably redudant with the above?)
+    sync(measureTcc, TCC_SYNCBUSY_COUNT);
+    sync(sequenceTcc, TCC_SYNCBUSY_COUNT);
+    sync(tupletTcc, TCC_SYNCBUSY_COUNT);
     counts.measure = measureTcc->COUNT.reg;
     counts.sequence = sequenceTcc->COUNT.reg;
     counts.beat = qcast(beatTc->COUNT16.COUNT.reg);
     counts.tuplet = tupletTcc->COUNT.reg;
-    syncAll(TCC_SYNCBUSY_COUNT);
-    sync(beatTc);
   }
 
   void writeCounts(Timing& counts) {
+    // sync as a group - though quantum is stopped, so shouldn't matter
+    sync(measureTcc, TCC_SYNCBUSY_COUNT);
+    sync(sequenceTcc, TCC_SYNCBUSY_COUNT);
+    sync(tupletTcc, TCC_SYNCBUSY_COUNT);
+
     measureTcc->COUNT.reg = counts.measure;
     sequenceTcc->COUNT.reg = counts.sequence;
     beatTc->COUNT16.COUNT.reg = static_cast<uint16_t>(counts.beat);
     tupletTcc->COUNT.reg = counts.tuplet;
-    syncAll(TCC_SYNCBUSY_COUNT);
-    sync(beatTc);
   }
 
   void writePeriods(Timing& counts) {
+    // sync as a group - though quantum is stopped, so shouldn't matter
+    sync(measureTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
+    sync(sequenceTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
+    sync(tupletTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
+
     measureTcc->PER.reg = counts.measure;
     sequenceTcc->PER.reg = counts.sequence;
     beatTc->COUNT16.CC[0].reg = static_cast<uint16_t>(counts.beat);
     tupletTcc->PER.reg = counts.tuplet;
-    syncAll(TCC_SYNCBUSY_PER);
-    sync(beatTc);
 
     measureTcc->CC[0].reg = min(Q_PER_B, counts.measure) / 4;
     sequenceTcc->CC[0].reg = min(Q_PER_B, counts.sequence) / 4;
     beatTc->COUNT16.CC[1].reg = static_cast<uint16_t>(counts.beat / 4);
     tupletTcc->CC[0].reg = min(Q_PER_B, counts.tuplet) / 4;
-    syncAll(TCC_SYNCBUSY_CC0);
-    sync(beatTc);
+  }
 
 
   // TC4 has a 16 bit counter
@@ -387,7 +416,6 @@ void initializeTimers(const State& state, void (*onMeasure)()) {
     | TC_CTRLA_RUNSTDBY  // FIXME: should this be here?
     | TC_CTRLA_PRESCSYNC_GCLK
     ;
-  sync(quantumTc);
 
   quantumTc->COUNT16.EVCTRL.reg
     = TC_EVCTRL_OVFEO
@@ -410,7 +438,6 @@ void initializeTimers(const State& state, void (*onMeasure)()) {
     | TC_CTRLA_RUNSTDBY  // FIXME: should this be here?
     | TC_CTRLA_PRESCSYNC_GCLK
     ;
-  sync(beatTc);
 
   beatTc->COUNT16.CTRLC.reg
     = TC_CTRLC_INVEN0
@@ -515,6 +542,7 @@ void dumpCapture() {
 
 void TCC0_Handler() {
   if (TCC0->INTFLAG.reg & TCC_INTFLAG_MC1) {
+    sync(TCC0, TCC_SYNCBUSY_CC1);
     capture(TCC0->CC[1].reg);
   }
   TCC0->INTFLAG.reg = TCC_INTFLAG_MC1;    // writing 1 clears the flag
