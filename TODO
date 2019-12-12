@@ -7,7 +7,11 @@ TODO
 	[x] rename capture variables
 [x] don't update sync until exit field?
 
-[] beat & tuplet seem to drift from seq & measure
+[-] beat & tuplet seem to drift from seq & measure
+	[x] periods were off - they needed to be N-1
+	[] include .5 unit bias in ext. measuring
+		- as a reading of n could have been anyhwere in [n,n+1)
+
 
 [] account for various lengths of the sequence
 	- what about when sequence is very short?!?!?!

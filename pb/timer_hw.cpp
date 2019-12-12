@@ -213,15 +213,15 @@ namespace {
     sync(sequenceTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
     sync(tupletTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
 
-    measureTcc->PER.reg = counts.measure;
-    sequenceTcc->PER.reg = counts.sequence;
-    beatTc->COUNT16.CC[0].reg = static_cast<uint16_t>(counts.beat);
-    tupletTcc->PER.reg = counts.tuplet;
+    measureTcc->PER.reg = counts.measure - 1;
+    sequenceTcc->PER.reg = counts.sequence - 1;
+    beatTc->COUNT16.CC[0].reg = static_cast<uint16_t>(counts.beat - 1);
+    tupletTcc->PER.reg = counts.tuplet - 1;
 
-    measureTcc->CC[0].reg = min(Q_PER_B, counts.measure) / 4;
-    sequenceTcc->CC[0].reg = min(Q_PER_B, counts.sequence) / 4;
-    beatTc->COUNT16.CC[1].reg = static_cast<uint16_t>(counts.beat / 4);
-    tupletTcc->CC[0].reg = min(Q_PER_B, counts.tuplet) / 4;
+    measureTcc->CC[0].reg = min(Q_PER_B, counts.measure) / 4 - 1;
+    sequenceTcc->CC[0].reg = min(Q_PER_B, counts.sequence) / 4 - 1;
+    beatTc->COUNT16.CC[1].reg = static_cast<uint16_t>(counts.beat / 4 - 1);
+    tupletTcc->CC[0].reg = min(Q_PER_B, counts.tuplet) / 4 - 1;
   }
 
 
@@ -254,7 +254,7 @@ namespace {
     // FIXME: would be better to adjust count to match remaining fration used
     // would be more efficient to keep previous divisor so no need to sync
     // read it back from the timer again
-    quantumTc->COUNT16.CC[0].bit.CC = divisor;
+    quantumTc->COUNT16.CC[0].bit.CC = divisor - 1;
     activeDivisor = divisor;
     activeBpmValid = false;
   }
@@ -448,9 +448,6 @@ void initializeTimers(const State& state, void (*onMeasure)()) {
     | TC_EVCTRL_EVACT_COUNT
     ;
 
-  beatTc->COUNT16.CC[0].bit.CC = Q_PER_B;        // period
-  beatTc->COUNT16.CC[1].bit.CC = Q_PER_B / 4;    // pulse width
-
   enable(beatTc);
 
   pinPeripheral(PIN_SPI_SCK, PIO_TIMER);
@@ -507,8 +504,10 @@ void updateTimers(const Settings& settings) {
 void dumpTimer() {
   Timing counts;
 
+  stopQuantumEvents();
   uint16_t quantumCount = quantumTc->COUNT16.COUNT.reg;
   readCounts(counts);
+  startQuantumEvents();
 
   Serial.println("dumpTimer counts:");
   Serial.printf("  q = %d / %d\n", quantumCount, activeDivisor);
