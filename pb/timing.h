@@ -46,5 +46,8 @@ const bpm_t bpmMin = 30;
 const bpm_t bpmMax = 300;
 
 
+void dumpQ(q_t);
+void dumpTiming(const Timing&);
+
 
 #endif // _INCLUDE_TIMING_H_

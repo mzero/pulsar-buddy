@@ -478,13 +478,14 @@ void updateTimers(const Settings& settings) {
 }
 
 void dumpTimer() {
-  uint16_t quantumCount = quantumTc->COUNT16.COUNT.reg;
-  uint16_t beatCount = beatTc->COUNT16.COUNT.reg;
+  Timing counts;
 
-  Serial.print("q count = ");
-  Serial.print(quantumCount);
-  Serial.print(", b count = ");
-  Serial.println(beatCount);
+  uint16_t quantumCount = quantumTc->COUNT16.COUNT.reg;
+  readCounts(counts);
+
+  Serial.println("dumpTimer counts:");
+  Serial.printf("  q = %d / %d\n", quantumCount, activeDivisor);
+  dumpTiming(counts);
 }
 
 void dumpCapture() {
