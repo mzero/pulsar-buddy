@@ -94,7 +94,7 @@ namespace {
 
   void updateSelectedField(int dir) {
     selectedFieldIndex =
-      constrain(selectedFieldIndex + dir, 0, selectableFields.size() - 1);
+      constrain(selectedFieldIndex + dir, 0, (int)(selectableFields.size()) - 1);
   }
 
   Field* selectedField() {    // "class" needed due to auto-prototype gen.
@@ -154,6 +154,8 @@ void clickSelection(ButtonState s) {
           // fall through
         case buttonUpLong:
           selectMode = selectValue;
+          break;
+        default:
           break;
       }
       break;

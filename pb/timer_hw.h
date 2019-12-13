@@ -1,8 +1,8 @@
 #ifndef _INCLUDE_TIMER_HW_H_
 #define _INCLUDE_TIMER_HW_H_
 
-#import "state.h"
-#import "timing.h"
+#include "state.h"
+#include "timing.h"
 
 void initializeTimers(const State&, void (*onMeasure)());
 

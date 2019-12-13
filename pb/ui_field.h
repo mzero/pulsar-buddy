@@ -62,10 +62,10 @@ public:
 
   OptionField(
       int16_t x, int16_t y, uint16_t w, uint16_t h,
-      std::initializer_list<value_t> options
+      const std::initializer_list<value_t>& options
       )
     : Field(x, y, w, h),
-      options({}),
+      options{},
       numOptions(min(maxOptions, (int)(options.size())))
     {
       std::copy(
@@ -133,7 +133,7 @@ class ValueField : public OptionField<T> {
 public:
   ValueField(
       int16_t x, int16_t y, uint16_t w, uint16_t h,
-      T& value, std::initializer_list<T> options
+      T& value, const std::initializer_list<T>& options
       )
     : OptionField<T>(x, y, w, h, options), value(value), valueAsDrawn(value)
       { };
@@ -169,7 +169,7 @@ public:
   PairField(
       int16_t x, int16_t y, uint16_t w, uint16_t h,
       ValueField<T>& fieldA, ValueField<U>& fieldB,
-      std::initializer_list<value_t> options
+      const std::initializer_list<value_t>& options
       )
     : OptionField<value_t>(x, y, w, h, options),
       fieldA(fieldA), fieldB(fieldB)

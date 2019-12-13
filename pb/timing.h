@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#import "state.h"
+#include "state.h"
 
 
 /*
@@ -17,9 +17,9 @@
       1/(4*LCM(1..9)) beat = 1/10,080 B
 */
 
-#define Q_PER_B 10080
-
 typedef uint32_t q_t;
+
+const q_t Q_PER_B = 10080;
 
 template< typename T >
 inline q_t qcast(const T& x) { return static_cast<q_t>(x); }

@@ -85,6 +85,9 @@ bool MemoryField::click(ButtonState s) {
           mode = displayCurrent;
           memory = selection;
           break;
+
+        default:
+          break;
       }
       return false;
 
