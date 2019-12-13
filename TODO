@@ -21,9 +21,9 @@ TODO
 	- before the phase adj. is applied.
 
 
-[] account for various lengths of the sequence
+[x] account for various lengths of the sequence
 	- what about when sequence is very short?!?!?!
-	[] bug on capture at sequence boundry!
+	[x] bug on capture at sequence boundry!
 
 [] review rounding and trunc. errors in capture code
 

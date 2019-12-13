@@ -207,21 +207,25 @@ namespace {
     tupletTcc->COUNT.reg = counts.tuplet;
   }
 
-  void writePeriods(Timing& counts) {
+  Timing activePeriods;
+
+  void writePeriods(Timing& periods) {
     // sync as a group - though quantum is stopped, so shouldn't matter
     sync(measureTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
     sync(sequenceTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
     sync(tupletTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
 
-    measureTcc->PER.reg = counts.measure - 1;
-    sequenceTcc->PER.reg = counts.sequence - 1;
-    beatTc->COUNT16.CC[0].reg = static_cast<uint16_t>(counts.beat - 1);
-    tupletTcc->PER.reg = counts.tuplet - 1;
+    measureTcc->PER.reg = periods.measure - 1;
+    sequenceTcc->PER.reg = periods.sequence - 1;
+    beatTc->COUNT16.CC[0].reg = static_cast<uint16_t>(periods.beat - 1);
+    tupletTcc->PER.reg = periods.tuplet - 1;
 
-    measureTcc->CC[0].reg = min(Q_PER_B, counts.measure) / 4 - 1;
-    sequenceTcc->CC[0].reg = min(Q_PER_B, counts.sequence) / 4 - 1;
-    beatTc->COUNT16.CC[1].reg = static_cast<uint16_t>(counts.beat / 4 - 1);
-    tupletTcc->CC[0].reg = min(Q_PER_B, counts.tuplet) / 4 - 1;
+    measureTcc->CC[0].reg = min(Q_PER_B, periods.measure) / 4 - 1;
+    sequenceTcc->CC[0].reg = min(Q_PER_B, periods.sequence) / 4 - 1;
+    beatTc->COUNT16.CC[1].reg = static_cast<uint16_t>(periods.beat / 4 - 1);
+    tupletTcc->CC[0].reg = min(Q_PER_B, periods.tuplet) / 4 - 1;
+
+    activePeriods = periods;
   }
 
 
@@ -275,6 +279,7 @@ namespace {
   int       capturesPerBeat = 0;
   q_t       captureClkQ = 0;
   q_t       captureClkQHalf = 0;
+  q_t       captureSequencePeriod = 0;
   const int captureBufferBeats = 2;
   const int captureBufferSize = captureBufferBeats * 48;
   divisor_t captureBuffer[captureBufferSize];
@@ -284,7 +289,6 @@ namespace {
   uint32_t  captureSum = 0;
   int       captureCount = 0;
 
-  const q_t qMod = 4 * Q_PER_B;
   q_t captureLastSample = 0;
 
   void capture(q_t sample) {
@@ -306,15 +310,20 @@ namespace {
     if (capturesPerBeat == 0)     // not sync'd
       return;
 
-    sample %= qMod;
+    if (captureSequencePeriod != activePeriods.sequence) {
+      captureSequencePeriod = activePeriods.sequence;
+      captureLastSample = 0;    // can't rely on last sanple if period changd
+    }
+
     if (captureLastSample > 0) {
 
       // compute current ext clk rate, as a divisor
       q_t qdiff =
-        ((sample + qMod - captureLastSample) % qMod) * capturesPerBeat;
+        (sample + captureSequencePeriod - captureLastSample)
+        % captureSequencePeriod;
 
       uint32_t dNext =
-        ((uint32_t)activeDivisor * (uint32_t)qdiff / (uint32_t)Q_PER_B);
+        ((uint32_t)activeDivisor * (uint32_t)qdiff / (uint32_t)captureClkQ);
       dNext = constrain(dNext, divisorMin, divisorMax);
 
       // record this in the capture buffer, and average it with up to
