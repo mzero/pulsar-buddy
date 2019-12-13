@@ -25,7 +25,7 @@ TODO
 	- what about when sequence is very short?!?!?!
 	[x] bug on capture at sequence boundry!
 
-[] review rounding and trunc. errors in capture code
+[x] review rounding and trunc. errors in capture code
 
 
 
@@ -35,11 +35,14 @@ TODO
 
 [] smooth display of bpm so user's don't freak out
 	[] commit should be based on displayed (smoothed) BPM
+	- noticable when at i+.5 BPMs
 
 
 [] handle total sync drop gracefully
 	- restart as if from scratch
 	- display no-sync?
+	- sync wildly off?
+	- sequence length too short for sync mode
 
 
 [] accelleration of encoder when setting BPM?

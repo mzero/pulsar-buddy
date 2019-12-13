@@ -267,6 +267,10 @@ namespace {
     }
   }
 
+  template< typename T >
+  inline T roundingDivide(T x, T q) {
+    return (x + q / 2) / q;
+  }
 
   // These are used to communicate changes in the clocking to the interrupt
   // service routine.
@@ -323,7 +327,7 @@ namespace {
         % captureSequencePeriod;
 
       uint32_t dNext =
-        ((uint32_t)activeDivisor * (uint32_t)qdiff / (uint32_t)captureClkQ);
+        roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
       dNext = constrain(dNext, divisorMin, divisorMax);
 
       // record this in the capture buffer, and average it with up to
@@ -337,7 +341,7 @@ namespace {
       captureBuffer[captureNext] = dNext;
 
       // compute the average ext clk rate over the last captureBufferBeats
-      uint32_t dFilt = captureSum / captureCount;
+      uint32_t dFilt = roundingDivide(captureSum, (uint32_t)captureCount);
       captureHistory[captureNext] = dFilt;
 
       captureNext = (captureNext + 1) % captureBufferSpan;
@@ -348,7 +352,7 @@ namespace {
         phase -= captureClkQ;
 
       // adjust filterd divisor to fix the phase error over one beat
-      uint32_t dAdj = dFilt * Q_PER_B / (Q_PER_B - phase);
+      uint32_t dAdj = roundingDivide(dFilt * Q_PER_B, Q_PER_B - phase);
       dAdj = constrain(dAdj, divisorMin, divisorMax);
 
       setDivisors(dFilt, dAdj);
