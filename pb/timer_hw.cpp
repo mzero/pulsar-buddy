@@ -400,7 +400,8 @@ void initializeTimers(const State& state, void (*onMeasure)()) {
   EIC->EVCTRL.reg
     |= EIC_EVCTRL_EXTINTEO8;
   EIC->CONFIG[1].bit.FILTEN0 = 1;
-  EIC->CONFIG[1].bit.SENSE0 = EIC_CONFIG_SENSE0_RISE_Val;
+  EIC->CONFIG[1].bit.SENSE0 = EIC_CONFIG_SENSE0_FALL_Val;
+    // input buffer circuit inverts the signal
   EIC->CTRL.reg = EIC_CTRL_ENABLE;
   while (EIC->STATUS.bit.SYNCBUSY);
 

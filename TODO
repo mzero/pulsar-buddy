@@ -7,15 +7,24 @@ TODO
 	[x] rename capture variables
 [x] don't update sync until exit field?
 
-[-] beat & tuplet seem to drift from seq & measure
+[x] beat & tuplet seem to drift from seq & measure
 	[x] periods were off - they needed to be N-1
-	[] include .5 unit bias in ext. measuring
-		- as a reading of n could have been anyhwere in [n,n+1)
 
+[x] input pulses arrive inverted!
+	- invert in events or invert in capture in timer
+
+[] clean up phase error logic
+	[] do qcb calc just once at pending time
+	[] decide how much filtering to put on it
+
+[] display BPM should be based on ext clk est.
+	- before the phase adj. is applied.
 
 [] account for various lengths of the sequence
 	- what about when sequence is very short?!?!?!
 	[] bug on capture at sequence boundry!
+
+
 
 [] how to stay sync'd to the one?
 
