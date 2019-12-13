@@ -268,20 +268,25 @@ namespace {
   // These variables "belong" to the capture() interrupt service routine.
   // They should not be modified, or even read, outside of it. They are
   // defined here only so debugging code can dump them.
-  int capturesPerBeat = 0;
+  int       capturesPerBeat = 0;
+  q_t       captureClkQ = 0;
+  q_t       captureClkQHalf = 0;
   const int captureBufferSize = 64;
-  uint32_t captureBuffer[captureBufferSize];
-  int captureNext = 0;
-  uint32_t captureSum = 0;
-  int captureCount = 0;
+  uint32_t  captureBuffer[captureBufferSize];
+  int       captureNext = 0;
+  uint32_t  captureSum = 0;
+  int       captureCount = 0;
 
   const q_t qMod = 4 * Q_PER_B;
   q_t captureLastSample = 0;
 
   void capture(q_t sample) {
     if (pendingExternalClocksPerBeatChange) {
-      if (capturesPerBeat != externalClocksPerBeat) {
-        capturesPerBeat = externalClocksPerBeat;
+      int perBeat = constrain(externalClocksPerBeat, 0, captureBufferSize);
+      if (capturesPerBeat != perBeat) {
+        capturesPerBeat = perBeat;
+        captureClkQ = Q_PER_B / perBeat;
+        captureClkQHalf = captureClkQ / 2;
         captureNext = 0;
         captureSum = 0;
         captureCount = 0;
@@ -295,12 +300,17 @@ namespace {
 
     sample %= qMod;
     if (captureLastSample > 0) {
+
+      // compute current ext clk rate, as a divisor
       q_t qdiff =
         ((sample + qMod - captureLastSample) % qMod) * capturesPerBeat;
+
       uint32_t dNext =
         ((uint32_t)activeDivisor * (uint32_t)qdiff / (uint32_t)Q_PER_B);
       dNext = constrain(dNext, divisorMin, divisorMax);
 
+      // record this in the capture buffer, and average it with up to
+      // one beat's worth of measurements
       captureSum += dNext;
       if (captureCount >= capturesPerBeat) {
         captureSum -= captureBuffer[captureNext];
@@ -310,11 +320,21 @@ namespace {
       captureBuffer[captureNext] = dNext;
       captureNext = (captureNext + 1) % capturesPerBeat;
 
+      // compute the average ext clk rate over the last beat, as a divisor
       uint32_t dFilt = captureSum / captureCount;
-      externalDivisor = static_cast<divisor_t>(dNext);
-      setDivisor(static_cast<divisor_t>(dFilt));
-    }
 
+      // phase error (in Q)
+      q_t phase = sample % captureClkQ;
+      if (phase >= captureClkQHalf)
+        phase -= captureClkQ;
+
+      // adjust filterd divisor to fix the phase error over one beat
+      uint32_t dAdj = dFilt * Q_PER_B / (Q_PER_B - phase);
+      dAdj = constrain(dAdj, divisorMin, divisorMax);
+
+      externalDivisor = static_cast<divisor_t>(dNext);
+      setDivisor(static_cast<divisor_t>(dAdj));
+    }
     captureLastSample = sample;
   }
 

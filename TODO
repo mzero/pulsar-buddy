@@ -13,8 +13,8 @@ TODO
 [x] input pulses arrive inverted!
 	- invert in events or invert in capture in timer
 
-[] clean up phase error logic
-	[] do qcb calc just once at pending time
+[-] clean up phase error logic
+	[x] do qcb calc just once at pending time
 	[] decide how much filtering to put on it
 
 [] display BPM should be based on ext clk est.
@@ -39,6 +39,9 @@ TODO
 
 
 [] accelleration of encoder when setting BPM?
+
+[] long press on BPM field doesn't work in all modes
+	- esp. after timeout
 
 
 --- Later
