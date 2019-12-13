@@ -240,23 +240,27 @@ namespace {
   constexpr divisor_t divisorMin = 952;
   constexpr divisor_t divisorMax = 9524;
 
-
+  // the divisor currently set on the timer, may jitter to correct phase
   divisor_t activeDivisor = 0;  // so it will be set the first time
-  bpm_t activeBpm = 0;
-  bool activeBpmValid = false;
 
-  divisor_t externalDivisor = 0;
+  // the divisor that matches the sync'd BPM
+  divisor_t targetDivisor = 0;
+  bpm_t targetBpm = 0;
+  bool targetBpmValid = false;
 
-  void setDivisor(divisor_t divisor) {
-    if (divisor == activeDivisor)
-      return;
+  void setDivisors(divisor_t target, divisor_t active) {
+    if (activeDivisor != active) {
+      // FIXME: would be better to adjust count to match remaining fration used
+      // would be more efficient to keep previous divisor so no need to sync
+      // read it back from the timer again
+      quantumTc->COUNT16.CC[0].bit.CC = active - 1;
+      activeDivisor = active;
+    }
 
-    // FIXME: would be better to adjust count to match remaining fration used
-    // would be more efficient to keep previous divisor so no need to sync
-    // read it back from the timer again
-    quantumTc->COUNT16.CC[0].bit.CC = divisor - 1;
-    activeDivisor = divisor;
-    activeBpmValid = false;
+    if (targetDivisor != target) {
+      targetDivisor = target;
+      targetBpmValid = false;
+    }
   }
 
 
@@ -271,8 +275,11 @@ namespace {
   int       capturesPerBeat = 0;
   q_t       captureClkQ = 0;
   q_t       captureClkQHalf = 0;
-  const int captureBufferSize = 64;
-  uint32_t  captureBuffer[captureBufferSize];
+  const int captureBufferBeats = 2;
+  const int captureBufferSize = captureBufferBeats * 48;
+  divisor_t captureBuffer[captureBufferSize];
+  divisor_t captureHistory[captureBufferSize];
+  int       captureBufferSpan;
   int       captureNext = 0;
   uint32_t  captureSum = 0;
   int       captureCount = 0;
@@ -287,6 +294,7 @@ namespace {
         capturesPerBeat = perBeat;
         captureClkQ = Q_PER_B / perBeat;
         captureClkQHalf = captureClkQ / 2;
+        captureBufferSpan = captureBufferBeats * perBeat;
         captureNext = 0;
         captureSum = 0;
         captureCount = 0;
@@ -310,18 +318,20 @@ namespace {
       dNext = constrain(dNext, divisorMin, divisorMax);
 
       // record this in the capture buffer, and average it with up to
-      // one beat's worth of measurements
+      // captureBufferBeats' worth of measurements
       captureSum += dNext;
-      if (captureCount >= capturesPerBeat) {
+      if (captureCount >= captureBufferSpan) {
         captureSum -= captureBuffer[captureNext];
       } else {
         captureCount += 1;
       }
       captureBuffer[captureNext] = dNext;
-      captureNext = (captureNext + 1) % capturesPerBeat;
 
-      // compute the average ext clk rate over the last beat, as a divisor
+      // compute the average ext clk rate over the last captureBufferBeats
       uint32_t dFilt = captureSum / captureCount;
+      captureHistory[captureNext] = dFilt;
+
+      captureNext = (captureNext + 1) % captureBufferSpan;
 
       // phase error (in Q)
       q_t phase = sample % captureClkQ;
@@ -332,8 +342,7 @@ namespace {
       uint32_t dAdj = dFilt * Q_PER_B / (Q_PER_B - phase);
       dAdj = constrain(dAdj, divisorMin, divisorMax);
 
-      externalDivisor = static_cast<divisor_t>(dNext);
-      setDivisor(static_cast<divisor_t>(dAdj));
+      setDivisors(dFilt, dAdj);
     }
     captureLastSample = sample;
   }
@@ -348,16 +357,17 @@ namespace {
 
 
 bpm_t currentBpm() {
-  if (!activeBpmValid) {
-    activeBpm = divisorToBpm(activeDivisor);
-    activeBpmValid = true;
+  if (!targetBpmValid) {
+    targetBpm = divisorToBpm(targetDivisor);
+    targetBpmValid = true;
   }
-  return activeBpm;
+  return targetBpm;
 }
 
 void setBpm(bpm_t bpm) {
   bpm = constrain(bpm, bpmMin, bpmMax);
-  setDivisor(divisorFromBpm(bpm));
+  divisor_t d = divisorFromBpm(bpm);
+  setDivisors(d, d);
 }
 
 void setSync(SyncMode sync) {
@@ -545,19 +555,18 @@ void dumpCapture() {
 
   for (int i = 0; i < captureCount; ++i) {
     sum += captureBuffer[i];
-    Serial.printf("[%2d] %8d\n", i, captureBuffer[i]);
+    Serial.printf("[%2d] %8d -- %8d\n", i, captureBuffer[i], captureHistory[i]);
   }
 
   if (captureCount > 0)
     Serial.printf("Sum: %8d, Average: %8d\n\n", sum, sum / captureCount);
 
   Serial.printf("captureSum = %d\n", captureSum);
-  Serial.printf("captureNext = %d\n", captureNext);
 
-  Serial.printf("active:   %d bpm - %d divisor\n",
-    divisorToBpm(activeDivisor), activeDivisor);
-  Serial.printf("external: %d bpm - %d divisor\n",
-    divisorToBpm(externalDivisor), externalDivisor);
+  Serial.printf("active: %3d bpm - %5d divisor  |  "
+                "target: %3d bpm - %5d divisor\n",
+    divisorToBpm(activeDivisor), activeDivisor,
+    divisorToBpm(targetDivisor), targetDivisor);
 }
 
 void TCC0_Handler() {
