@@ -27,15 +27,15 @@ TODO
 
 [x] review rounding and trunc. errors in capture code
 
+[x] smooth display of bpm so user's don't freak out
+	[x] commit should be based on displayed (smoothed) BPM
+	- noticable when at i+.5 BPMs
+
+[x] GCC compilation flag to disallow implicit numeric conversions?
 
 
 
 [] how to stay sync'd to the one?
-
-
-[] smooth display of bpm so user's don't freak out
-	[] commit should be based on displayed (smoothed) BPM
-	- noticable when at i+.5 BPMs
 
 
 [] handle total sync drop gracefully
@@ -50,7 +50,6 @@ TODO
 [] long press on BPM field doesn't work in all modes
 	- esp. after timeout
 
-[] GCC compilation flag to disallow implicit numeric conversions?
 
 
 --- Later
@@ -81,6 +80,10 @@ TODO
 
 [] speed up centerNumber by using the fixed size of digits in the font
 
+[] MIDI clock sync mode
+	[] timing to 24th
+	[] enable / disable event system for sw event on entry/exit
+	[] how to handle power issues?
 
 
 

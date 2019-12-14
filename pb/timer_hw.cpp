@@ -415,7 +415,7 @@ bpm_t currentBpm() {
     updateAt += 100;    // recompute only 10x a second
 
     auto targetBpmf = divisorToBpm(targetDivisor);
-    if (fabsf(targetBpmf - reportedBpmf) < 1.0f) {
+    if (fabsf(targetBpmf - reportedBpmf) < 0.5f) {
       // moving a little bit, so just slew slowly
       reportedBpmf = (10.0f * reportedBpmf + targetBpmf) / 11.0f;
     } else {
