@@ -87,6 +87,38 @@ namespace {
       ;
   }
 
+#if 0
+  void simulateExtClk() {
+    static bool firstTime = true;
+
+    if (firstTime) {
+      GCLK->CLKCTRL.reg
+        = GCLK_CLKCTRL_CLKEN
+        | GCLK_CLKCTRL_GEN_GCLK0
+        | GCLK_CLKCTRL_ID(GCM_EVSYS_CHANNEL_6);
+
+      EVSYS->CTRL.reg
+        = EVSYS_CTRL_GCLKREQ
+        ;
+
+      EVSYS->USER.reg
+        = EVSYS_USER_USER(EVSYS_ID_USER_TCC0_MC_1)
+        | EVSYS_USER_CHANNEL(EXTCLK_EVENT_CHANNEL + 1)
+        ;
+      EVSYS->CHANNEL.reg
+        = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
+        | EVSYS_CHANNEL_PATH_SYNCHRONOUS
+        | EVSYS_CHANNEL_EDGSEL_RISING_EDGE
+        ;
+
+      firstTime = false;
+    }
+    EVSYS->CHANNEL.reg
+        = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
+        | EVSYS_CHANNEL_SWEVT
+        ;
+  }
+#endif
 
   Tc* const quantumTc = TC4;
   Tc* const beatTc = TC5;
@@ -566,6 +598,12 @@ void updateTimers(const Settings& settings) {
   writePeriods(periods);
   startQuantumEvents();
 }
+
+#if 0
+void midiClock() {
+  simulateExtClk();
+}
+#endif
 
 void dumpTimer() {
   Timing counts;

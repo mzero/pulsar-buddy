@@ -14,6 +14,7 @@ void setBpm(bpm_t);
   // sync back to externally driven tempo.
 void setSync(SyncMode);
 
+// void midiClock();
 
 void resetTimers(const Settings&);
 void updateTimers(const Settings&);

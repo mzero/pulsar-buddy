@@ -1,5 +1,9 @@
 // #include <ZeroRegs.h>
 
+#if 0
+#include <usbmidi.h>
+#endif
+
 #include "display.h"
 #include "layout.h"
 #include "state.h"
@@ -89,6 +93,23 @@ void loop() {
     }
     persistState();
   }
+
+#if 0
+  USBMIDI.poll();
+  while (USBMIDI.available()) {
+    auto b = USBMIDI.read();
+
+    if (b == 0xf8) {
+      midiClock();
+
+      static bool reported = false;
+      if (!reported) {
+        Serial.println("MIDI clock detected");
+        reported = true;
+      }
+    }
+  }
+#endif
 
   int dir = encoder.update();
   if (dir) {
