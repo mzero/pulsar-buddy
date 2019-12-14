@@ -231,14 +231,15 @@ namespace {
 
   // TC4 has a 16 bit counter
   typedef uint16_t divisor_t;
-  const double cpuFactor = 60.0 * F_CPU / Q_PER_B;
+  const float cpuFactor = 60.0f * F_CPU / Q_PER_B;
 
-  bpm_t divisorToBpm(divisor_t divisor) {
-    return round(cpuFactor / (double)divisor);
+
+  float divisorToBpm(divisor_t divisor) {
+    return roundf(cpuFactor / (float)divisor);
   }
 
-  divisor_t divisorFromBpm(bpm_t bpm) {
-    return round(cpuFactor / (double)bpm);
+  divisor_t divisorFromBpm(float bpm) {
+    return roundf(cpuFactor / (float)bpm);
   }
 
   constexpr divisor_t divisorMin = 952;
@@ -249,8 +250,6 @@ namespace {
 
   // the divisor that matches the sync'd BPM
   divisor_t targetDivisor = 0;
-  bpm_t targetBpm = 0;
-  bool targetBpmValid = false;
 
   void setDivisors(divisor_t target, divisor_t active) {
     if (activeDivisor != active) {
@@ -261,10 +260,7 @@ namespace {
       activeDivisor = active;
     }
 
-    if (targetDivisor != target) {
-      targetDivisor = target;
-      targetBpmValid = false;
-    }
+    targetDivisor = target;
   }
 
   template< typename T >
@@ -370,16 +366,31 @@ namespace {
 
 
 bpm_t currentBpm() {
-  if (!targetBpmValid) {
-    targetBpm = divisorToBpm(targetDivisor);
-    targetBpmValid = true;
+  static auto updateAt = millis();
+  static float reportedBpmf = 0;
+  static bpm_t reportedBpm = 0;
+
+  if (updateAt < millis()) {
+    updateAt += 100;    // recompute only 10x a second
+
+    auto targetBpmf = divisorToBpm(targetDivisor);
+    if (fabsf(targetBpmf - reportedBpmf) < 1.0f) {
+      // moving a little bit, so just slew slowly
+      reportedBpmf = (10.0f * reportedBpmf + targetBpmf) / 11.0f;
+    } else {
+      // moved a lot
+      reportedBpmf = targetBpmf;
+    }
+
+    reportedBpm = roundf(reportedBpmf);
   }
-  return targetBpm;
+
+  return reportedBpm;
 }
 
 void setBpm(bpm_t bpm) {
   bpm = constrain(bpm, bpmMin, bpmMax);
-  divisor_t d = divisorFromBpm(bpm);
+  divisor_t d = divisorFromBpm((float)bpm);
   setDivisors(d, d);
 }
 
