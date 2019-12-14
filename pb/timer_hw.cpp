@@ -228,6 +228,9 @@ namespace {
     activePeriods = periods;
   }
 
+// In this section of code, be very careful about numeric types
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wconversion"
 
   // TC4 has a 16 bit counter
   typedef uint16_t divisor_t;
@@ -235,11 +238,11 @@ namespace {
 
 
   float divisorToBpm(divisor_t divisor) {
-    return roundf(cpuFactor / (float)divisor);
+    return cpuFactor / (float)divisor;
   }
 
   divisor_t divisorFromBpm(float bpm) {
-    return roundf(cpuFactor / (float)bpm);
+    return (divisor_t)(roundf(cpuFactor / bpm));
   }
 
   constexpr divisor_t divisorMin = 952;
@@ -256,7 +259,7 @@ namespace {
       // FIXME: would be better to adjust count to match remaining fration used
       // would be more efficient to keep previous divisor so no need to sync
       // read it back from the timer again
-      quantumTc->COUNT16.CC[0].bit.CC = active - 1;
+      quantumTc->COUNT16.CC[0].reg = (divisor_t)(active - 1);
       activeDivisor = active;
     }
 
@@ -334,11 +337,11 @@ namespace {
       } else {
         captureCount += 1;
       }
-      captureBuffer[captureNext] = dNext;
+      captureBuffer[captureNext] = (divisor_t)dNext;
 
       // compute the average ext clk rate over the last captureBufferBeats
       uint32_t dFilt = roundingDivide(captureSum, (uint32_t)captureCount);
-      captureHistory[captureNext] = dFilt;
+      captureHistory[captureNext] = (divisor_t)dFilt;
 
       captureNext = (captureNext + 1) % captureBufferSpan;
 
@@ -351,7 +354,7 @@ namespace {
       uint32_t dAdj = roundingDivide(dFilt * Q_PER_B, Q_PER_B - phase);
       dAdj = constrain(dAdj, divisorMin, divisorMax);
 
-      setDivisors(dFilt, dAdj);
+      setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
     }
     captureLastSample = sample;
   }
@@ -362,8 +365,14 @@ namespace {
     pendingExternalClocksPerBeatChange = true;
     // interrupts();
   }
+
+#pragma GCC diagnostic pop
 }
 
+
+// In this section of code, be very careful about numeric types
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wconversion"
 
 bpm_t currentBpm() {
   static auto updateAt = millis();
@@ -382,7 +391,7 @@ bpm_t currentBpm() {
       reportedBpmf = targetBpmf;
     }
 
-    reportedBpm = roundf(reportedBpmf);
+    reportedBpm = (bpm_t)(roundf(reportedBpmf));
   }
 
   return reportedBpm;
@@ -409,6 +418,8 @@ void setSync(SyncMode sync) {
 
   resetCapture(clocksPerBeat);
 }
+
+#pragma GCC diagnostic pop
 
 
 
@@ -575,7 +586,7 @@ void dumpCapture() {
   if (capturesPerBeat == 0)
     return;
 
-  int32_t sum = 0;
+  uint32_t sum = 0;
 
   for (int i = 0; i < captureCount; ++i) {
     sum += captureBuffer[i];
@@ -583,14 +594,18 @@ void dumpCapture() {
   }
 
   if (captureCount > 0)
-    Serial.printf("Sum: %8d, Average: %8d\n\n", sum, sum / captureCount);
+    Serial.printf("Sum: %8d, Average: %8d\n\n",
+      sum, roundingDivide(sum, (uint32_t)captureCount));
 
   Serial.printf("captureSum = %d\n", captureSum);
 
-  Serial.printf("active: %3d bpm - %5d divisor  |  "
-                "target: %3d bpm - %5d divisor\n",
-    divisorToBpm(activeDivisor), activeDivisor,
-    divisorToBpm(targetDivisor), targetDivisor);
+  int activeBpm100 = (int)(roundf(100.0f * divisorToBpm(activeDivisor)));
+  int targetBpm100 = (int)(roundf(100.0f * divisorToBpm(targetDivisor)));
+
+  Serial.printf("active: %3d.%02d bpm - %5d divisor  |  "
+                "target: %3d.%02d bpm - %5d divisor\n",
+    activeBpm100 / 100, activeBpm100 % 100, activeDivisor,
+    targetBpm100 / 100, targetBpm100 % 100, targetDivisor);
 }
 
 void TCC0_Handler() {
