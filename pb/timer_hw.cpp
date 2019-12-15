@@ -439,7 +439,6 @@ void setSync(SyncMode sync) {
   int clocksPerBeat = 0;
   switch (sync) {
     case syncFixed: clocksPerBeat = 0; break;
-    case syncTap: clocksPerBeat = 1; break;
     default:
       if (sync & syncExternalFlag) {
         clocksPerBeat = sync & syncPPQNMask;

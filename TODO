@@ -1,49 +1,12 @@
 TODO
 
-[x] All of State needs to be checked, not just the
-	pending functions, for when to commit it.
-[x] why commiting on startup?
-[x] review sync of capture variables
-	[x] rename capture variables
-[x] don't update sync until exit field?
-
-[x] beat & tuplet seem to drift from seq & measure
-	[x] periods were off - they needed to be N-1
-
-[x] input pulses arrive inverted!
-	- invert in events or invert in capture in timer
-
-[x] clean up phase error logic
-	[x] do qcb calc just once at pending time
-	[x] decide how much filtering to put on it
-
-[x] display BPM should be based on ext clk est.
-	- before the phase adj. is applied.
-
-
-[x] account for various lengths of the sequence
-	- what about when sequence is very short?!?!?!
-	[x] bug on capture at sequence boundry!
-
-[x] review rounding and trunc. errors in capture code
-
-[x] smooth display of bpm so user's don't freak out
-	[x] commit should be based on displayed (smoothed) BPM
-	- noticable when at i+.5 BPMs
-
-[x] GCC compilation flag to disallow implicit numeric conversions?
-
-
-
 [] how to stay sync'd to the one?
-
 
 [] handle total sync drop gracefully
 	- restart as if from scratch
 	- display no-sync?
 	- sync wildly off?
 	- sequence length too short for sync mode
-
 
 [] accelleration of encoder when setting BPM?
 
@@ -56,10 +19,11 @@ TODO
 
 [] switch to explicit timing of external clock?
 
-[] tap tempo
+[-] tap tempo
 	? separate mode? or just part of fixed?
+	>> just part of fixed
 
-[] images for sync modes
+[x] images for sync modes
 
 
 [] Figure out production / debug build method
@@ -74,7 +38,8 @@ TODO
 [] need a UI for "apply right now!"
 [] need a UI for "really, reset the whole dang thing!"
 
-[] calibration? I bet xtal isn't exactly 48MHz!
+[-] calibration? I bet xtal isn't exactly 48MHz!
+	- at about 20ppm it is good enough
 
 [] check and Serial write (or other error) when periods out of range
 

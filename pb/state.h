@@ -20,11 +20,10 @@ struct Settings {
 
 enum SyncMode : uint8_t {
   syncFixed = 0,
-  syncTap = 1,
 
   // sync based on incoming clock
   syncExternalFlag = 0x80,  // high bit indicates external sync
-  syncPPQNMask = 0x7f,      // lower 7 bits are parts per beat
+  syncPPQNMask = 0x3f,      // lower 6 bits are parts per beat
     // -- defined for generality, but only the values below are supported
 
   sync1ppqn = 0x81,    // clock = quarter note (beat)
@@ -33,6 +32,8 @@ enum SyncMode : uint8_t {
   sync8ppqn = 0x88,    // clock = 32nd note (Pulsar sync)
   sync24ppqn = 0x98,   // clock = 24ppqn DIN sync
   sync48ppqn = 0xb0,   // clock = 48ppqn DIN sync
+
+  syncMidi = 0xd8,     // clock = 24ppqn MIDI sync
 };
 
 
