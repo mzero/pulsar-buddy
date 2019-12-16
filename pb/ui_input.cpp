@@ -14,13 +14,14 @@ Encoder::Encoder(uint32_t pinA, uint32_t pinB)
   a = digitalRead(pinA);
   b = digitalRead(pinB);
   quads = 0;
+  lastUpdate = 0;
 }
 
-int Encoder::update() {
+Encoder::Update Encoder::update() {
   int newA = digitalRead(pinA);
   int newB = digitalRead(pinB);
 
-  int r = 0;
+  int16_t dir = 0;
 
   if (newA != a || newB != b) {
     if (newA == a) {
@@ -34,15 +35,24 @@ int Encoder::update() {
 
     if (a && b) {
       if (quads > 1) {
-        r = 1;
+        dir = 1;
       } else if (quads < -1) {
-        r = -1;
+        dir = -1;
       }
       quads = 0;
     }
   }
 
-  return r;
+  int16_t speedup = 0;
+  if (dir != 0) {
+    auto now = millis();
+    auto delta = now - lastUpdate;
+    lastUpdate = now;
+
+    if (delta < 20)       speedup = 2;
+    else if (delta < 50)  speedup = 1;
+  }
+  return Update(dir, speedup);
 }
 
 Button::Button(uint32_t pin)

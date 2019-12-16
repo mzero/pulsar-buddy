@@ -18,7 +18,7 @@ void Field::enter(bool alternate) { }
 void Field::exit() { }
 
 bool Field::click(ButtonState s) { return false; }
-void Field::update(int dir) { }
+void Field::update(Encoder::Update update) { }
 
 bool Field::isOutOfDate() { return selectedAsDrawn != selected; }
 

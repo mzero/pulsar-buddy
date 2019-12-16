@@ -7,7 +7,23 @@
 class Encoder {
 public:
   Encoder(uint32_t pinA, uint32_t pinB);
-  int update();   // reports -1 for CCW, 0 for no motion, and 1 for CW
+
+  struct Update {
+  public:
+    inline bool active()        const { return _dir != 0; }
+    inline int dir()            const { return _dir; }
+      // -1 for CCW, 0 for no motion, and 1 for CW
+    inline int accel(int rate)  const { return _dir + _dir * _speedup * rate; }
+
+  private:
+    Update(int16_t dir, int16_t speedup) : _dir(dir), _speedup(speedup) { }
+    int16_t _dir;
+    int16_t _speedup;
+
+    friend class Encoder;
+  };
+
+  Update update();
 
 private:
   const uint32_t pinA;
@@ -17,6 +33,8 @@ private:
   int b;
 
   int quads;
+
+  unsigned long lastUpdate;
 };
 
 

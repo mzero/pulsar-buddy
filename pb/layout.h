@@ -5,7 +5,7 @@
 
 
 void resetSelection();
-void updateSelection(int dir);
+void updateSelection(Encoder::Update update);
 void clickSelection(ButtonState);
 
 void drawAll(bool refresh);

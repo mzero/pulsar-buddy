@@ -131,9 +131,9 @@ void loop() {
   }
 #endif
 
-  int dir = encoder.update();
-  if (dir) {
-    updateSelection(dir);
+  auto update = encoder.update();
+  if (update.active()) {
+    updateSelection(update);
     active = true;
   }
 

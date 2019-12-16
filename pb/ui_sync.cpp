@@ -126,15 +126,15 @@ namespace {
   }
 }
 
-void SyncField::update(int dir) {
+void SyncField::update(Encoder::Update update) {
   switch (mode) {
     case displayBPM:
-      setBpm(currentBpm() + dir);
+      setBpm(currentBpm() + update.accel(5));
       break;
 
     case displaySync:
       int i = findSyncModeIndex(pendingSync);
-      int j = constrain(i + dir, 0, numSyncOptions - 1);
+      int j = constrain(i + update.dir(), 0, numSyncOptions - 1);
       pendingSync = syncOptions[j].mode;
       break;
   }

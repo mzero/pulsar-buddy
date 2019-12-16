@@ -30,7 +30,7 @@ public:
   virtual void exit();
 
   virtual bool click(ButtonState s);
-  virtual void update(int);
+  virtual void update(Encoder::Update);
 
 protected:
   virtual bool isOutOfDate();
@@ -74,7 +74,7 @@ public:
     };
 
   virtual void select(bool);
-  virtual void update(int dir);
+  virtual void update(Encoder::Update);
 
   virtual value_t getValue() = 0;
   virtual void    setValue(const value_t& v) = 0;
@@ -110,9 +110,9 @@ int OptionField<T>::findOptionIndex(const value_t& v) {
 }
 
 template< typename T >
-void OptionField<T>::update(int dir) {
+void OptionField<T>::update(Encoder::Update update) {
   int i = findOptionIndex(getValue());
-  i = constrain(i + dir, -1, numOptions - 1);
+  i = constrain(i + update.dir(), -1, numOptions - 1);
 
   if (i >= 0) {
     setValue(options[i]);

@@ -99,8 +99,8 @@ bool MemoryField::click(ButtonState s) {
   }
 }
 
-void MemoryField::update(int dir) {
-  selection = constrain(selection + dir, 1, 4);
+void MemoryField::update(Encoder::Update update) {
+  selection = constrain(selection + update.dir(), 1, 4);
 
   if (mode == selectLoad)
     showMemoryPreview(selection);

@@ -92,9 +92,10 @@ namespace {
 
   int selectedFieldIndex = 1;   // start on number of measures
 
-  void updateSelectedField(int dir) {
+  void updateSelectedField(Encoder::Update update) {
     selectedFieldIndex =
-      constrain(selectedFieldIndex + dir, 0, (int)(selectableFields.size()) - 1);
+      constrain(selectedFieldIndex + update.dir(),
+        0, (int)(selectableFields.size()) - 1);
   }
 
   Field* selectedField() {    // "class" needed due to auto-prototype gen.
@@ -114,7 +115,7 @@ void resetSelection() {
   selectedField()->deselect();
 }
 
-void updateSelection(int dir) {
+void updateSelection(Encoder::Update update) {
   switch (selectMode) {
 
     case selectNone:
@@ -124,12 +125,12 @@ void updateSelection(int dir) {
 
     case selectField:
       selectedField()->deselect();
-      updateSelectedField(dir);
+      updateSelectedField(update);
       selectedField()->select();
       break;
 
     case selectValue:
-      selectedField()->update(dir);
+      selectedField()->update(update);
       break;
   }
 }

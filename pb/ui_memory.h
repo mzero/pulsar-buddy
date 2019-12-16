@@ -16,7 +16,7 @@ public:
     virtual void exit();
 
     virtual bool click(ButtonState);
-    virtual void update(int);
+    virtual void update(Encoder::Update);
 
 protected:
     virtual bool isOutOfDate();

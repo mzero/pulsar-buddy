@@ -15,7 +15,7 @@ public:
     virtual void enter(bool);
     virtual void exit();
 
-    virtual void update(int);
+    virtual void update(Encoder::Update);
 
 protected:
     virtual bool isOutOfDate();
