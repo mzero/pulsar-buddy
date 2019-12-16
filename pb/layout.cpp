@@ -138,11 +138,9 @@ void clickSelection(ButtonState s) {
   switch (selectMode) {
 
     case selectNone:
-      if (s == buttonUp || s == buttonUpLong) {
-        selectMode = selectField;
-        selectedField()->select();
-      }
-      break;
+      selectMode = selectField;
+      selectedField()->select();
+      // fall through;
 
     case selectField:
       switch (s) {

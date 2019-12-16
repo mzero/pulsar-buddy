@@ -10,21 +10,12 @@ TODO
 
 [] accelleration of encoder when setting BPM?
 
-[] long press on BPM field doesn't work in all modes
+[x] long press on BPM field doesn't work in all modes
 	- esp. after timeout
 
 
 
 --- Later
-
-[] switch to explicit timing of external clock?
-
-[-] tap tempo
-	? separate mode? or just part of fixed?
-	>> just part of fixed
-
-[x] images for sync modes
-
 
 [] Figure out production / debug build method
 	[] review LOG calls in flash.cpp
@@ -32,14 +23,9 @@ TODO
 [] if no beats after X min... shut down display totally
 	- fire back on when beat detected
 
-[] make enums be uint8_t based
-	- probably not really worth it
-
 [] need a UI for "apply right now!"
 [] need a UI for "really, reset the whole dang thing!"
 
-[-] calibration? I bet xtal isn't exactly 48MHz!
-	- at about 20ppm it is good enough
 
 [] check and Serial write (or other error) when periods out of range
 
@@ -50,13 +36,15 @@ TODO
 	[] enable / disable event system for sw event on entry/exit
 	[] how to handle power issues?
 
+[] switch to explicit timing of external clock?
+
+[] make enums be uint8_t based
+	- probably not really worth it
+
 
 
 HARDWARE
 --------
-
-Power
-	[] need barrel splitter or tap
 
 Physical
 	? how to assemble?
