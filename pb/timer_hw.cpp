@@ -407,12 +407,14 @@ namespace {
 #pragma GCC diagnostic error "-Wconversion"
 
 bpm_t currentBpm() {
-  static auto updateAt = millis();
+  static auto updateAt = millis() - 1; // ensure update the first time
   static float reportedBpmf = 0;
   static bpm_t reportedBpm = 0;
 
-  if (updateAt < millis()) {
-    updateAt += 100;    // recompute only 10x a second
+  auto now = millis();
+  if (updateAt < now) {
+    updateAt = max(updateAt + 100, now + 10);
+      // recompute only 10x a second, on a regular basis, but don't get behind
 
     auto targetBpmf = divisorToBpm(targetDivisor);
     if (fabsf(targetBpmf - reportedBpmf) < 0.5f) {
