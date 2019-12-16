@@ -146,6 +146,8 @@ void SyncField::redraw() {
 
   switch (mode) {
     case displayBPM: {
+      bpmAsDrawn = currentBpm();
+
       // rotated coordinates of the field
       const int16_t xr = display.height() - (y + h);
       const int16_t yr = x;
@@ -156,7 +158,6 @@ void SyncField::redraw() {
       centerNumber(bpmAsDrawn, xr, yr, wr, hr);
       display.setRotation(0);
 
-      bpmAsDrawn = currentBpm();
       break;
     }
 
