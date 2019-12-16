@@ -135,7 +135,7 @@ void updateSelection(Encoder::Update update) {
   }
 }
 
-void clickSelection(ButtonState s) {
+void clickSelection(Button::State s) {
   switch (selectMode) {
 
     case selectNone:
@@ -145,13 +145,13 @@ void clickSelection(ButtonState s) {
 
     case selectField:
       switch (s) {
-        case buttonDownLong:
+        case Button::DownLong:
           selectedField()->enter(true);
           break;
-        case buttonUp:
+        case Button::Up:
           selectedField()->enter(false);
           // fall through
-        case buttonUpLong:
+        case Button::UpLong:
           selectMode = selectValue;
           break;
         default:
@@ -163,7 +163,7 @@ void clickSelection(ButtonState s) {
       if (selectedField()->click(s)) {
         break;
       }
-      if (s == buttonUp || s == buttonUpLong) {
+      if (s == Button::Up || s == Button::UpLong) {
         selectedField()->exit();
         selectMode = selectField;
       }

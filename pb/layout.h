@@ -6,7 +6,7 @@
 
 void resetSelection();
 void updateSelection(Encoder::Update update);
-void clickSelection(ButtonState);
+void clickSelection(Button::State);
 
 void drawAll(bool refresh);
 

@@ -29,7 +29,7 @@ public:
   virtual void enter(bool alternate);
   virtual void exit();
 
-  virtual bool click(ButtonState s);
+  virtual bool click(Button::State s);
   virtual void update(Encoder::Update);
 
 protected:

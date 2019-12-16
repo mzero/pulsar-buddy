@@ -137,8 +137,8 @@ void loop() {
     active = true;
   }
 
-  ButtonState s = encoderButton.update();
-  if (s != buttonNoChange) {
+  Button::State s = encoderButton.update();
+  if (s != Button::NoChange) {
     clickSelection(s);
     active = true;
   }
@@ -147,17 +147,17 @@ void loop() {
     active = true;
   }
 
-  if (oledButtonA.update() == buttonDown) {
+  if (oledButtonA.update() == Button::Down) {
     resetTimers(userSettings());
     active = true;
   }
 
-  if (oledButtonB.update() == buttonDown) {
+  if (oledButtonB.update() == Button::Down) {
     //printZeroRegs(zeroOpts);
     active = true;
   }
 
-  if (oledButtonC.update() == buttonDown) {
+  if (oledButtonC.update() == Button::Down) {
     // storeToMemory(1);
     dumpCapture();
     // dumpTimer();

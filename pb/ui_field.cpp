@@ -17,7 +17,7 @@ void Field::select(bool s) {
 void Field::enter(bool alternate) { }
 void Field::exit() { }
 
-bool Field::click(ButtonState s) { return false; }
+bool Field::click(Button::State s) { return false; }
 void Field::update(Encoder::Update update) { }
 
 bool Field::isOutOfDate() { return selectedAsDrawn != selected; }

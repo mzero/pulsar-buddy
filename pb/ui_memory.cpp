@@ -65,13 +65,13 @@ void MemoryField::exit() {
   mode = displayCurrent;
 }
 
-bool MemoryField::click(ButtonState s) {
+bool MemoryField::click(Button::State s) {
   switch (s) {
-    case buttonDown:
-    case buttonDownLong:
+    case Button::Down:
+    case Button::DownLong:
       return true;
 
-    case buttonUp:
+    case Button::Up:
       switch (mode) {
         case selectLoad:
           endMemoryPreview();
@@ -91,7 +91,7 @@ bool MemoryField::click(ButtonState s) {
       }
       return false;
 
-    case buttonUpLong:
+    case Button::UpLong:
       return false;
 
     default:

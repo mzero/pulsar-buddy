@@ -62,49 +62,49 @@ Button::Button(uint32_t pin)
   lastRead = -1;        // will cause first update to always set it
   validAtTime = 0;
 
-  state = buttonUp;
+  state = Up;
   longAtTime = 0;
 }
 
-ButtonState Button::update()
+Button::State Button::update()
 {
   int read = digitalRead(pin);
   if (read != lastRead) {
     // pin changed, wait for it to be stable
     lastRead = read;
     validAtTime = millis() + 50;
-    return buttonNoChange;
+    return NoChange;
   }
 
   uint32_t now = millis();
   if (now < validAtTime) {
     // pin stable, not not long enough
-    return buttonNoChange;
+    return NoChange;
   }
 
-  ButtonState prevState = state;
+  State prevState = state;
 
   switch (state) {
-    case buttonUp:
-    case buttonUpLong:
+    case Up:
+    case UpLong:
       if (lastRead == LOW) {
-        state = buttonDown;
+        state = Down;
         longAtTime = now + 2000;
       }
       break;
 
-    case buttonDown:
+    case Down:
       if (lastRead == LOW) {  // still down?
         if (now > longAtTime) {
-          state = buttonDownLong;
+          state = DownLong;
           break;
         }
       }
       // fall through
 
-    case buttonDownLong:
+    case DownLong:
       if (lastRead == HIGH) {
-        state = (prevState == buttonDownLong) ? buttonUpLong : buttonUp;
+        state = (prevState == DownLong) ? UpLong : Up;
       }
       break;
 
@@ -112,7 +112,7 @@ ButtonState Button::update()
       break;
   }
 
-  return (state != prevState) ? state : buttonNoChange;
+  return (state != prevState) ? state : NoChange;
 }
 
 

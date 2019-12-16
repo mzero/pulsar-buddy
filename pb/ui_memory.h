@@ -15,7 +15,7 @@ public:
     virtual void enter(bool);
     virtual void exit();
 
-    virtual bool click(ButtonState);
+    virtual bool click(Button::State);
     virtual void update(Encoder::Update);
 
 protected:
