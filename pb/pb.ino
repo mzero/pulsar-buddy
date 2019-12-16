@@ -59,18 +59,38 @@ void noteMeasure() {
   measureEvent = true;
 }
 
+
+extern "C" char* sbrk(int incr);
+
+uint32_t sramUsed() {
+  return (uint32_t)(sbrk(0)) - 0x20000000;
+}
+
+
 void setup() {
+  auto s0 = sramUsed();
+
   Serial.begin(115200);
-  while (!Serial);
-     // wait for native usb, there is a delay in that call
-     // so no need for one here
-     // FIXME: Take this out for production
 
   initializeState();
   initializeTimers(userState(), noteMeasure);
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
+
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.print("Waiting for serial connection....");
+  display.display();
+
+  while (!Serial);
+     // wait for native usb, there is a delay in that call
+     // so no need for one here
+     // FIXME: Take this out for production
+
+  auto s1 = sramUsed();
+  Serial.printf("sram used: %d static, %d post-init\n", s0, s1);
+
   drawAll(true);
 }
 
