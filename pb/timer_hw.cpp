@@ -12,7 +12,9 @@
 #if defined(__SAMD21__) || defined(TC4) || defined(TC5)
 
 /* Timer Diagram:
-
+                      +--> WATCHDOG --> timeout
+                      |    (TC3)
+                      |
   QUANTUM --> event --+--> BEAT --> waveform
    (TC4)              |    (TC5)
                       |
@@ -63,7 +65,8 @@ namespace {
 
   void initializeEvents() {
     for ( uint16_t user :
-          { EVSYS_ID_USER_TC5_EVU,
+          { EVSYS_ID_USER_TC3_EVU,
+            EVSYS_ID_USER_TC5_EVU,
             EVSYS_ID_USER_TCC0_EV_0,
             EVSYS_ID_USER_TCC1_EV_0,
             EVSYS_ID_USER_TCC2_EV_0}
@@ -121,6 +124,7 @@ namespace {
 #endif
 
   Tc* const quantumTc = TC4;
+  Tc* const watchdogTc = TC3;
   Tc* const beatTc = TC5;
   Tcc* const sequenceTcc = TCC0;
   Tcc* const measureTcc = TCC1;
@@ -299,6 +303,7 @@ namespace {
   }
 
   bool clockPerlexed = false;
+  bool clockStopped = false;
 
 
   template< typename T >
@@ -329,6 +334,24 @@ namespace {
 
   q_t captureLastSample = 0;
 
+  void missedClock() {
+    if (capturesPerBeat > 0) {
+      stopQuantumEvents();
+      clockStopped = true;
+    }
+  }
+
+  void noteClock() {
+    watchdogTc->COUNT16.COUNT.reg = (uint16_t)(captureClkQ * 2);
+    if (watchdogTc->COUNT16.STATUS.bit.STOP)
+      watchdogTc->COUNT16.CTRLBSET.reg = TC_CTRLBSET_CMD_RETRIGGER;
+    if (clockStopped) {
+      // reset sequence to start?
+      startQuantumEvents();
+      clockStopped = false;
+    }
+  }
+
   void capture(q_t sample) {
     if (pendingExternalClocksPerBeatChange) {
       int perBeat = constrain(externalClocksPerBeat, 0, captureBufferSize);
@@ -347,6 +370,8 @@ namespace {
 
     if (capturesPerBeat == 0)     // not sync'd
       return;
+
+    noteClock();
 
     if (captureSequencePeriod != activePeriods.sequence) {
       captureSequencePeriod = activePeriods.sequence;
@@ -435,7 +460,9 @@ ClockStatus ClockStatus::current() {
     reportedBpm = (bpm_t)(roundf(reportedBpmf));
   }
 
-  return ClockStatus(reportedBpm, clockPerlexed ? Perplexed : Running);
+  return ClockStatus(
+    reportedBpm,
+    clockStopped ? Paused : (clockPerlexed ? Perplexed : Running));
 }
 
 void setBpm(bpm_t bpm) {
@@ -478,6 +505,7 @@ void initializeTimers(const State& state, void (*onMeasure)()) {
     | PM_APBCMASK_TCC0
     | PM_APBCMASK_TCC1
     | PM_APBCMASK_TCC2
+    | PM_APBCMASK_TC3
     | PM_APBCMASK_TC4
     | PM_APBCMASK_TC5;
 
@@ -532,6 +560,36 @@ void initializeTimers(const State& state, void (*onMeasure)()) {
 
   enable(quantumTc);
 
+
+  /** WATCH DOG TIMER **/
+
+  disableAndReset(watchdogTc);
+
+  watchdogTc->COUNT16.CTRLA.reg
+    = TC_CTRLA_MODE_COUNT16
+    | TC_CTRLA_PRESCALER_DIV1
+    | TC_CTRLA_RUNSTDBY  // FIXME: should this be here?
+    | TC_CTRLA_PRESCSYNC_GCLK
+    ;
+
+  watchdogTc->COUNT16.CTRLBSET.reg
+    = TC_CTRLBSET_DIR
+    | TC_CTRLBSET_ONESHOT
+    ;
+
+  watchdogTc->COUNT16.EVCTRL.reg
+    = TC_EVCTRL_TCEI
+    | TC_EVCTRL_EVACT_COUNT
+    ;
+
+  watchdogTc->COUNT16.INTENSET.reg
+    = TC_INTENSET_OVF
+    ;
+
+  enable(watchdogTc);
+
+  NVIC_SetPriority(TC3_IRQn, 0);
+  NVIC_EnableIRQ(TC3_IRQn);
 
   /** BEAT TIMER **/
 
@@ -624,6 +682,9 @@ void dumpTimer() {
   Serial.println("dumpTimer counts:");
   Serial.printf("  q = %d / %d\n", quantumCount, activeDivisor);
   dumpTiming(counts);
+
+  uint16_t watchCount = watchdogTc->COUNT16.COUNT.reg;
+  Serial.printf("watchdogTimer count: %d\n", watchCount);
 }
 
 void dumpCapture() {
@@ -654,12 +715,19 @@ void dumpCapture() {
     targetBpm100 / 100, targetBpm100 % 100, targetDivisor);
 }
 
+void TC3_Handler() {
+  if (TC3->COUNT16.INTFLAG.reg & TC_INTFLAG_OVF) {
+    missedClock();
+    TC3->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;   // writing 1 clears the flag
+  }
+}
+
 void TCC0_Handler() {
   if (TCC0->INTFLAG.reg & TCC_INTFLAG_MC1) {
     sync(TCC0, TCC_SYNCBUSY_CC1);
     capture(TCC0->CC[1].reg);
+    TCC0->INTFLAG.reg = TCC_INTFLAG_MC1;    // writing 1 clears the flag
   }
-  TCC0->INTFLAG.reg = TCC_INTFLAG_MC1;    // writing 1 clears the flag
 }
 
 void TCC1_Handler() {
