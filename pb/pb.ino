@@ -106,9 +106,9 @@ void loop() {
       active = true;
     }
   } else {
-    auto bpm = currentBpm();
-    if (userState().userBpm != bpm) {
-      userState().userBpm = bpm;
+    auto status = ClockStatus::current();
+    if (status.running() && userState().userBpm != status.bpm) {
+      userState().userBpm = status.bpm;
       active = true;
     }
     persistState();

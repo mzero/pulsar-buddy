@@ -298,6 +298,9 @@ namespace {
     targetDivisor = target;
   }
 
+  bool clockPerlexed = false;
+
+
   template< typename T >
   inline T roundingDivide(T x, T q) {
     return (x + q / 2) / q;
@@ -359,34 +362,38 @@ namespace {
 
       uint32_t dNext =
         roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
-      dNext = constrain(dNext, divisorMin, divisorMax);
 
-      // record this in the capture buffer, and average it with up to
-      // captureBufferBeats' worth of measurements
-      captureSum += dNext;
-      if (captureCount >= captureBufferSpan) {
-        captureSum -= captureBuffer[captureNext];
-      } else {
-        captureCount += 1;
+      bool dOkay = divisorMin <= dNext && dNext <= divisorMax;
+      clockPerlexed = !dOkay;
+
+      if (dOkay) {
+        // record this in the capture buffer, and average it with up to
+        // captureBufferBeats' worth of measurements
+        captureSum += dNext;
+        if (captureCount >= captureBufferSpan) {
+          captureSum -= captureBuffer[captureNext];
+        } else {
+          captureCount += 1;
+        }
+        captureBuffer[captureNext] = (divisor_t)dNext;
+
+        // compute the average ext clk rate over the last captureBufferBeats
+        uint32_t dFilt = roundingDivide(captureSum, (uint32_t)captureCount);
+        captureHistory[captureNext] = (divisor_t)dFilt;
+
+        captureNext = (captureNext + 1) % captureBufferSpan;
+
+        // phase error (in Q)
+        q_t phase = sample % captureClkQ;
+        if (phase >= captureClkQHalf)
+          phase -= captureClkQ;
+
+        // adjust filterd divisor to fix the phase error over one beat
+        uint32_t dAdj = roundingDivide(dFilt * Q_PER_B, Q_PER_B - phase);
+        dAdj = constrain(dAdj, divisorMin, divisorMax);
+
+        setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
       }
-      captureBuffer[captureNext] = (divisor_t)dNext;
-
-      // compute the average ext clk rate over the last captureBufferBeats
-      uint32_t dFilt = roundingDivide(captureSum, (uint32_t)captureCount);
-      captureHistory[captureNext] = (divisor_t)dFilt;
-
-      captureNext = (captureNext + 1) % captureBufferSpan;
-
-      // phase error (in Q)
-      q_t phase = sample % captureClkQ;
-      if (phase >= captureClkQHalf)
-        phase -= captureClkQ;
-
-      // adjust filterd divisor to fix the phase error over one beat
-      uint32_t dAdj = roundingDivide(dFilt * Q_PER_B, Q_PER_B - phase);
-      dAdj = constrain(dAdj, divisorMin, divisorMax);
-
-      setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
     }
     captureLastSample = sample;
   }
@@ -406,7 +413,7 @@ namespace {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic error "-Wconversion"
 
-bpm_t currentBpm() {
+ClockStatus ClockStatus::current() {
   static auto updateAt = millis() - 1; // ensure update the first time
   static float reportedBpmf = 0;
   static bpm_t reportedBpm = 0;
@@ -428,7 +435,7 @@ bpm_t currentBpm() {
     reportedBpm = (bpm_t)(roundf(reportedBpmf));
   }
 
-  return reportedBpm;
+  return ClockStatus(reportedBpm, clockPerlexed ? Perplexed : Running);
 }
 
 void setBpm(bpm_t bpm) {

@@ -2,6 +2,7 @@
 #define _INCLUDE_UI_SYNC_H_
 
 #include "state.h"
+#include "timer_hw.h"
 #include "timing.h"
 #include "ui_field.h"
 
@@ -22,13 +23,13 @@ protected:
     virtual void redraw();
 
 private:
-    enum Mode { displayBPM, displaySync };
+    enum Mode { displayClock, displaySync };
 
     State& state;
     Mode mode;
 
     Mode modeAsDrawn;
-    bpm_t bpmAsDrawn;
+    ClockStatus clockAsDrawn;
     SyncMode pendingSync;
     SyncMode syncAsDrawn;
 };
