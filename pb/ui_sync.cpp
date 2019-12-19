@@ -167,7 +167,8 @@ void SyncField::redraw() {
       auto status = ClockStatus::current();
 
       switch (status.state) {
-        case ClockStatus::Running: {
+        case clockFreeRunning:
+        case clockSyncRunning: {
           // rotated coordinates of the field
           const int16_t xr = display.height() - (y + h);
           const int16_t yr = x;
@@ -180,12 +181,12 @@ void SyncField::redraw() {
           break;
         }
 
-        case ClockStatus::Paused: {
+        case clockPaused: {
           display.drawBitmap(x, y, SyncImages::paused, 15, 32, foreColor());
           break;
         }
 
-        case ClockStatus::Perplexed: {
+        case clockPerplexed: {
           auto image = SyncImages::clkbad;
           switch (state.syncMode) {
             case sync24ppqn:

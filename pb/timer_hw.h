@@ -1,51 +1,42 @@
 #ifndef _INCLUDE_TIMER_HW_H_
 #define _INCLUDE_TIMER_HW_H_
 
-#include "state.h"
 #include "timing.h"
 
-void initializeTimers(const State&, void (*onMeasure)());
+void initializeTimers();
+
+extern void isrMeasure();
+extern void isrClockCapture(q_t, q_t);
+extern void isrWatchdog();
 
 
+typedef uint16_t divisor_t;     // the quantum timer has a 16 bit counter
+float divisorToBpm(divisor_t);
+divisor_t divisorFromBpm(float);
+constexpr divisor_t divisorMin = 952;   // 300 bpm
+constexpr divisor_t divisorMax = 9524;  // 30 bpm
 
-struct ClockStatus {
+void setQuantumDivisor(divisor_t);
+void startQuantumEvents();
+void stopQuantumEvents();
+
+class PauseQuantum {
 public:
-  static ClockStatus current();
-
-  enum State : uint16_t {
-    Running = 0,
-    Paused = 1,
-    Perplexed = 2
-  };
-
-  inline bool running() const { return state == Running; }
-
-  bpm_t   bpm;
-  State   state;
-
-  inline ClockStatus(bpm_t b, State s) : bpm(b), state(s) { }
-  inline ClockStatus() : bpm(0), state(Paused) { }
- };
-
-inline bool operator==(const ClockStatus& rhs, const ClockStatus& lhs) {
-  return rhs.bpm == lhs.bpm && rhs.state == lhs.state;
-}
-inline bool operator!=(const ClockStatus& rhs, const ClockStatus& lhs) {
-  return !(rhs == lhs);
-}
+  PauseQuantum();
+  ~PauseQuantum();
+private:
+  bool wasRunning;
+};
 
 
-void setBpm(bpm_t);
-  // if sync'd, this resets the current BPM, but system will immediately try to
-  // sync back to externally driven tempo.
-void setSync(SyncMode);
+void readCounts(Timing&);
+void writeCounts(const Timing&);
+void zeroCounts();
+void writePeriods(const Timing&);
 
-// void midiClock();
+void resetWatchdog(q_t);
 
-void resetTimers(const Settings&);
-void updateTimers(const Settings&);
 
-void dumpTimer();
-void dumpCapture();
+void dumpTimers();
 
 #endif // _INCLUDE_TIMER_HW_H_

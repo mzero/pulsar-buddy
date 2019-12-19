@@ -1,8 +1,8 @@
 #ifndef _INCLUDE_UI_SYNC_H_
 #define _INCLUDE_UI_SYNC_H_
 
+#include "clock.h"
 #include "state.h"
-#include "timer_hw.h"
 #include "timing.h"
 #include "ui_field.h"
 

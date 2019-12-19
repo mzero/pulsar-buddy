@@ -5,27 +5,39 @@
 #include <Arduino.h>
 #include <wiring_private.h>
 
-#include "timing.h"
+
+namespace {
+  const float cpuFactor = 60.0f * F_CPU / Q_PER_B;
+}
+
+float divisorToBpm(divisor_t divisor) {
+  return cpuFactor / (float)divisor;
+}
+
+divisor_t divisorFromBpm(float bpm) {
+  return (divisor_t)(roundf(cpuFactor / bpm));
+}
 
 
 // *** NOTE: This implementation is for the SAMD21 only.
 #if defined(__SAMD21__) || defined(TC4) || defined(TC5)
 
 /* Timer Diagram:
-                      +--> WATCHDOG --> timeout
-                      |    (TC3)
-                      |
-  QUANTUM --> event --+--> BEAT --> waveform
-   (TC4)              |    (TC5)
-                      |
-                      +--> SEQUENCE --> waveform
-                      |    (TCC0)
-                      |
-                      +--> MEASURE --> waveform
-                      |    (TCC1)
-                      |
-                      +--> TUPLET --> waveform
-                           (TCC2)
+
+  QUANTUM -+-> event --+--> BEAT --> waveform
+   (TC4)   |           |    (TC5)
+           |           |
+           |           +--> SEQUENCE --> waveform
+           |           |    (TCC0)
+           |           |
+           |           +--> MEASURE --> waveform
+           |           |    (TCC1)
+           |           |
+           |           +--> TUPLET --> waveform
+           |                (TCC2)
+           |
+           +-> event ----> WATCHDOG --> timeout
+                           (TC3)
 
   Note on synchonization:
 
@@ -39,45 +51,41 @@
 */
 
 namespace {
+  Tc* const quantumTc = TC4;
+  Tc* const watchdogTc = TC3;
+  Tc* const beatTc = TC5;
+  Tcc* const sequenceTcc = TCC0;
+  Tcc* const measureTcc = TCC1;
+  Tcc* const tupletTcc = TCC2;
 
-  void defaultCallback() { }
-  void (*tcc1callback)() = defaultCallback;
 
-
-#define QUANTUM_EVENT_CHANNEL   5
-#define EXTCLK_EVENT_CHANNEL    6
-
-  void startQuantumEvents() {
-    EVSYS->CHANNEL.reg
-      = EVSYS_CHANNEL_CHANNEL(QUANTUM_EVENT_CHANNEL)
-      | EVSYS_CHANNEL_EVGEN(EVSYS_ID_GEN_TC4_OVF)
-      | EVSYS_CHANNEL_PATH_ASYNCHRONOUS
-      ;
-  }
-
-  void stopQuantumEvents() {
-    EVSYS->CHANNEL.reg
-      = EVSYS_CHANNEL_CHANNEL(QUANTUM_EVENT_CHANNEL)
-      | EVSYS_CHANNEL_EVGEN(0)
-      | EVSYS_CHANNEL_PATH_ASYNCHRONOUS
-      ;
-  }
+#define QUANTUM_A_EVENT_CHANNEL   5
+#define QUANTUM_B_EVENT_CHANNEL   6
+#define EXTCLK_EVENT_CHANNEL      7
 
   void initializeEvents() {
     for ( uint16_t user :
-          { EVSYS_ID_USER_TC3_EVU,
-            EVSYS_ID_USER_TC5_EVU,
+          { EVSYS_ID_USER_TC5_EVU,
             EVSYS_ID_USER_TCC0_EV_0,
             EVSYS_ID_USER_TCC1_EV_0,
             EVSYS_ID_USER_TCC2_EV_0}
         ) {
       EVSYS->USER.reg
         = EVSYS_USER_USER(user)
-        | EVSYS_USER_CHANNEL(QUANTUM_EVENT_CHANNEL + 1)
+        | EVSYS_USER_CHANNEL(QUANTUM_A_EVENT_CHANNEL + 1)
             // yes, +1 as per data sheet
         ;
     }
-    startQuantumEvents();
+
+    EVSYS->USER.reg
+      = EVSYS_USER_USER(EVSYS_ID_USER_TC3_EVU)
+      | EVSYS_USER_CHANNEL(QUANTUM_B_EVENT_CHANNEL + 1)
+      ;
+    EVSYS->CHANNEL.reg
+      = EVSYS_CHANNEL_CHANNEL(QUANTUM_B_EVENT_CHANNEL)
+      | EVSYS_CHANNEL_EVGEN(EVSYS_ID_GEN_TC4_OVF)
+      | EVSYS_CHANNEL_PATH_ASYNCHRONOUS
+      ;
 
     EVSYS->USER.reg
       = EVSYS_USER_USER(EVSYS_ID_USER_TCC0_MC_1)
@@ -90,46 +98,77 @@ namespace {
       ;
   }
 
-#if 0
-  void simulateExtClk() {
-    static bool firstTime = true;
+  bool quantumRunning = false;
+}
 
-    if (firstTime) {
-      GCLK->CLKCTRL.reg
-        = GCLK_CLKCTRL_CLKEN
-        | GCLK_CLKCTRL_GEN_GCLK0
-        | GCLK_CLKCTRL_ID(GCM_EVSYS_CHANNEL_6);
+void setQuantumDivisor(divisor_t d) {
+  quantumTc->COUNT16.CC[0].reg = (divisor_t)(d - 1);
+}
 
-      EVSYS->CTRL.reg
-        = EVSYS_CTRL_GCLKREQ
-        ;
-
-      EVSYS->USER.reg
-        = EVSYS_USER_USER(EVSYS_ID_USER_TCC0_MC_1)
-        | EVSYS_USER_CHANNEL(EXTCLK_EVENT_CHANNEL + 1)
-        ;
-      EVSYS->CHANNEL.reg
-        = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
-        | EVSYS_CHANNEL_PATH_SYNCHRONOUS
-        | EVSYS_CHANNEL_EDGSEL_RISING_EDGE
-        ;
-
-      firstTime = false;
-    }
+void startQuantumEvents() {
+  if (!quantumRunning) {
     EVSYS->CHANNEL.reg
-        = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
-        | EVSYS_CHANNEL_SWEVT
-        ;
+      = EVSYS_CHANNEL_CHANNEL(QUANTUM_A_EVENT_CHANNEL)
+      | EVSYS_CHANNEL_EVGEN(EVSYS_ID_GEN_TC4_OVF)
+      | EVSYS_CHANNEL_PATH_ASYNCHRONOUS
+      ;
+    quantumRunning = true;
   }
+}
+
+void stopQuantumEvents() {
+  if (quantumRunning) {
+    EVSYS->CHANNEL.reg
+      = EVSYS_CHANNEL_CHANNEL(QUANTUM_A_EVENT_CHANNEL)
+      | EVSYS_CHANNEL_EVGEN(0)
+      | EVSYS_CHANNEL_PATH_ASYNCHRONOUS
+      ;
+    quantumRunning = false;
+  }
+}
+
+PauseQuantum::PauseQuantum()
+  : wasRunning(quantumRunning)
+  { if (wasRunning) stopQuantumEvents(); }
+
+PauseQuantum::~PauseQuantum()
+  { if (wasRunning) startQuantumEvents(); }
+
+
+#if 0
+void simulateExtClk() {
+  static bool firstTime = true;
+
+  if (firstTime) {
+    GCLK->CLKCTRL.reg
+      = GCLK_CLKCTRL_CLKEN
+      | GCLK_CLKCTRL_GEN_GCLK0
+      | GCLK_CLKCTRL_ID(GCM_EVSYS_CHANNEL_6);
+
+    EVSYS->CTRL.reg
+      = EVSYS_CTRL_GCLKREQ
+      ;
+
+    EVSYS->USER.reg
+      = EVSYS_USER_USER(EVSYS_ID_USER_TCC0_MC_1)
+      | EVSYS_USER_CHANNEL(EXTCLK_EVENT_CHANNEL + 1)
+      ;
+    EVSYS->CHANNEL.reg
+      = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
+      | EVSYS_CHANNEL_PATH_SYNCHRONOUS
+      | EVSYS_CHANNEL_EDGSEL_RISING_EDGE
+      ;
+
+    firstTime = false;
+  }
+  EVSYS->CHANNEL.reg
+      = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
+      | EVSYS_CHANNEL_SWEVT
+      ;
+}
 #endif
 
-  Tc* const quantumTc = TC4;
-  Tc* const watchdogTc = TC3;
-  Tc* const beatTc = TC5;
-  Tcc* const sequenceTcc = TCC0;
-  Tcc* const measureTcc = TCC1;
-  Tcc* const tupletTcc = TCC2;
-
+namespace {
   // NOTE: All TC units are used in 16 bit mode.
 
   inline void sync(Tc* tc) {
@@ -207,294 +246,76 @@ namespace {
     sync(tcc, TCC_SYNCBUSY_ENABLE);
   }
 
-  void readCounts(Timing& counts) {
-    // request read sync, with command written to ctrlb
-    sync(measureTcc, TCC_SYNCBUSY_CTRLB);
-    sync(sequenceTcc, TCC_SYNCBUSY_CTRLB);
-    sync(tupletTcc, TCC_SYNCBUSY_CTRLB);
-    measureTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
-    sequenceTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
-    tupletTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
-
-    // wait for command to complete
-    while (measureTcc->CTRLBSET.bit.CMD);
-    while (sequenceTcc->CTRLBSET.bit.CMD);
-    while (tupletTcc->CTRLBSET.bit.CMD);
-
-    // sync for count (probably redudant with the above?)
-    sync(measureTcc, TCC_SYNCBUSY_COUNT);
-    sync(sequenceTcc, TCC_SYNCBUSY_COUNT);
-    sync(tupletTcc, TCC_SYNCBUSY_COUNT);
-    counts.measure = measureTcc->COUNT.reg;
-    counts.sequence = sequenceTcc->COUNT.reg;
-    counts.beat = qcast(beatTc->COUNT16.COUNT.reg);
-    counts.tuplet = tupletTcc->COUNT.reg;
-  }
-
-  void writeCounts(Timing& counts) {
-    // sync as a group - though quantum is stopped, so shouldn't matter
-    sync(measureTcc, TCC_SYNCBUSY_COUNT);
-    sync(sequenceTcc, TCC_SYNCBUSY_COUNT);
-    sync(tupletTcc, TCC_SYNCBUSY_COUNT);
-
-    measureTcc->COUNT.reg = counts.measure;
-    sequenceTcc->COUNT.reg = counts.sequence;
-    beatTc->COUNT16.COUNT.reg = static_cast<uint16_t>(counts.beat);
-    tupletTcc->COUNT.reg = counts.tuplet;
-  }
-
-  Timing activePeriods;
-
-  void writePeriods(Timing& periods) {
-    // sync as a group - though quantum is stopped, so shouldn't matter
-    sync(measureTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
-    sync(sequenceTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
-    sync(tupletTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
-
-    measureTcc->PER.reg = periods.measure - 1;
-    sequenceTcc->PER.reg = periods.sequence - 1;
-    beatTc->COUNT16.CC[0].reg = static_cast<uint16_t>(periods.beat - 1);
-    tupletTcc->PER.reg = periods.tuplet - 1;
-
-    measureTcc->CC[0].reg = min(Q_PER_B, periods.measure) / 4 - 1;
-    sequenceTcc->CC[0].reg = min(Q_PER_B, periods.sequence) / 4 - 1;
-    beatTc->COUNT16.CC[1].reg = static_cast<uint16_t>(periods.beat / 4 - 1);
-    tupletTcc->CC[0].reg = min(Q_PER_B, periods.tuplet) / 4 - 1;
-
-    activePeriods = periods;
-  }
-
-// In this section of code, be very careful about numeric types
-#pragma GCC diagnostic push
-#pragma GCC diagnostic error "-Wconversion"
-
-  // TC4 has a 16 bit counter
-  typedef uint16_t divisor_t;
-  const float cpuFactor = 60.0f * F_CPU / Q_PER_B;
-
-
-  float divisorToBpm(divisor_t divisor) {
-    return cpuFactor / (float)divisor;
-  }
-
-  divisor_t divisorFromBpm(float bpm) {
-    return (divisor_t)(roundf(cpuFactor / bpm));
-  }
-
-  constexpr divisor_t divisorMin = 952;
-  constexpr divisor_t divisorMax = 9524;
-
-  // the divisor currently set on the timer, may jitter to correct phase
-  divisor_t activeDivisor = 0;  // so it will be set the first time
-
-  // the divisor that matches the sync'd BPM
-  divisor_t targetDivisor = 0;
-
-  void setDivisors(divisor_t target, divisor_t active) {
-    if (activeDivisor != active) {
-      // FIXME: would be better to adjust count to match remaining fration used
-      // would be more efficient to keep previous divisor so no need to sync
-      // read it back from the timer again
-      quantumTc->COUNT16.CC[0].reg = (divisor_t)(active - 1);
-      activeDivisor = active;
-    }
-
-    targetDivisor = target;
-  }
-
-  bool clockPerlexed = false;
-  bool clockStopped = false;
-
-
-  template< typename T >
-  inline T roundingDivide(T x, T q) {
-    return (x + q / 2) / q;
-  }
-
-  // These are used to communicate changes in the clocking to the interrupt
-  // service routine.
-  volatile int externalClocksPerBeat = 0;
-  volatile bool pendingExternalClocksPerBeatChange = false;
-
-  // These variables "belong" to the capture() interrupt service routine.
-  // They should not be modified, or even read, outside of it. They are
-  // defined here only so debugging code can dump them.
-  int       capturesPerBeat = 0;
-  q_t       captureClkQ = 0;
-  q_t       captureClkQHalf = 0;
-  q_t       captureSequencePeriod = 0;
-  const int captureBufferBeats = 2;
-  const int captureBufferSize = captureBufferBeats * 48;
-  divisor_t captureBuffer[captureBufferSize];
-  divisor_t captureHistory[captureBufferSize];
-  int       captureBufferSpan;
-  int       captureNext = 0;
-  uint32_t  captureSum = 0;
-  int       captureCount = 0;
-
-  q_t captureLastSample = 0;
-
-  void missedClock() {
-    if (capturesPerBeat > 0) {
-      stopQuantumEvents();
-      clockStopped = true;
-    }
-  }
-
-  void noteClock() {
-    watchdogTc->COUNT16.COUNT.reg = (uint16_t)(captureClkQ * 2);
-    if (watchdogTc->COUNT16.STATUS.bit.STOP)
-      watchdogTc->COUNT16.CTRLBSET.reg = TC_CTRLBSET_CMD_RETRIGGER;
-    if (clockStopped) {
-      // reset sequence to start?
-      startQuantumEvents();
-      clockStopped = false;
-    }
-  }
-
-  void capture(q_t sample) {
-    if (pendingExternalClocksPerBeatChange) {
-      int perBeat = constrain(externalClocksPerBeat, 0, captureBufferSize);
-      if (capturesPerBeat != perBeat) {
-        capturesPerBeat = perBeat;
-        captureClkQ = Q_PER_B / perBeat;
-        captureClkQHalf = captureClkQ / 2;
-        captureBufferSpan = captureBufferBeats * perBeat;
-        captureNext = 0;
-        captureSum = 0;
-        captureCount = 0;
-        captureLastSample = 0;
-      }
-      pendingExternalClocksPerBeatChange = false;
-    }
-
-    if (capturesPerBeat == 0)     // not sync'd
-      return;
-
-    noteClock();
-
-    if (captureSequencePeriod != activePeriods.sequence) {
-      captureSequencePeriod = activePeriods.sequence;
-      captureLastSample = 0;    // can't rely on last sanple if period changd
-    }
-
-    if (captureLastSample > 0) {
-
-      // compute current ext clk rate, as a divisor
-      q_t qdiff =
-        (sample + captureSequencePeriod - captureLastSample)
-        % captureSequencePeriod;
-
-      uint32_t dNext =
-        roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
-
-      bool dOkay = divisorMin <= dNext && dNext <= divisorMax;
-      clockPerlexed = !dOkay;
-
-      if (dOkay) {
-        // record this in the capture buffer, and average it with up to
-        // captureBufferBeats' worth of measurements
-        captureSum += dNext;
-        if (captureCount >= captureBufferSpan) {
-          captureSum -= captureBuffer[captureNext];
-        } else {
-          captureCount += 1;
-        }
-        captureBuffer[captureNext] = (divisor_t)dNext;
-
-        // compute the average ext clk rate over the last captureBufferBeats
-        uint32_t dFilt = roundingDivide(captureSum, (uint32_t)captureCount);
-        captureHistory[captureNext] = (divisor_t)dFilt;
-
-        captureNext = (captureNext + 1) % captureBufferSpan;
-
-        // phase error (in Q)
-        q_t phase = sample % captureClkQ;
-        if (phase >= captureClkQHalf)
-          phase -= captureClkQ;
-
-        // adjust filterd divisor to fix the phase error over one beat
-        uint32_t dAdj = roundingDivide(dFilt * Q_PER_B, Q_PER_B - phase);
-        dAdj = constrain(dAdj, divisorMin, divisorMax);
-
-        setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
-      }
-    }
-    captureLastSample = sample;
-  }
-
-  void resetCapture(int perBeat) {
-    // noInterrupts();  // shouldn't be needed given the access pattern
-    externalClocksPerBeat = perBeat;
-    pendingExternalClocksPerBeatChange = true;
-    // interrupts();
-  }
-
-#pragma GCC diagnostic pop
 }
 
 
-// In this section of code, be very careful about numeric types
-#pragma GCC diagnostic push
-#pragma GCC diagnostic error "-Wconversion"
+void readCounts(Timing& counts) {
+  // request read sync, with command written to ctrlb
+  sync(measureTcc, TCC_SYNCBUSY_CTRLB);
+  sync(sequenceTcc, TCC_SYNCBUSY_CTRLB);
+  sync(tupletTcc, TCC_SYNCBUSY_CTRLB);
+  measureTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
+  sequenceTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
+  tupletTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
 
-ClockStatus ClockStatus::current() {
-  static auto updateAt = millis() - 1; // ensure update the first time
-  static float reportedBpmf = 0;
-  static bpm_t reportedBpm = 0;
+  // wait for command to complete
+  while (measureTcc->CTRLBSET.bit.CMD);
+  while (sequenceTcc->CTRLBSET.bit.CMD);
+  while (tupletTcc->CTRLBSET.bit.CMD);
 
-  auto now = millis();
-  if (updateAt < now) {
-    updateAt = max(updateAt + 100, now + 10);
-      // recompute only 10x a second, on a regular basis, but don't get behind
-
-    auto targetBpmf = divisorToBpm(targetDivisor);
-    if (fabsf(targetBpmf - reportedBpmf) < 0.5f) {
-      // moving a little bit, so just slew slowly
-      reportedBpmf = (10.0f * reportedBpmf + targetBpmf) / 11.0f;
-    } else {
-      // moved a lot
-      reportedBpmf = targetBpmf;
-    }
-
-    reportedBpm = (bpm_t)(roundf(reportedBpmf));
-  }
-
-  return ClockStatus(
-    reportedBpm,
-    clockStopped ? Paused : (clockPerlexed ? Perplexed : Running));
+  // sync for count (probably redudant with the above?)
+  sync(measureTcc, TCC_SYNCBUSY_COUNT);
+  sync(sequenceTcc, TCC_SYNCBUSY_COUNT);
+  sync(tupletTcc, TCC_SYNCBUSY_COUNT);
+  counts.measure = measureTcc->COUNT.reg;
+  counts.sequence = sequenceTcc->COUNT.reg;
+  counts.beat = qcast(beatTc->COUNT16.COUNT.reg);
+  counts.tuplet = tupletTcc->COUNT.reg;
 }
 
-void setBpm(bpm_t bpm) {
-  bpm = constrain(bpm, bpmMin, bpmMax);
-  divisor_t d = divisorFromBpm((float)bpm);
-  setDivisors(d, d);
+void writeCounts(const Timing& counts) {
+  // sync as a group - though quantum is stopped, so shouldn't matter
+  sync(measureTcc, TCC_SYNCBUSY_COUNT);
+  sync(sequenceTcc, TCC_SYNCBUSY_COUNT);
+  sync(tupletTcc, TCC_SYNCBUSY_COUNT);
+
+  measureTcc->COUNT.reg = counts.measure;
+  sequenceTcc->COUNT.reg = counts.sequence;
+  beatTc->COUNT16.COUNT.reg = static_cast<uint16_t>(counts.beat);
+  tupletTcc->COUNT.reg = counts.tuplet;
 }
 
-void setSync(SyncMode sync) {
-  int clocksPerBeat = 0;
-  switch (sync) {
-    case syncFixed: clocksPerBeat = 0; break;
-    default:
-      if (sync & syncExternalFlag) {
-        clocksPerBeat = sync & syncPPQNMask;
-      } else {
-        clocksPerBeat = 0;
-      }
-  }
-
-  resetCapture(clocksPerBeat);
+void zeroCounts() {
+  Timing zeros = { 0, 0, 0, 0 };
+  writeCounts(zeros);
 }
 
-#pragma GCC diagnostic pop
+void writePeriods(const Timing& periods) {
+  // sync as a group - though quantum is stopped, so shouldn't matter
+  sync(measureTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
+  sync(sequenceTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
+  sync(tupletTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
+
+  measureTcc->PER.reg = periods.measure - 1;
+  sequenceTcc->PER.reg = periods.sequence - 1;
+  beatTc->COUNT16.CC[0].reg = static_cast<uint16_t>(periods.beat - 1);
+  tupletTcc->PER.reg = periods.tuplet - 1;
+
+  measureTcc->CC[0].reg = min(Q_PER_B, periods.measure) / 4 - 1;
+  sequenceTcc->CC[0].reg = min(Q_PER_B, periods.sequence) / 4 - 1;
+  beatTc->COUNT16.CC[1].reg = static_cast<uint16_t>(periods.beat / 4 - 1);
+  tupletTcc->CC[0].reg = min(Q_PER_B, periods.tuplet) / 4 - 1;
+}
 
 
+void resetWatchdog(q_t interval)
+{
+    watchdogTc->COUNT16.COUNT.reg =
+      (uint16_t)(constrain(0x10000 - interval, 0, 0xffff));
+}
 
-void initializeTimers(const State& state, void (*onMeasure)()) {
 
-  tcc1callback = onMeasure;
-
-
+void initializeTimers() {
   /** POWER **/
 
   PM->APBAMASK.reg
@@ -555,9 +376,6 @@ void initializeTimers(const State& state, void (*onMeasure)()) {
     = TC_EVCTRL_OVFEO
     ;
 
-  setBpm(state.userBpm);
-  setSync(state.syncMode);
-
   enable(quantumTc);
 
 
@@ -570,11 +388,6 @@ void initializeTimers(const State& state, void (*onMeasure)()) {
     | TC_CTRLA_PRESCALER_DIV1
     | TC_CTRLA_RUNSTDBY  // FIXME: should this be here?
     | TC_CTRLA_PRESCSYNC_GCLK
-    ;
-
-  watchdogTc->COUNT16.CTRLBSET.reg
-    = TC_CTRLBSET_DIR
-    | TC_CTRLBSET_ONESHOT
     ;
 
   watchdogTc->COUNT16.EVCTRL.reg
@@ -635,106 +448,52 @@ void initializeTimers(const State& state, void (*onMeasure)()) {
 
   initializeTcc(tupletTcc);
   pinPeripheral(PIN_SPI_MISO, PIO_TIMER);
-
-  resetTimers(state.settings);
 }
 
-void resetTimers(const Settings& settings) {
-  Timing periods;
-  Timing counts = { 0, 0, 0 };
 
-  computePeriods(settings, periods);
-
-  stopQuantumEvents();
-  writeCounts(counts);
-  writePeriods(periods);
-  startQuantumEvents();
-}
-
-void updateTimers(const Settings& settings) {
-  Timing periods;
+void dumpTimers() {
   Timing counts;
 
-  computePeriods(settings, periods);
+  Serial.printf("quantum events %s\n",
+    quantumRunning ? "running" : "stopped");
 
-  stopQuantumEvents();
-  readCounts(counts);
-  adjustOffsets(periods, counts);
-  writeCounts(counts);
-  writePeriods(periods);
-  startQuantumEvents();
-}
+  {
+    PauseQuantum pq;
+    readCounts(counts);
+  }
 
-#if 0
-void midiClock() {
-  simulateExtClk();
-}
-#endif
-
-void dumpTimer() {
-  Timing counts;
-
-  stopQuantumEvents();
-  uint16_t quantumCount = quantumTc->COUNT16.COUNT.reg;
-  readCounts(counts);
-  startQuantumEvents();
-
-  Serial.println("dumpTimer counts:");
-  Serial.printf("  q = %d / %d\n", quantumCount, activeDivisor);
   dumpTiming(counts);
 
   uint16_t watchCount = watchdogTc->COUNT16.COUNT.reg;
   Serial.printf("watchdogTimer count: %d\n", watchCount);
 }
 
-void dumpCapture() {
-  Serial.printf("captures per beat: %d\n", capturesPerBeat);
-  Serial.printf("capture count: %d\n", captureCount);
-  if (capturesPerBeat == 0)
-    return;
 
-  uint32_t sum = 0;
 
-  for (int i = 0; i < captureCount; ++i) {
-    sum += captureBuffer[i];
-    Serial.printf("[%2d] %8d -- %8d\n", i, captureBuffer[i], captureHistory[i]);
-  }
-
-  if (captureCount > 0)
-    Serial.printf("Sum: %8d, Average: %8d\n\n",
-      sum, roundingDivide(sum, (uint32_t)captureCount));
-
-  Serial.printf("captureSum = %d\n", captureSum);
-
-  int activeBpm100 = (int)(roundf(100.0f * divisorToBpm(activeDivisor)));
-  int targetBpm100 = (int)(roundf(100.0f * divisorToBpm(targetDivisor)));
-
-  Serial.printf("active: %3d.%02d bpm - %5d divisor  |  "
-                "target: %3d.%02d bpm - %5d divisor\n",
-    activeBpm100 / 100, activeBpm100 % 100, activeDivisor,
-    targetBpm100 / 100, targetBpm100 % 100, targetDivisor);
-}
-
-void TC3_Handler() {
-  if (TC3->COUNT16.INTFLAG.reg & TC_INTFLAG_OVF) {
-    missedClock();
-    TC3->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;   // writing 1 clears the flag
-  }
-}
 
 void TCC0_Handler() {
   if (TCC0->INTFLAG.reg & TCC_INTFLAG_MC1) {
-    sync(TCC0, TCC_SYNCBUSY_CC1);
-    capture(TCC0->CC[1].reg);
+    sync(sequenceTcc, TCC_SYNCBUSY_CC1);
+    auto sequenceCapture = sequenceTcc->CC[1].reg;
+    auto watchdogCapture = watchdogTc->COUNT16.COUNT.reg;
+    isrClockCapture(sequenceCapture, watchdogCapture);
     TCC0->INTFLAG.reg = TCC_INTFLAG_MC1;    // writing 1 clears the flag
   }
 }
 
 void TCC1_Handler() {
   if (TCC1->INTFLAG.reg & TCC_INTFLAG_OVF) {
-    tcc1callback();
+    isrMeasure();
     TCC1->INTFLAG.reg = TCC_INTFLAG_OVF;  // writing 1 clears the flag
   }
 }
 
-#endif // __SAMD21__ and used TC and TCC units
+void TC3_Handler() {
+  if (TC3->COUNT16.INTFLAG.reg & TC_INTFLAG_OVF) {
+    isrWatchdog();
+    TC3->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;   // writing 1 clears the flag
+  }
+}
+
+
+#endif // __SAMD21__

@@ -40,8 +40,8 @@ enum SyncMode : uint8_t {
 struct State {
   Settings    settings;
   uint8_t     memoryIndex;
-  SyncMode    syncMode;     // not used yet
-  uint16_t    userBpm;      // not used yet
+  SyncMode    syncMode;
+  uint16_t    userBpm;
   uint16_t    reserved;
 };
 

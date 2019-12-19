@@ -4,6 +4,7 @@
 #include <usbmidi.h>
 #endif
 
+#include "clock.h"
 #include "display.h"
 #include "layout.h"
 #include "state.h"
@@ -53,9 +54,9 @@ Button oledButtonC(BUTTON_C);
 
 // ZeroRegOptions zeroOpts = { Serial, true };
 
-bool measureEvent = false;
+volatile bool measureEvent = false;
 
-void noteMeasure() {
+void isrMeasure() {
   measureEvent = true;
 }
 
@@ -73,7 +74,11 @@ void setup() {
   Serial.begin(115200);
 
   initializeState();
-  initializeTimers(userState(), noteMeasure);
+  initializeTimers();
+
+  setBpm(userState().userBpm);
+  setSync(userState().syncMode);
+  resetTiming(userState().settings);
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
@@ -101,7 +106,7 @@ void loop() {
   if (measureEvent) {
     measureEvent = false;
     if (pendingState()) {
-      resetTimers(userSettings());
+      updateTiming(userSettings());
       commitState();
       active = true;
     }
@@ -148,7 +153,7 @@ void loop() {
   }
 
   if (oledButtonA.update() == Button::Down) {
-    resetTimers(userSettings());
+    resetTiming(userSettings());
     active = true;
   }
 
@@ -159,8 +164,8 @@ void loop() {
 
   if (oledButtonC.update() == Button::Down) {
     // storeToMemory(1);
-    dumpCapture();
-    // dumpTimer();
+    dumpTimers();
+    dumpClock();
     active = true;
   }
 
