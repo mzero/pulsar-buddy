@@ -210,6 +210,9 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
       resetWatchdog(captureClkQWait);
     } else {
       setState(clockPerplexed);
+      resetWatchdog(4 * Q_PER_B);
+        // on perplexed, wait much long for absence of clock to signal
+        // paused
     }
 
   } else {

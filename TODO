@@ -2,16 +2,18 @@ TODO
 
 [] how to stay sync'd to the one?
 
-[] handle total sync drop gracefully
+[x] handle total sync drop gracefully
 	- restart as if from scratch
 	- display no-sync?
 	- sync wildly off?
 	- sequence length too short for sync mode
+	[x] better withSuspendedQuantum
+	[x] why the flash running when perplexed?
 
-[] accelleration of encoder when setting BPM?
+[] outputs need to be off when stopped (how?)
+[] starting on the 1 should mean all triggers fire on start
 
-[x] long press on BPM field doesn't work in all modes
-	- esp. after timeout
+[] look into saving when clock goes perplexed
 
 
 
@@ -34,9 +36,6 @@ TODO
 [] MIDI clock sync mode
 	[] timing to 24th
 	[] enable / disable event system for sw event on entry/exit
-	[] how to handle power issues?
-
-[] switch to explicit timing of external clock?
 
 [] make enums be uint8_t based
 	- probably not really worth it
@@ -63,9 +62,24 @@ QUESTIONS
 
 [] should tuplet load be sync'd to measure or full sequence?
 [] should sequence length, when reloaded, be reset to first measure?
-
+[] if only a tuplet change, then if sync'd on measure, should sequence restart or no?
 
 [] why doesn't TCC1.WO1 on PAD_SPI_RX (pin 0, PA11) work?
 
 
 
+SYNC
+----
+
+if computed rate is outside of BPM (divisor) range
+	- then BAD_SYNC condition
+	- show some form of broken / question icon
+	- ? show previous BPM?
+		- target is likely to have slewed up?
+
+if missed N (2?) clocks,
+	- then PAUSED_SYNC condition
+	- show previous BPM, but with a paused icon on top
+	- on next clock...
+		- restart capture (resetcapture() won't work because same sync rate)
+		- ? reset counters to start of sequence?
