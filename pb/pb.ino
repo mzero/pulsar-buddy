@@ -173,17 +173,27 @@ void loop() {
     active = true;
   }
 
+  static unsigned long nextDraw = 0;
+  static bool needsDraw = false;
+
   if (active) {
     selectionTimeout.activity();
     dimTimeout.activity();
-    drawAll(false);
+    needsDraw = true;
   } else {
     if (selectionTimeout.update()) {
       resetSelection();
-      drawAll(false);
+      needsDraw = true;
     }
     if (dimTimeout.update()) {
       display.dim(true);
     }
+  }
+
+  auto now = millis();
+  if (needsDraw || now > nextDraw) {
+    drawAll(false);
+    needsDraw = false;
+    nextDraw = now + 50;  // redraw 20x a second
   }
 }
