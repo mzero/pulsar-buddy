@@ -52,7 +52,9 @@ Button oledButtonA(BUTTON_A);
 Button oledButtonB(BUTTON_B);
 Button oledButtonC(BUTTON_C);
 
-// ZeroRegOptions zeroOpts = { Serial, true };
+#ifdef ZERO_REGS_H
+ZeroRegOptions zeroOpts = { Serial, true };
+#endif
 
 volatile bool measureEvent = false;
 
@@ -158,7 +160,9 @@ void loop() {
   }
 
   if (oledButtonB.update() == Button::Down) {
-    //printZeroRegs(zeroOpts);
+#ifdef ZERO_REGS_H
+    printZeroRegs(zeroOpts);
+#endif
     active = true;
   }
 
