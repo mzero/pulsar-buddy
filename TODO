@@ -1,18 +1,11 @@
 TODO
 
-[] how to stay sync'd to the one?
-
-[x] handle total sync drop gracefully
-	- restart as if from scratch
-	- display no-sync?
-	- sync wildly off?
-	- sequence length too short for sync mode
-	[x] better withSuspendedQuantum
-	[x] why the flash running when perplexed?
+[x] starting on the 1 should mean all triggers fire on start
 
 [] outputs need to be off when stopped (how?)
-[] starting on the 1 should mean all triggers fire on start
 
+[] how to stay sync'd to the one?
+	- one tap tempo input could reset to the 1!
 [] look into saving when clock goes perplexed
 
 

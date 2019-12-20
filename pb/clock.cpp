@@ -50,10 +50,19 @@ namespace {
     clockState = cs;
 
     if (runningState(cs))
-        startQuantumEvents();
-    else
-        stopQuantumEvents();
-        zeroCounts();
+      startQuantumEvents();
+    else {
+      stopQuantumEvents();
+
+      // set just "before" zero so first quantum after pause will trigger
+      // all the outputs
+      Timing preZeros;
+      preZeros.measure = activePeriods.measure - 1;
+      preZeros.sequence = activePeriods.sequence - 1;
+      preZeros.beat = activePeriods.beat - 1;
+      preZeros.tuplet = activePeriods.tuplet - 1;
+      writeCounts(preZeros);
+    }
   }
 
   void setMode(ClockMode cm) {
@@ -165,8 +174,13 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
       // can't rely on last sanple if period changd
   }
 
-  q_t sample = clockState != clockPerplexed ? sequenceSample : watchdogSample;
-  q_t period = clockState != clockPerplexed ? captureSequencePeriod : 0x10000;
+  q_t sample =
+    clockState == clockPaused ? 0    // treat this clock as start of the sequence
+    : clockState == clockPerplexed ? watchdogSample
+    : sequenceSample;
+  q_t period =
+    clockState == clockPerplexed ? 0x10000
+    : captureSequencePeriod;
 
   if (captureLastSampleValid) {
 
@@ -224,9 +238,9 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
         // so don't interpret slower than expected as stopped
     }
   }
+
   captureLastSampleValid = true;
-  captureLastSample =
-    clockState != clockPerplexed ? sequenceSample : watchdogSample;
+  captureLastSample = sample;
 }
 
 
