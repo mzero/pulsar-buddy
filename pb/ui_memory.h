@@ -41,7 +41,7 @@ public:
     : x(x), y(y), queryFunction(f), lastPending(false)
     { }
 
-  void render(bool refresh);
+  bool render(bool refresh);
 
 private:
   int16_t x;

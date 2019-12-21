@@ -180,8 +180,8 @@ namespace {
   }
 }
 
-void drawAll(bool refresh) {
-  display.dim(false);
+bool drawAll(bool refresh) {
+  bool drew = refresh;
 
   if (refresh) {
     display.clearDisplay();
@@ -189,36 +189,39 @@ void drawAll(bool refresh) {
   }
 
   // BPM area
-  fieldBpm.render(refresh);
+  drew |= fieldBpm.render(refresh);
 
   if (refresh) drawSeparator(16);
 
   // Repeat area
-  fieldNumberMeasures.render(refresh);
+  drew |= fieldNumberMeasures.render(refresh);
   if (refresh) {
     // the x
     display.drawLine(31, 12, 37, 18, WHITE);
     display.drawLine(31, 18, 37, 12, WHITE);
   }
-  fieldBeatsPerMeasure.render(refresh);
-  commonTimeSignatures.render(refresh);
-  fieldBeatUnit.render(refresh);
-  pendingLoopIndicator.render(refresh);
+  drew |= fieldBeatsPerMeasure.render(refresh);
+  drew |= commonTimeSignatures.render(refresh);
+  drew |= fieldBeatUnit.render(refresh);
+  drew |= pendingLoopIndicator.render(refresh);
 
   if (refresh) drawSeparator(64);
 
   // Tuplet area
-  fieldTupletCount.render(refresh);
-  commonTuplets.render(refresh);
-  fieldTupletTime.render(refresh);
-  fieldTupletUnit.render(refresh);
-  pendingTupletIndicator.render(refresh);
+  drew |= fieldTupletCount.render(refresh);
+  drew |= commonTuplets.render(refresh);
+  drew |= fieldTupletTime.render(refresh);
+  drew |= fieldTupletUnit.render(refresh);
+  drew |= pendingTupletIndicator.render(refresh);
 
   if (refresh) drawSeparator(109);
 
   // Memory area
-  fieldMemory.render(refresh);
-  pendingMemoryIndicator.render(refresh);
+  drew |= fieldMemory.render(refresh);
+  drew |= pendingMemoryIndicator.render(refresh);
 
-  display.display();
+  if (drew)
+    display.display();
+
+  return drew;
 }

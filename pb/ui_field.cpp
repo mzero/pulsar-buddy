@@ -1,13 +1,14 @@
 #include "ui_field.h"
 
 
-void Field::render(bool force) {
+bool Field::render(bool force) {
   if (!force && !isOutOfDate())
-    return;
+    return false;
 
   display.fillRect(x, y, w, h, backColor());
   redraw();
   selectedAsDrawn = selected;
+  return true;
 }
 
 void Field::select(bool s) {

@@ -108,7 +108,7 @@ void MemoryField::update(Encoder::Update update) {
 
 
 
-void PendingIndicator::render(bool refresh) {
+bool PendingIndicator::render(bool refresh) {
   bool pending = queryFunction();
   if (refresh || lastPending != pending) {
     lastPending = pending;
@@ -118,7 +118,10 @@ void PendingIndicator::render(bool refresh) {
         x + 3, y,
         x,     y + 3,
         pending ? WHITE : BLACK);
+
+    return true;
   }
+  return false;
 }
 
 

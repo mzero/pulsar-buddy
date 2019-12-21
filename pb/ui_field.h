@@ -19,8 +19,8 @@ public:
       selected(false), selectedAsDrawn(false)
     { };
 
-  void render(bool refresh);
-  inline void render() { render(false); };
+  bool render(bool refresh);
+  inline bool render() { return render(false); };
 
   virtual void select(bool s);
   inline void select() { select(true); };
