@@ -191,9 +191,21 @@ void loop() {
   }
 
   auto now = millis();
+  static bool saverDrawn = false;
+
   if (needsDraw || now > nextDraw) {
-    drawAll(false);
+    bool drew = drawAll(false);
     needsDraw = false;
     nextDraw = now + 50;  // redraw 20x a second
+
+    if (drew) {
+      if (saverDrawn)
+        drawAll(true);    // need to redraw if the saver had been drawn
+      display.dim(false);
+    }
+
+    saverDrawn = updateSaver(drew);
+  } else {
+    saverDrawn = updateSaver(false);
   }
 }
