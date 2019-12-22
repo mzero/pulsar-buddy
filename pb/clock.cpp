@@ -47,12 +47,22 @@ namespace {
   void setState(ClockState cs) {
     if (clockState == cs)
       return;
+
+    bool wasRunning = runningState(clockState);
+    bool setRunning = runningState(cs);
+
     clockState = cs;
 
-    if (runningState(cs))
+    if (wasRunning == setRunning)
+      return;
+
+    if (setRunning) {
+      forceTriggersOff(false);
       startQuantumEvents();
+    }
     else {
       stopQuantumEvents();
+      forceTriggersOff(true);
 
       // set just "before" zero so first quantum after pause will trigger
       // all the outputs

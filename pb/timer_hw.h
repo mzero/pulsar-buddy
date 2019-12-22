@@ -34,6 +34,8 @@ void writeCounts(const Timing&);
 void zeroCounts();
 void writePeriods(const Timing&);
 
+void forceTriggersOff(bool);
+
 void resetWatchdog(q_t);
 
 

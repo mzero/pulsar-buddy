@@ -2,13 +2,17 @@ TODO
 
 [x] starting on the 1 should mean all triggers fire on start
 
-[] outputs need to be off when stopped (how?)
+[x] outputs need to be off when stopped (how?)
 
 [] how to stay sync'd to the one?
 	- one tap tempo input could reset to the 1!
 [] look into saving when clock goes perplexed
 
+[] when ext sync'd display sometimes flickers to bright... implying a change
+	- find out what it is.
 
+[] Timeouts need one activity call to get going
+	- so does screen saver
 
 --- Later
 
@@ -17,6 +21,9 @@ TODO
 
 [] if no beats after X min... shut down display totally
 	- fire back on when beat detected
+	- implemented screen saver
+	[] ? should this only happen if no beats?
+	[] ? what about if on internal... ?
 
 [] need a UI for "apply right now!"
 [] need a UI for "really, reset the whole dang thing!"
@@ -33,6 +40,10 @@ TODO
 [] make enums be uint8_t based
 	- probably not really worth it
 
+[] Possible settings:
+	- always DIM display
+	- never screen save
+	- version display
 
 
 HARDWARE

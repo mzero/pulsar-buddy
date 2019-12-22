@@ -234,7 +234,6 @@ namespace {
       | TCC_DRVCTRL_INVEN6
       | TCC_DRVCTRL_INVEN7;
       // inverted, because output buffer swaps
-      // some times
 
     sync(tcc, TCC_SYNCBUSY_WAVE);
     tcc->WAVE.reg
@@ -305,6 +304,54 @@ void writePeriods(const Timing& periods) {
   sequenceTcc->CC[0].reg = min(Q_PER_B, periods.sequence) / 4 - 1;
   beatTc->COUNT16.CC[1].reg = static_cast<uint16_t>(periods.beat / 4 - 1);
   tupletTcc->CC[0].reg = min(Q_PER_B, periods.tuplet) / 4 - 1;
+}
+
+
+/*
+  Output pins are:
+                timer   wave    samd pin    arduino pin
+    SEQUENCE:   TCC0    WO4     PB10        29, PIN_SPI_MOSI
+    MEASURE:    TCC1    WO0     PA10         1, PIN_SERIAL1_TX
+    BEAT:       TC5     WO1     PB11        30, PIN_SPI_SCK
+    TUPLET:     TCC2    WO0     PA12        28, PIN_SPI_MISO
+
+    Despite the Adafruit's pinout diagram, these are the actual library pin
+    numbers for the SPI pins on the Feather M0 Express.
+
+  Input pins:
+    EXT CLK:                    PB08        15, PIN_A1
+    OTHER:                      PB09        16, PIN_A2
+*/
+
+namespace {
+
+  const std::initializer_list<uint8_t> outputPins =
+    {PIN_SPI_MOSI, PIN_SERIAL1_TX, PIN_SPI_SCK, PIN_SPI_MISO};
+
+  void initializePins() {
+    // Pins are configured as outputs, first, set to HIGH...
+    // ...then configured to output the from the peripheral multiplexor.
+    // This way, all triggers can be forced off (HIGH, they invert), by just
+    // disabling the multiplexor for them.
+
+    for (uint32_t pin : outputPins) {
+      pinMode(pin, OUTPUT);
+      digitalWrite(pin, HIGH);
+      pinPeripheral(pin, pin == PIN_SPI_MOSI ? PIO_TIMER_ALT : PIO_TIMER);
+    }
+
+    forceTriggersOff(true);
+
+    pinMode(PIN_A1, INPUT_PULLUP);
+    pinPeripheral(PIN_A1, PIO_EXTINT);
+  }
+}
+
+void forceTriggersOff(bool forceOff) {
+  for (uint32_t pin : outputPins)
+    PORT->Group[g_APinDescription[pin].ulPort]
+      .PINCFG[g_APinDescription[pin].ulPin]
+        .bit.PMUXEN = forceOff ? 0 : 1;
 }
 
 
@@ -427,27 +474,17 @@ void initializeTimers() {
 
   enable(beatTc);
 
-  pinPeripheral(PIN_SPI_SCK, PIO_TIMER);
-    // Despite the Adafruit pinout diagram, this is actuall pin 30
-    // on the Feather M0 Express. It is SAMD21's port PB11, and
-    // configuring it for function "E" (PIO_TIMER) maps it to TC5.WO1.
-
-
   initializeTcc(measureTcc);
-  pinPeripheral(PAD_SPI_RX, PIO_TIMER);
-  pinPeripheral(PAD_SPI_TX, PIO_TIMER);
   NVIC_SetPriority(TCC1_IRQn, 0);
   NVIC_EnableIRQ(TCC1_IRQn);
 
   initializeTcc(sequenceTcc);
-  pinPeripheral(PIN_SPI_MOSI, PIO_TIMER_ALT);
-  pinMode(PIN_A1, INPUT_PULLUP);
-  pinPeripheral(PIN_A1, PIO_EXTINT);
   NVIC_SetPriority(TCC0_IRQn, 0);
   NVIC_EnableIRQ(TCC0_IRQn);
 
   initializeTcc(tupletTcc);
-  pinPeripheral(PIN_SPI_MISO, PIO_TIMER);
+
+  initializePins();
 }
 
 
