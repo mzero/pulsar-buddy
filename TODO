@@ -8,8 +8,11 @@ TODO
 	- one tap tempo input could reset to the 1!
 [] look into saving when clock goes perplexed
 
-[] when ext sync'd display sometimes flickers to bright... implying a change
+[x] when ext sync'd display sometimes flickers to bright... implying a change
 	- find out what it is.
+	- fast moving clock threashold was too low
+
+[] probably should persist state only if it is stable
 
 [] Timeouts need one activity call to get going
 	- so does screen saver

@@ -258,6 +258,11 @@ ClockStatus ClockStatus::current() {
   static auto updateAt = millis() - 1; // ensure update the first time
   static float reportedBpmf = 0;
   static bpm_t reportedBpm = 0;
+  static const float fastThreasholdDeltaBpmf = 1.0f;
+    // If moving faster than this, then just jump
+    // TODO: Consider setting this lower to 0.5f
+    // That is good enough for the Digitakt, but too low for the the
+    // janky clock divider test rig I have
 
   auto now = millis();
   if (updateAt < now) {
@@ -265,7 +270,7 @@ ClockStatus ClockStatus::current() {
       // recompute only 10x a second, on a regular basis, but don't get behind
 
     auto targetBpmf = divisorToBpm(targetDivisor);
-    if (fabsf(targetBpmf - reportedBpmf) < 0.5f) {
+    if (fabsf(targetBpmf - reportedBpmf) < fastThreasholdDeltaBpmf) {
       // moving a little bit, so just slew slowly
       reportedBpmf = (10.0f * reportedBpmf + targetBpmf) / 11.0f;
     } else {
@@ -274,6 +279,19 @@ ClockStatus ClockStatus::current() {
     }
 
     reportedBpm = (bpm_t)(roundf(reportedBpmf));
+
+
+#if 0 // for plotting on the IDE plotter
+    int targetBpm100 = (int)(roundf(100.0f * targetBpmf));
+    int reportedBpm100 = (int)(roundf(100.0f * reportedBpmf));
+
+    Serial.printf(
+      "targetf:%d.%02d reportedf:%d.%02d reported:%d\n",
+      targetBpm100 / 100, targetBpm100 % 100,
+      reportedBpm100 / 100, reportedBpm100 % 100,
+      reportedBpm
+      );
+#endif
   }
 
   return ClockStatus(reportedBpm, clockState);
