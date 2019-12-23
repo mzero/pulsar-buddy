@@ -46,6 +46,9 @@ void setup() {
   setSync(userState().syncMode);
   resetTiming(userState().settings);
 
+  if (configuration.screen.alwaysDim)
+    display.dim(true);
+
   if (configuration.debug.waitForSerial) {
     display.clearDisplay();
     display.setTextColor(WHITE);
@@ -147,6 +150,8 @@ void loop() {
     selectionTimeout.activity();
     dimTimeout.activity();
     needsDraw = true;
+    if (!configuration.screen.alwaysDim)
+      display.dim(false);
   } else {
     if (selectionTimeout.update()) {
       resetSelection();
@@ -168,11 +173,12 @@ void loop() {
     if (drew) {
       if (saverDrawn)
         drawAll(true);    // need to redraw if the saver had been drawn
-      display.dim(false);
     }
 
-    saverDrawn = updateSaver(drew);
+    if (!configuration.screen.saverDisable)
+      saverDrawn = updateSaver(drew);
   } else {
-    saverDrawn = updateSaver(false);
+    if (!configuration.screen.saverDisable)
+      saverDrawn = updateSaver(false);
   }
 }
