@@ -5,6 +5,7 @@
 #endif
 
 #include "clock.h"
+#include "config.h"
 #include "controls.h"
 #include "display.h"
 #include "layout.h"
@@ -34,7 +35,10 @@ void setup() {
   auto s0 = sramUsed();
 
   Serial.begin(115200);
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
 
+  Configuration::initialize();
   initializeState();
   initializeTimers();
 
@@ -42,18 +46,18 @@ void setup() {
   setSync(userState().syncMode);
   resetTiming(userState().settings);
 
-  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
+  if (configuration.debug.waitForSerial) {
+    display.clearDisplay();
+    display.setTextColor(WHITE);
+    display.print("Waiting for serial connection....");
+    display.display();
 
-  display.clearDisplay();
-  display.setTextColor(WHITE);
-  display.print("Waiting for serial connection....");
-  display.display();
+    while (!Serial);
+       // wait for native usb, there is a delay in that call
+       // so no need for one here
+       // FIXME: Take this out for production
 
-  while (!Serial);
-     // wait for native usb, there is a delay in that call
-     // so no need for one here
-     // FIXME: Take this out for production
+  }
 
   drawAll(true);
   updateSaver(true);
