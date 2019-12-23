@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include "config.h"
+
 
 namespace {
 
@@ -46,8 +48,10 @@ void computePeriods(const Settings& s, Timing& p) {
   p.beat = qPerBeatUnit(s.tupletUnit);
   p.tuplet = qcast(s.tupletTime) * p.beat / qcast(s.tupletCount);
 
-  Serial.println("computed new periods:");
-  dumpTiming(p);
+  if (configuration.debug.timing) {
+    Serial.println("computed new periods:");
+    dumpTiming(p);
+  }
 }
 
 void adjustOffsets(const Timing& periods, Timing& offsets) {
@@ -61,7 +65,9 @@ void adjustOffsets(const Timing& periods, Timing& offsets) {
   offsets.beat = sequence % periods.beat;
   offsets.tuplet = sequence % periods.tuplet;
 
-  Serial.println("new offsets:");
-  dumpTiming(offsets);
+  if (configuration.debug.timing) {
+    Serial.println("new offsets:");
+    dumpTiming(offsets);
+  }
 }
 

@@ -39,6 +39,20 @@ void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
 
   Configuration::initialize();
+
+  if (configuration.debug.waitForSerial) {
+    display.clearDisplay();
+    display.setTextColor(WHITE);
+    display.print("Waiting for\nserial connection...");
+    display.display();
+
+    while (!Serial);
+       // wait for native usb, there is a delay in that call
+       // so no need for one here
+       // FIXME: Take this out for production
+
+  }
+
   initializeState();
   initializeTimers();
 
@@ -49,26 +63,13 @@ void setup() {
   if (configuration.screen.alwaysDim)
     display.dim(true);
 
-  if (configuration.debug.waitForSerial) {
-    display.clearDisplay();
-    display.setTextColor(WHITE);
-    display.print("Waiting for serial connection....");
-    display.display();
-
-    while (!Serial);
-       // wait for native usb, there is a delay in that call
-       // so no need for one here
-       // FIXME: Take this out for production
-
-  }
-
   drawAll(true);
   updateSaver(true);
   selectionTimeout.activity();
   dimTimeout.activity();
 
   auto s1 = sramUsed();
-  //Serial.printf("sram used: %d static, %d post-init\n", s0, s1);
+  Serial.printf("sram used: %d static, %d post-init\n", s0, s1);
 }
 
 

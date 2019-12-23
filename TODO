@@ -24,8 +24,34 @@ TODO
 
 --- Later
 
-[] Figure out production / debug build method
-	[] review LOG calls in flash.cpp
+[x] Configuration system:
+	- press encoder at boot to get to
+	- simple text UI
+	- just on/off flags (for now)
+	- stored in flash
+[x] Possible settings:
+	- always DIM display
+	- never screen save
+
+[x] Figure out production / debug build method
+
+
+[] Version number from somewhere!
+
+
+[] ? MIDI Clock code: include? or keep #ifdef'd? or configuration?
+	- currently using #if 0 in several places
+
+[] ? ZeroRegs: compile in for production? or keep out?
+
+[] Handle printing run-time errors
+	- write Serial if available, else to Display
+		- if writing to display, wait for press to resume
+	- a new Print subclass that does this
+	- use in Flash for errors
+	- use in timing for "shouldn't happen"
+
+
 
 [] if no beats after X min... shut down display totally
 	- fire back on when beat detected
@@ -48,10 +74,6 @@ TODO
 [] make enums be uint8_t based
 	- probably not really worth it
 
-[] Possible settings:
-	- always DIM display
-	- never screen save
-	- version display
 
 
 HARDWARE
@@ -77,6 +99,13 @@ QUESTIONS
 [] if only a tuplet change, then if sync'd on measure, should sequence restart or no?
 
 [] why doesn't TCC1.WO1 on PAD_SPI_RX (pin 0, PA11) work?
+
+
+NOTES
+-----
+- can set flags in platform.local.txt, like so:
+	compiler.c.extra_flags="-DEK_BUILD"
+	compiler.cpp.extra_flags="-DEK_BUILD"
 
 
 

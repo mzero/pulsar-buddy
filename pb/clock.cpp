@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "config.h"
 #include "timer_hw.h"
 
 
@@ -280,18 +281,18 @@ ClockStatus ClockStatus::current() {
 
     reportedBpm = (bpm_t)(roundf(reportedBpmf));
 
+    if (configuration.debug.plotClock) {
+      // for plotting on the IDE plotter
+      int targetBpm100 = (int)(roundf(100.0f * targetBpmf));
+      int reportedBpm100 = (int)(roundf(100.0f * reportedBpmf));
 
-#if 0 // for plotting on the IDE plotter
-    int targetBpm100 = (int)(roundf(100.0f * targetBpmf));
-    int reportedBpm100 = (int)(roundf(100.0f * reportedBpmf));
-
-    Serial.printf(
-      "targetf:%d.%02d reportedf:%d.%02d reported:%d\n",
-      targetBpm100 / 100, targetBpm100 % 100,
-      reportedBpm100 / 100, reportedBpm100 % 100,
-      reportedBpm
-      );
-#endif
+      Serial.printf(
+        "targetf:%d.%02d reportedf:%d.%02d reported:%d\n",
+        targetBpm100 / 100, targetBpm100 % 100,
+        reportedBpm100 / 100, reportedBpm100 % 100,
+        reportedBpm
+        );
+    }
   }
 
   return ClockStatus(reportedBpm, clockState);

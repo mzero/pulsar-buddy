@@ -161,9 +161,6 @@ void storeToMemory(int index) {
   _userState.memoryIndex = index;
   storage().settings[index-1] = _userState.settings;
 
-  Serial.print("memory save into ");
-  Serial.println(index);
-
   containerLog.save(container);
 }
 

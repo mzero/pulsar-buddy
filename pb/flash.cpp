@@ -2,6 +2,8 @@
 
 #include "Adafruit_SPIFlashBase.h"
 
+#include "config.h"
+
 
 #define DEBUG 1
 #if DEBUG
@@ -202,13 +204,15 @@ found:    // sometimes, a goto is just the thing!
     ;
   }
 
-  LOGLN("FlashMemoryLog begin:");
-  LOG("   data length        = "); LOGLN(layout.dataLength);
-  LOG("   entries per sector = "); LOGLN(layout.entriesPerSector);
-  LOG("   bitmap length      = "); LOGLN(layout.bitmapLength);
-  LOG("   current serial     = "); LOGLN(currentSerial);
-  LOG("   current sector     = "); LOGLN(currentSector);
-  LOG("   current index      = "); LOGLN(currentIndex);
+  if (configuration.debug.flash) {
+    Serial.println("FlashMemoryLog begin:");
+    Serial.printf( "   data length        = %4d\n", layout.dataLength);
+    Serial.printf( "   entries per sector = %4d\n", layout.entriesPerSector);
+    Serial.printf( "   bitmap length      = %4d\n", layout.bitmapLength);
+    Serial.printf( "   current serial     = %4d\n", currentSerial);
+    Serial.printf( "   current sector     = %4d\n", currentSector);
+    Serial.printf( "   current index      = %4d\n", currentIndex);
+  }
   return true;
 }
 
@@ -298,10 +302,12 @@ bool FlashMemoryLog::writeNext(const uint8_t* buf)
   currentSector = nextSector;
   currentIndex = nextIndex;
 
-  LOGLN("FlashMemoryLog wrote:");
-  LOG("   current serial     = "); LOGLN(currentSerial);
-  LOG("   current sector     = "); LOGLN(currentSector);
-  LOG("   current index      = "); LOGLN(currentIndex);
+  if (configuration.debug.flash) {
+    Serial.println("FlashMemoryLog wrote:");
+    Serial.printf("   current serial     = %4d\n", currentSerial);
+    Serial.printf("   current sector     = %4d\n", currentSector);
+    Serial.printf("   current index      = %4d\n", currentIndex);
+  }
 
   return true;
 }
