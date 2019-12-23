@@ -95,10 +95,13 @@ void setup() {
      // so no need for one here
      // FIXME: Take this out for production
 
-  auto s1 = sramUsed();
-  Serial.printf("sram used: %d static, %d post-init\n", s0, s1);
-
   drawAll(true);
+  updateSaver(true);
+  selectionTimeout.activity();
+  dimTimeout.activity();
+
+  auto s1 = sramUsed();
+  //Serial.printf("sram used: %d static, %d post-init\n", s0, s1);
 }
 
 
@@ -167,7 +170,7 @@ void loop() {
   }
 
   if (oledButtonC.update() == Button::Down) {
-    // storeToMemory(1);
+    Serial.println("-------------------------------------------------------");
     dumpTimers();
     dumpClock();
     active = true;

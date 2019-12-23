@@ -4,18 +4,23 @@ TODO
 
 [x] outputs need to be off when stopped (how?)
 
-[] how to stay sync'd to the one?
-	- one tap tempo input could reset to the 1!
-[] look into saving when clock goes perplexed
-
 [x] when ext sync'd display sometimes flickers to bright... implying a change
 	- find out what it is.
 	- fast moving clock threashold was too low
 
+[x] Timeouts need one activity call to get going
+	- so does screen saver
+
+
+[] how to stay sync'd to the one?
+	- one tap tempo input could reset to the 1!
+
+[] look into saving when clock goes perplexed
+[] look into getting perplexed when shifting to very fast tempos
+
 [] probably should persist state only if it is stable
 
-[] Timeouts need one activity call to get going
-	- so does screen saver
+
 
 --- Later
 
