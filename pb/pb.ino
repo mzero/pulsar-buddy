@@ -35,14 +35,14 @@ void setup() {
   auto s0 = sramUsed();
 
   Serial.begin(115200);
-  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
+  initializeDisplay();
 
   Configuration::initialize();
 
   if (configuration.debug.waitForSerial) {
     display.clearDisplay();
     display.setTextColor(WHITE);
+    display.setCursor(0, 0);
     display.print("Waiting for\nserial connection...");
     display.display();
 

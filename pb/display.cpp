@@ -16,6 +16,12 @@
 Adafruit_SSD1306 display =
   Adafruit_SSD1306(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire);
 
+void initializeDisplay() {
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C for 128x32
+  display.cp437();
+}
+
 void resetText() {
   display.setTextSize(1);
   display.setFont(&FONT);
