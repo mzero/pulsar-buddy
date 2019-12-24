@@ -1,15 +1,14 @@
 TODO
 
-[] Version number from somewhere!
 
-[] Handle printing run-time errors
+[x] Handle printing run-time errors
 	- write Serial if available, else to Display
 		- if writing to display, wait for press to resume
 	- a new Print subclass that does this
 	- use in Flash for errors
 	- use in timing for "shouldn't happen"
-	[] check and Serial write (or other error) when periods out of range
 
+[] Version number from somewhere!
 
 [] look into saving when clock goes perplexed
 [] look into getting perplexed when shifting to very fast tempos
@@ -31,6 +30,8 @@ TODO
 [] how to stay sync'd to the one?
 	- one tap tempo input could reset to the 1!
 
+[] check that various timer periods are in range
+	- and use critical.print() if not
 
 [] need a UI for "apply right now!"
 [] need a UI for "really, reset the whole dang thing!"

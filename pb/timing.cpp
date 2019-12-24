@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "config.h"
+#include "critical.h"
 
 
 namespace {
@@ -17,8 +18,7 @@ namespace {
     }
 
     // should never happen!
-    Serial.print("** Unknown beat unit: ");
-    Serial.println(b);
+    critical.printf("Unsupported beat unit: %d\n", b);
     return Q_PER_B;
   }
 
