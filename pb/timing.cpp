@@ -57,8 +57,10 @@ void computePeriods(const Settings& s, Timing& p) {
 void adjustOffsets(const Timing& periods, Timing& offsets) {
   q_t sequence = offsets.sequence % periods.sequence;
 
-  Serial.println("old offsets:");
-  dumpTiming(offsets);
+  if (configuration.debug.timing) {
+    Serial.println("old offsets:");
+    dumpTiming(offsets);
+  }
 
   offsets.sequence = sequence % periods.sequence;
   offsets.measure = sequence % periods.measure;
