@@ -7,6 +7,7 @@
 #include "clock.h"
 #include "config.h"
 #include "controls.h"
+#include "critical.h"
 #include "display.h"
 #include "layout.h"
 #include "state.h"
@@ -92,6 +93,12 @@ void loop() {
     persistState();
   }
 
+  switch (critical.update()) {
+    case Critical::inactive: break;
+    case Critical::active: return;
+    case Critical::closed: drawAll(true); break;
+  }
+
 #if 0
   USBMIDI.poll();
   while (USBMIDI.available()) {
@@ -134,6 +141,8 @@ void loop() {
 #ifdef ZERO_REGS_H
     printZeroRegs(zeroOpts);
 #endif
+    critical.printf("ouch @ %dms\n", millis());
+    critical.println("  something went wrong");
     active = true;
   }
 

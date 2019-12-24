@@ -1,19 +1,15 @@
 TODO
 
-[x] starting on the 1 should mean all triggers fire on start
+[] Version number from somewhere!
 
-[x] outputs need to be off when stopped (how?)
+[] Handle printing run-time errors
+	- write Serial if available, else to Display
+		- if writing to display, wait for press to resume
+	- a new Print subclass that does this
+	- use in Flash for errors
+	- use in timing for "shouldn't happen"
+	[] check and Serial write (or other error) when periods out of range
 
-[x] when ext sync'd display sometimes flickers to bright... implying a change
-	- find out what it is.
-	- fast moving clock threashold was too low
-
-[x] Timeouts need one activity call to get going
-	- so does screen saver
-
-
-[] how to stay sync'd to the one?
-	- one tap tempo input could reset to the 1!
 
 [] look into saving when clock goes perplexed
 [] look into getting perplexed when shifting to very fast tempos
@@ -24,55 +20,26 @@ TODO
 
 --- Later
 
-[x] Configuration system:
-	- press encoder at boot to get to
-	- simple text UI
-	- just on/off flags (for now)
-	- stored in flash
-[x] Possible settings:
-	- always DIM display
-	- never screen save
-
-[x] Figure out production / debug build method
-
-
-[] Version number from somewhere!
-
-
 [] ? MIDI Clock code: include? or keep #ifdef'd? or configuration?
 	- currently using #if 0 in several places
-
-[] ? ZeroRegs: compile in for production? or keep out?
-
-[] Handle printing run-time errors
-	- write Serial if available, else to Display
-		- if writing to display, wait for press to resume
-	- a new Print subclass that does this
-	- use in Flash for errors
-	- use in timing for "shouldn't happen"
-
-
-
-[] if no beats after X min... shut down display totally
-	- fire back on when beat detected
-	- implemented screen saver
-	[] ? should this only happen if no beats?
-	[] ? what about if on internal... ?
-
-[] need a UI for "apply right now!"
-[] need a UI for "really, reset the whole dang thing!"
-
-
-[] check and Serial write (or other error) when periods out of range
-
-[] speed up centerNumber by using the fixed size of digits in the font
-
 [] MIDI clock sync mode
 	[] timing to 24th
 	[] enable / disable event system for sw event on entry/exit
 
+[] ? ZeroRegs: compile in for production? or keep out?
+
+[] how to stay sync'd to the one?
+	- one tap tempo input could reset to the 1!
+
+
+[] need a UI for "apply right now!"
+[] need a UI for "really, reset the whole dang thing!"
+
+[] speed up centerNumber by using the fixed size of digits in the font
+
 [] make enums be uint8_t based
 	- probably not really worth it
+
 
 
 
