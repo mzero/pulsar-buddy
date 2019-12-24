@@ -3,16 +3,8 @@
 #include "Adafruit_SPIFlashBase.h"
 
 #include "config.h"
+#include "critical.h"
 
-
-#define DEBUG 1
-#if DEBUG
-  #define LOG(x)    Serial.print(x)
-  #define LOGLN(x)  Serial.println(x)
-#else
-  #define LOG(x)
-  #define LOGLN(x)
-#endif
 
 namespace {
 
@@ -105,33 +97,36 @@ bool FlashMemoryLog::begin(uint32_t startSector, uint32_t sectorCount)
 
   if (!flashBegun) {
     if (!flash.begin()) {
-      LOGLN("flash begin failure");
+      critical.println("flash begin failure");
       return false;
     }
-    LOG("flash length in sectors: "); LOGLN(flash.size() / SFLASH_SECTOR_SIZE);
+    if (configuration.debug.flash) {
+      Serial.printf("flash length in sectors: %d\n",
+        flash.size() / SFLASH_SECTOR_SIZE);
+    }
     flashBegun = true;
   }
 
 
   if (dataLength > Layout::maxDataLength) {
-    LOGLN("data length too big");
+    critical.println("data length too big");
     return false;
   }
 
   if ((regionEndSector - regionStartSector) < 2) {
-    LOGLN("must have at least 2 sectors in region");
+    critical.println("must have at least 2 sectors in region");
     return false;
   }
 
   uint32_t numberOfSectors = flash.size() / SFLASH_SECTOR_SIZE;
 
   if (regionStartSector >= numberOfSectors) {
-    LOGLN("start sector beyond flash capacity");
+    critical.println("start sector beyond flash capacity");
     return false;
   }
 
   if (regionEndSector > numberOfSectors) {
-    LOGLN("region extends past end of flash");
+    critical.println("region extends past end of flash");
     return false;
   }
 
@@ -150,8 +145,7 @@ bool FlashMemoryLog::begin(uint32_t startSector, uint32_t sectorCount)
           sizeof(header))
         != sizeof(header))
     {
-      LOG("flash read failure at sector ");
-      LOGLN(sector);
+      critical.printf("flash read failure at sector %d\n", sector);
       return false;
     }
 
@@ -174,8 +168,8 @@ bool FlashMemoryLog::begin(uint32_t startSector, uint32_t sectorCount)
           bitMap, layout.bitmapLength)
         != layout.bitmapLength)
     {
-      LOG("flash read failure of bitmap ");
-      LOGLN(currentSector);
+      critical.printf("flash read failure of bitmap at sector %d\n",
+        currentSector);
       return false;
     }
 
@@ -194,8 +188,8 @@ bool FlashMemoryLog::begin(uint32_t startSector, uint32_t sectorCount)
         default:
           // something is very amiss
           // reset region
-          LOG("bitmap was ill formed in sector  ");
-          LOGLN(currentSector);
+          critical.printf("bitmap was ill formed in sector %d\n",
+            currentSector);
           currentSector = notFoundSerial;
           goto found;
       }
@@ -259,8 +253,7 @@ bool FlashMemoryLog::writeNext(const uint8_t* buf)
 
   if (nextIndex == 0) {
     if (!flash.eraseSector(nextSector)) {
-      LOG("sector failed to erase: ");
-      LOGLN(nextSector);
+      critical.printf("sector %d failed to erase\n", nextSector);
       return false;
     }
 
@@ -272,8 +265,7 @@ bool FlashMemoryLog::writeNext(const uint8_t* buf)
           reinterpret_cast<uint8_t*>(&header), sizeof(Header))
       != sizeof(Header))
     {
-      LOG("header write of failed to address: ");
-      LOGLN(layout.headerAddress(nextSector));
+      critical.printf("header write failed, sector %d\n", nextSector);
       return false;
     }
   }
@@ -282,8 +274,8 @@ bool FlashMemoryLog::writeNext(const uint8_t* buf)
         buf, dataLength)
       != dataLength)
   {
-    LOG("data write of failed to address: ");
-    LOGLN(layout.dataAddress(nextSector, nextIndex));
+    critical.printf("data write failed, sector %d index %d\n",
+      nextSector, nextIndex);
     return false;
   }
 
@@ -293,8 +285,8 @@ bool FlashMemoryLog::writeNext(const uint8_t* buf)
       &bitmapByte, 1)
       != 1)
   {
-    LOG("bitmap write failed to address: ");
-    LOGLN(layout.bitmapAddress(nextSector) + nextIndex / 8);
+    critical.printf("bitmap write failed, sector %d index %d\n",
+      nextSector, nextIndex);
     return false;
   }
 

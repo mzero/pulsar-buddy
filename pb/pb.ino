@@ -64,7 +64,9 @@ void setup() {
   if (configuration.screen.alwaysDim)
     display.dim(true);
 
-  drawAll(true);
+  if (critical.update() != Critical::active)
+    drawAll(true);
+
   updateSaver(true);
   selectionTimeout.activity();
   dimTimeout.activity();
