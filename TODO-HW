@@ -1,0 +1,50 @@
+Hardware TODO
+
+
+
+Design
+------
+
+[] vias for ground
+[] logo in mask/copper
+
+[x] encoder footprint
+	[] encoder choice
+
+Circuit
+-------
+
+
+[] power
+	[] spec LM7405 replacement?
+	[] diode rectifier
+	[] diode USB/power safety (see other adafruit boards)
+	[x] use resettable?
+
+
+Later
+-----
+
+[] decide if DIN-5 plug or no
+	[] if not, spec 3.5mm jack for MIDI
+[] MIDI circuit
+
+
+[] daughter cards
+	[] leds?
+	[] spec binding posts
+	[] pcb mount bananas?
+	[] pcb mount 3.5 mm jacks?
+
+[x] standoff sizing
+	- 6mm from box to main board
+	- 15mm from main board to daughter card
+	- 2mm or 4mm from OLED featherwing to cover
+
+	- inter-board connector
+		plug: SSW-106-01-?-D    (01 or 02 or 21 or 22 is okay)
+		pins: EW-6-09-?-D-xxx   xxx is 255 or less
+			? can be any, but T is only tin and least desirable
+
+	[-] 2nd parallel power jack?
+		- no real room

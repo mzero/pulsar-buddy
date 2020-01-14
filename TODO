@@ -44,20 +44,8 @@ TODO
 
 
 
-HARDWARE
---------
-
-Physical
-	? how to assemble?
-	? alternate / better encoder?
-	? encoder cap
-	? box
-
-
-
-
-
 QUESTIONS
+---------
 
 [] if total reset length is kept under 4 x 4/4 (or even 8 x 8/1!)
 	then all cycle counts in q fit in 16 bits
@@ -65,8 +53,6 @@ QUESTIONS
 [] should tuplet load be sync'd to measure or full sequence?
 [] should sequence length, when reloaded, be reset to first measure?
 [] if only a tuplet change, then if sync'd on measure, should sequence restart or no?
-
-[] why doesn't TCC1.WO1 on PAD_SPI_RX (pin 0, PA11) work?
 
 
 NOTES
