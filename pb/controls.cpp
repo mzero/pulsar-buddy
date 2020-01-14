@@ -28,8 +28,8 @@
 #endif
 
 #define ENCODER_SW  10
-#define ENCODER_A   11
-#define ENCODER_B   12
+#define ENCODER_A   12
+#define ENCODER_B   11
 
 
 IdleTimeout selectionTimeout(2000);
