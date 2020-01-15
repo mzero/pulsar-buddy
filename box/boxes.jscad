@@ -584,12 +584,12 @@ function innerBox(flat) {
 
     if (flat) {
         // deconstruct the box
-        top =                           translate([0, 0, -(h - t/2)],   top);
+        //top =                           translate([0, 0, -(h - t/2)],   top);
         bottom =                         translate([0, 0, -t/2],        bottom);
         front = rotate([90, -180, 0],  translate([0, (d-t)/2, -h/2],   front));
         back =  rotate([90, 0, 0],   translate([0, -(d-t)/2, -h/2],      back));
         left =  rotate([180, 90, 0],  translate([(w-t)/2, 0, -h/2],     left));
-        //right = rotate([0, -90, 0],    translate([-(w-t)/2, 0, -h/2],      right));
+        right = rotate([0, -90, 0],    translate([-(w-t)/2, 0, -h/2],      right));
 
         // lay it out
         const [emin, emax] = lrTrim.getBounds();
@@ -598,8 +598,8 @@ function innerBox(flat) {
         bottom =translate([0, 0, 0],                            rotate([0, 180, 0], bottom));
         front = translate([0, -((h+d)/2 + cutGap), 0],          rotate([0, 0, 0], front));
         back =  translate([0, -((h+d)/2 + h + 2*cutGap), 0],    rotate([0, 0, 0], back));
-        left =  translate([-(d+cutGap)/2, (eh + d)/2 - cutGap, 0], rotate([0, 0, 90], left));
-        //right = translate([(d+cutGap)/2,  (eh + d)/2 - cutGap, 0], rotate([0, 0, 90], right));
+        left =  translate([-(d+cutGap)/2, (eh + d)/2 + cutGap, 0], rotate([0, 0, 90], left));
+        right = translate([(d+cutGap)/2,  (eh + d)/2 + cutGap, 0], rotate([0, 0, 90], right));
     }
 
     return union([top, bottom, left, right, front, back].filter(x => x));
@@ -614,18 +614,22 @@ function getParameterDefinitions() {
         { name: 'layout', type: 'choice', caption: 'layout',
             values:
                 [ 'flat', 'nested', 'nested solid', 'stacked', 'pulsar',
-                'apart', 'outer only', 'inner only'],
+                'apart', 'outer only', 'inner only', 'svg'],
+            captions:
+                [ 'flat', 'nested', 'nested solid', 'stacked', 'pulsar',
+                'apart', 'outer only', 'inner only', 'svg'],
             default: 'flat' },
         { name: 'pcb', type: 'checkbox', caption: 'show pcb',
-            checked: true },
+            checked: true }
     ];
 }
 
 function main(params) {
-  var boxA = outerBox(params.layout == 'flat', params.layout == 'nested');
-  var boxB = innerBox(params.layout == 'flat');
+  const flat = params.layout == 'flat' || params.layout == 'svg';
+  var boxA = outerBox(flat, params.layout == 'nested');
+  var boxB = innerBox(flat);
 
-  if (params.layout == 'flat') {
+  if (flat) {
       const [amin, amax] = boxA.getBounds();
       const [bmin, bmax] = boxB.getBounds();
 
@@ -637,6 +641,9 @@ function main(params) {
       const [jmin, jmax] = jigsaw.getBounds();
       console.log("Flat extent: " + (jmax.x - jmin.x) + "mm x " + (jmax.y - jmin.y) + "mm");
 
+      if (params.layout == 'svg') {
+        return jigsaw.projectToOrthoNormalBasis(CSG.OrthoNormalBasis.Z0Plane());
+      }
       return jigsaw;
   }
 
@@ -645,14 +652,14 @@ function main(params) {
   }
 
   if (params.layout == 'nested' || params.layout == 'nested solid')
-      return [translate([0, 0, 0], boxB), translate([0, 0, 0], boxA)];
+      return union(translate([0, 0, 0], boxB), translate([0, 0, 0], boxA));
   if (params.layout == 'stacked')
-      return [translate([0, 0, 0], boxA), translate([0, 0, oh], boxB)];
+      return union(translate([0, 0, 0], boxA), translate([0, 0, oh], boxB));
   if (params.layout == 'pulsar')
-      return [translate([0, 0, 0], boxA), translate([0, 0, oh], boxB),
-        translate([-ow/2-59.5, -od/2, 0], pulsar23())];
+      return union(translate([0, 0, 0], boxA), translate([0, 0, oh], boxB),
+        translate([-ow/2-59.5, -od/2, 0], pulsar23()));
   if (params.layout == 'apart')
-      return [translate([0, od, 0], boxA), translate([0, -od, 0], boxB)];
+      return union(translate([0, od, 0], boxA), translate([0, -od, 0], boxB));
   if (params.layout == 'outer only')
       return boxA;
   if (params.layout == 'inner only')
