@@ -275,11 +275,13 @@ const bananaXYs = redBananaXYs.concat(blackBananaXYs);
 
 const featherw = inch(2);
 const featherd = inch(0.9);
+const feathert = pcbt;
+
 const featherhBelow = pcbt + 8 + 1;  // 1 for solder
 const featherhAbove = 2.54 + pcbt;
 const featherh = featherhBelow + pcbt + featherhAbove;
 
-const featherx0 = pcbx0 + mils(3400 + 200);
+const featherx0 = pcbx0 + mils(3700);
 const feathery0 = pcby0 + mils(850);
 
 
@@ -313,10 +315,13 @@ function punchComponentHoles(obj) {
 }
 
 function boardAndPins() {
+    const pcbColor =     hsv2rgb(120/360, 0.85, 0.48);
+    const featherColor = hsv2rgb(120/360, 0.80, 0.30);
+
 
     const pcb =
         translate([0, 0, pcbt/2],
-            colorize(hsv2rgb(120/360, 0.85, 0.48),
+            colorize(pcbColor,
                 difference(
                     cube({size: [pcbw, pcbd, pcbt], center: true}),
                     pcbHoles(pcbHoleDrill))));
@@ -335,7 +340,7 @@ function boardAndPins() {
 
     const feather =
         union(
-            colorize(hsv2rgb(120/360, 0.8, 0.3),
+            colorize(featherColor,
                 cube({size: [featherw, featherd, featherh]})),
             translate(
                 [inch(0.28), inch(0.21), featherh],
@@ -345,6 +350,54 @@ function boardAndPins() {
             //     [0, 0, featherh + 4],
             //     colorize([0.98, 0.98, 1.0, 0.3],
             //         cube({size: [featherw, featherd, 1.5]})))
+        );
+
+    const featherOLED =
+        union(
+            colorize(featherColor,
+                translate([0, 0, 2.54],
+                    cube({size: [featherw, featherd, feathert]}))),
+            translate(
+                [inch(0.28), inch(0.21), 2.54 + feathert],
+                colorize(hsv2rgb(0, 0, 0),
+                    cube({size: [inch(1.2), inch(0.45), 0.5]}))),
+            // spacers on pins
+            translate([mils(200), 0, 0],
+                cube({size: [mils(1200), mils(100), 2.54]})),
+            translate([mils(200), mils(800), 0],
+                cube({size: [mils(1600), mils(100), 2.54]}))
+
+        );
+
+    const featherLowerGap = 8.5 + 2.54;
+    const featherM0 =
+        union(
+            // socket & spacers on pins
+            translate([mils(200), 0, -featherLowerGap],
+                cube({size: [mils(1200), mils(100), featherLowerGap]})),
+            translate([mils(200), mils(800), -featherLowerGap],
+                cube({size: [mils(1600), mils(100), featherLowerGap]})),
+
+            colorize(featherColor,
+                translate([0, 0, -(featherLowerGap + feathert)],
+                    cube({size: [featherw, featherd, feathert]})))
+        );
+
+    const powerJack =
+        union(
+            colorize(hsv2rgb(0, 0, 0.15),
+                difference(
+                    cube({size:[ 13.5, 9, 11 ], center: [false, true, false]}),
+                    translate([1, 0, 4.5],
+                        rotate([0, 90, 0],
+                            cylinder({r: 6/2, h: 12.5})))
+                    )
+                ),
+            colorize(hsv2rgb(206/360, 0.03, 0.97),
+                translate([0, 0, 4.5],
+                    rotate([0, 90, 0],
+                        cylinder({r: 1.95/2, h: 13.5})))
+                )
         );
 
     const knob =
@@ -387,7 +440,11 @@ function boardAndPins() {
             ]),
 
         // the feather stack
-        translate([featherx0, feathery0, -featherhBelow], feather),
+        //translate([featherx0, feathery0, -featherhBelow], feather),
+        translate([featherx0, feathery0 + mils(100), pcbt], featherOLED),
+        translate([featherx0, feathery0, 0], featherM0),
+
+        translate([pcbx0 + mils(5200), pcby0 + mils(600), -11], powerJack),
 
         // the button
         translate([knobx, knoby, pcbt], knob),
@@ -555,8 +612,8 @@ function innerBox(flat) {
 
     const lrTrim =
         difference(parts.lr,
-            translate([3.5, 0, 0],
-                cube({ size: [h - 15, d - 11 - 6, t], center: true })));
+            translate([(11-6)/2, 0, 0],
+                cube({ size: [h - 11 - 6, d - 15, t], center: true })));
 
     var top =   translate([0, 0, h - t/2],        rotate([180, 180, 180],   topCover));
     var bottom =translate([0, 0, t/2],            rotate([0, 180, 0],     botFoot));
@@ -610,14 +667,12 @@ function placedPcb() {
 }
 
 function getParameterDefinitions() {
+    const values = [ 'flat', 'nested', 'nested solid', 'stacked', 'pulsar',
+                'apart', 'outer only', 'inner only', 'pcb only', 'svg']
     return [
         { name: 'layout', type: 'choice', caption: 'layout',
-            values:
-                [ 'flat', 'nested', 'nested solid', 'stacked', 'pulsar',
-                'apart', 'outer only', 'inner only', 'svg'],
-            captions:
-                [ 'flat', 'nested', 'nested solid', 'stacked', 'pulsar',
-                'apart', 'outer only', 'inner only', 'svg'],
+            values: values,
+            captions: values,
             default: 'flat' },
         { name: 'pcb', type: 'checkbox', caption: 'show pcb',
             checked: true }
@@ -664,5 +719,7 @@ function main(params) {
       return boxA;
   if (params.layout == 'inner only')
       return boxB;
+  if (params.layout == 'pcb only')
+      return boardAndPins();
   return [];
 }
