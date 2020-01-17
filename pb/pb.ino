@@ -56,6 +56,7 @@ void setup() {
 
   initializeState();
   initializeTimers();
+  initializeClock();
 
   setBpm(userState().userBpm);
   setSync(userState().syncMode);

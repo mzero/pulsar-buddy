@@ -38,6 +38,8 @@ inline bool operator!=(const ClockStatus& rhs, const ClockStatus& lhs) {
 }
 
 
+void initializeClock();
+
 void setBpm(bpm_t);
   // if sync'd, this resets the current BPM, but system will immediately try to
   // sync back to externally driven tempo.

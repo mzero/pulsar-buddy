@@ -13,11 +13,16 @@ TODO
 
 [x] Version number from somewhere!
 
-[] probably should persist state only if it is stable
+[x] extended BPM range mode
+	- 10 to 900 bpm, but it won't be perplexed as often!
+	- will four digits show on BPM display?!?!?! no!
+
 
 
 
 --- Later
+
+[] probably should persist state only if it is stable
 
 [] ? MIDI Clock code: include? or keep #ifdef'd? or configuration?
 	- currently using #if 0 in several places
@@ -41,9 +46,6 @@ TODO
 [] make enums be uint8_t based
 	- probably not really worth it
 
-[] extended BPM range mode
-	- 5 to 1500 bpm, but it won't be perplexed as often!
-	- will four digits show on BPM display?!?!?!
 
 
 

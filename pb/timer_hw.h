@@ -13,8 +13,6 @@ extern void isrWatchdog();
 typedef uint16_t divisor_t;     // the quantum timer has a 16 bit counter
 float divisorToBpm(divisor_t);
 divisor_t divisorFromBpm(float);
-constexpr divisor_t divisorMin = 952;   // 300 bpm
-constexpr divisor_t divisorMax = 9524;  // 30 bpm
 
 void setQuantumDivisor(divisor_t);
 void startQuantumEvents();

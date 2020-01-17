@@ -97,6 +97,24 @@ namespace {
   }
 
 
+  /** BPM RANGE **/
+
+  divisor_t divisorMin = 952;   // 300 bpm
+  divisor_t divisorMax = 9524;  // 30 bpm
+
+  // When running, allow a 5% wider range so small excursions outside
+  // the range don't make the clock perplexed. When perplexed, the normal
+  // range is used, so that it only unperplexes when solidly good.
+  divisor_t runningDivisorMin = 907;    // 315 bpm
+  divisor_t runningDivisorMax = 10582;  // 27 bpm
+
+  void setBpmRange(float low, float high) {
+    divisorMin = divisorFromBpm(high);
+    divisorMax = divisorFromBpm(low);
+
+    runningDivisorMin = divisorFromBpm(high * 1.05f);
+    runningDivisorMax = divisorFromBpm(low * 0.95f);
+  }
 
   /** EXTERNAL CLOCK FREQ ESTIMATOR & PHASE LOCKED LOOP **/
 
@@ -105,12 +123,7 @@ namespace {
     return (x + q / 2) / q;
   }
 
-  // When running, allow a 5% wider range so small excursions outside
-  // the range don't make the clock perplexed. When perplexed, the normal
-  // range is used, so that it only unperplexes when solidly good.
 
-  constexpr divisor_t runningDivisorMin = 907;    // 315 bpm
-  constexpr divisor_t runningDivisorMax = 10582;  // 27 bpm
 
   // These are used to communicate changes in the clocking to the interrupt
   // service routine.
@@ -367,6 +380,14 @@ ClockStatus ClockStatus::current() {
   }
 
   return ClockStatus(reportedBpm, clockState);
+}
+
+
+void initializeClock() {
+  if (configuration.options.extendedBpmRange)
+    setBpmRange(10, 900);
+  else
+    setBpmRange(30, 300);
 }
 
 void setBpm(bpm_t bpm) {
