@@ -21,13 +21,13 @@ namespace {
         configurationLog.save(configuration);
         return true;
 
-      case 1: configuration.screen.alwaysDim      ^= 1; break;
-      case 2: configuration.screen.saverDisable   ^= 1; break;
-      case 3: configuration.debug.waitForSerial   ^= 1; break;
-      case 4: configuration.debug.flash           ^= 1; break;
-      case 5: configuration.debug.timing          ^= 1; break;
-      case 6: configuration.debug.clock           ^= 1; break;
-      case 7: configuration.debug.plotClock       ^= 1; break;
+      case 1: configuration.options.extendedBpmRange ^= 1; break;
+      case 2: configuration.options.alwaysDim        ^= 1; break;
+      case 3: configuration.options.saverDisable     ^= 1; break;
+      case 4: configuration.debug.waitForSerial     ^= 1; break;
+      case 5: configuration.debug.flash             ^= 1; break;
+      case 6: configuration.debug.timing            ^= 1; break;
+      case 7: configuration.debug.plotClock         ^= 1; break;
       default: ;
     }
     return false;
@@ -60,23 +60,24 @@ namespace {
     display.print(" Pulsar Buddy v. ");
     display.print(PB_VERSION);
 
-    // screen line
+    // options line
     display.setCursor(0, 8);
-    display.print("Screen:");
-    drawFlag("dim", configuration.screen.alwaysDim, 1);
-    drawFlag("saver", !configuration.screen.saverDisable, 2);
+    display.print("Opts:");
+    drawFlag("extBPM", configuration.options.extendedBpmRange, 1);
 
-    // debug line 1
+    // screen line
     display.setCursor(0, 16);
-    display.print("Debug:");
-    drawFlag("wait", configuration.debug.waitForSerial, 3);
-    drawFlag("flash", configuration.debug.flash, 4);
+    display.print("Screen:");
+    drawFlag("dim", configuration.options.alwaysDim, 2);
+    drawFlag("saver", !configuration.options.saverDisable, 3);
 
-    // debug line 2
+    // debug line
     display.setCursor(0, 24);
-    drawFlag("time", configuration.debug.timing, 5);
-    drawFlag("clk", configuration.debug.clock, 6);
-    drawFlag("plot", configuration.debug.plotClock, 7);
+    display.print("Debug:");
+    drawFlag("wait", configuration.debug.waitForSerial, 4);
+    drawFlag("f", configuration.debug.flash, 5);
+    drawFlag("t", configuration.debug.timing, 6);
+    drawFlag("p", configuration.debug.plotClock, 7);
 
     display.display();
   }

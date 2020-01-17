@@ -61,7 +61,7 @@ void setup() {
   setSync(userState().syncMode);
   resetTiming(userState().settings);
 
-  if (configuration.screen.alwaysDim)
+  if (configuration.options.alwaysDim)
     display.dim(true);
 
   if (critical.update() != Critical::active)
@@ -162,7 +162,7 @@ void loop() {
     selectionTimeout.activity();
     dimTimeout.activity();
     needsDraw = true;
-    if (!configuration.screen.alwaysDim)
+    if (!configuration.options.alwaysDim)
       display.dim(false);
   } else {
     if (selectionTimeout.update()) {
@@ -187,10 +187,10 @@ void loop() {
         drawAll(true);    // need to redraw if the saver had been drawn
     }
 
-    if (!configuration.screen.saverDisable)
+    if (!configuration.options.saverDisable)
       saverDrawn = updateSaver(drew);
   } else {
-    if (!configuration.screen.saverDisable)
+    if (!configuration.options.saverDisable)
       saverDrawn = updateSaver(false);
   }
 }

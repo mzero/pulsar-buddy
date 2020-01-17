@@ -8,16 +8,16 @@ struct Configuration {
   struct {
     uint8_t alwaysDim:1;
     uint8_t saverDisable:1;
-    uint8_t :6;
-  } screen;
+    uint8_t extendedBpmRange:1;
+    uint8_t :5;
+  } options;
 
   struct {
     uint8_t waitForSerial:1;
     uint8_t flash:1;
     uint8_t timing:1;
-    uint8_t clock:1;
     uint8_t plotClock:1;
-    uint8_t :3;
+    uint8_t :4;
   } debug;
 
   uint8_t reserved1;
