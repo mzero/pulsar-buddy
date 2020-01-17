@@ -8,10 +8,10 @@ TODO
 	- use in Flash for errors
 	- use in timing for "shouldn't happen"
 
-[] Version number from somewhere!
+[x] look into saving when clock goes perplexed
+[x] look into getting perplexed when shifting to very fast tempos
 
-[] look into saving when clock goes perplexed
-[] look into getting perplexed when shifting to very fast tempos
+[x] Version number from somewhere!
 
 [] probably should persist state only if it is stable
 

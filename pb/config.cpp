@@ -3,6 +3,7 @@
 #include "controls.h"
 #include "display.h"
 #include "flash.h"
+#include "version.h"
 
 Configuration configuration;
 
@@ -56,7 +57,8 @@ namespace {
     // top line
     display.setCursor(0, 0);
     drawButton("\x1b", 0);
-    display.print(" Pulsar Buddy v. 001");
+    display.print(" Pulsar Buddy v. ");
+    display.print(PB_VERSION);
 
     // screen line
     display.setCursor(0, 8);
