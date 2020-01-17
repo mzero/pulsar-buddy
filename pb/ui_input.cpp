@@ -89,7 +89,7 @@ Button::State Button::update()
     case UpLong:
       if (lastRead == LOW) {
         state = Down;
-        longAtTime = now + 2000;
+        longAtTime = now + 1250;
       }
       break;
 

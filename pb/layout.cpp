@@ -163,9 +163,20 @@ void clickSelection(Button::State s) {
       if (selectedField()->click(s)) {
         break;
       }
-      if (s == Button::Up || s == Button::UpLong) {
-        selectedField()->exit();
-        selectMode = selectField;
+      switch (s) {
+        case Button::DownLong:
+          // held down after selecting... so exit and re-enter
+          selectedField()->exit();
+          selectedField()->enter(true);
+          selectMode = selectField;
+          break;
+        case Button::Up:
+        case Button::UpLong:
+          selectedField()->exit();
+          selectMode = selectField;
+          break;
+        default:
+          break;
       }
       break;
   }
