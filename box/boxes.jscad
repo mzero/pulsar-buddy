@@ -369,7 +369,7 @@ function boardAndPins() {
 
         );
 
-    const featherLowerGap = 8.5 + 2.54;
+    const featherLowerGap = 5 + 2.54;
     const featherM0 =
         union(
             // socket & spacers on pins
