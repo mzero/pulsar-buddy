@@ -355,10 +355,11 @@ void forceTriggersOff(bool forceOff) {
 }
 
 
-void resetWatchdog(q_t interval)
+q_t resetWatchdog(q_t interval)
 {
-    watchdogTc->COUNT16.COUNT.reg =
-      (uint16_t)(constrain(0x10000 - interval, 0, 0xffff));
+    q_t resetCount = constrain(0x10000 - interval, 0, 0xffff);
+    watchdogTc->COUNT16.COUNT.reg = (uint16_t)(resetCount);
+    return resetCount;
 }
 
 

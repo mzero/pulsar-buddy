@@ -5,6 +5,7 @@
 #include "config.h"
 #include "timer_hw.h"
 
+#define DEBUG_ISR 0
 
 // In this section of code, be very careful about numeric types
 #pragma GCC diagnostic push
@@ -104,6 +105,13 @@ namespace {
     return (x + q / 2) / q;
   }
 
+  // When running, allow a 5% wider range so small excursions outside
+  // the range don't make the clock perplexed. When perplexed, the normal
+  // range is used, so that it only unperplexes when solidly good.
+
+  constexpr divisor_t runningDivisorMin = 907;    // 315 bpm
+  constexpr divisor_t runningDivisorMax = 10582;  // 27 bpm
+
   // These are used to communicate changes in the clocking to the interrupt
   // service routine.
   volatile int externalClocksPerBeat = 0;
@@ -128,6 +136,8 @@ namespace {
 
   bool captureLastSampleValid = false;
   q_t captureLastSample = 0;
+
+  q_t captureWatchdogStartCount = 0;
 
   inline void processPending() {
     if (pendingExternalClocksPerBeatChange) {
@@ -159,14 +169,45 @@ namespace {
     captureSum = 0;
     captureCount = 0;
   }
-}
 
+#if DEBUG_ISR
+  uint32_t countWatchdogISR = 0;
+  uint32_t countClockISR = 0;
+  uint32_t countUnpausing = 0;
+  uint32_t countStillPerplexed = 0;
+  uint32_t countUnPerplexing = 0;
+  uint32_t countRunningChangePeriod = 0;
+  uint32_t countRunningInvalid = 0;
+  uint32_t countRunningPerplexed = 0;
+  uint32_t countRuningWell = 0;
+
+  void zeroDebugCounts() {
+    countWatchdogISR = 0;
+    countClockISR = 0;
+    countUnpausing = 0;
+    countStillPerplexed = 0;
+    countUnPerplexing = 0;
+    countRunningChangePeriod = 0;
+    countRunningInvalid = 0;
+    countRunningPerplexed = 0;
+    countRuningWell = 0;
+  }
+
+#define INC_COUNTER(c) (++c)
+#define DEC_COUNTER(c) (--c)
+#else
+#define INC_COUNTER(c) (0)
+#define DEC_COUNTER(c) (0)
+#endif
+}
 
 void isrWatchdog() {
   if (clockMode == modeInternal)
     return;
   if (clockState == clockPaused)
     return;
+
+  INC_COUNTER(countWatchdogISR);
 
   // pause, as an external clock hasn't been heard in too long
   setState(clockPaused);
@@ -179,79 +220,109 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
   if (clockMode == modeInternal)
     return;
 
-  if (captureSequencePeriod != activePeriods.sequence) {
-    captureSequencePeriod = activePeriods.sequence;
-    captureLastSampleValid = false;
-      // can't rely on last sanple if period changd
-  }
+  INC_COUNTER(countClockISR);
 
-  q_t sample =
-    clockState == clockPaused ? 0    // treat this clock as start of the sequence
-    : clockState == clockPerplexed ? watchdogSample
-    : sequenceSample;
-  q_t period =
-    clockState == clockPerplexed ? 0x10000
-    : captureSequencePeriod;
+  switch (clockState) {
 
-  if (captureLastSampleValid) {
+    case clockPerplexed: {
+      q_t qdiff = watchdogSample - captureWatchdogStartCount;
 
-    // compute current ext clk rate, as a divisor
-    q_t qdiff = (sample + period - captureLastSample) % period;
+      uint32_t dNext =
+        roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
 
-    uint32_t dNext =
-      roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
+      if (!(divisorMin <= dNext && dNext <= divisorMax)) {
+          // still perplexed
+          INC_COUNTER(countStillPerplexed);
 
-    if (divisorMin <= dNext && dNext <= divisorMax) {
-      if (clockState != clockSyncRunning)
-        zeroCapture();
-
-      // record this in the capture buffer, and average it with up to
-      // captureBufferBeats' worth of measurements
-      captureSum += dNext;
-      if (captureCount >= captureBufferSpan) {
-        captureSum -= captureBuffer[captureNext];
-      } else {
-        captureCount += 1;
+          captureWatchdogStartCount = resetWatchdog(4 * Q_PER_B);
+          break;
       }
-      captureBuffer[captureNext] = (divisor_t)dNext;
-
-      // compute the average ext clk rate over the last captureBufferBeats
-      uint32_t dFilt = roundingDivide(captureSum, (uint32_t)captureCount);
-      captureHistory[captureNext] = (divisor_t)dFilt;
-
-      captureNext = (captureNext + 1) % captureBufferSpan;
-
-      // phase error (in Q)
-      q_t phase = sample % captureClkQ;
-      if (phase >= captureClkQHalf)
-        phase -= captureClkQ;
-
-      // adjust filterd divisor to fix the phase error over one beat
-      uint32_t dAdj = roundingDivide(dFilt * Q_PER_B, Q_PER_B - phase);
-      dAdj = constrain(dAdj, divisorMin, divisorMax);
-
-      setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
-      setState(clockSyncRunning);
-      resetWatchdog(captureClkQWait);
-    } else {
-      setState(clockPerplexed);
-      resetWatchdog(4 * Q_PER_B);
-        // on perplexed, wait much long for absence of clock to signal
-        // paused
+      INC_COUNTER(countUnPerplexing);
+      DEC_COUNTER(countUnpausing);
+      // back to normal, act like un-pausing
+      // fall through
     }
 
-  } else {
-    if (clockState == clockPaused) {
+    case clockPaused: {
+      INC_COUNTER(countUnpausing);
+
       zeroCapture();
       setState(clockSyncRunning);
       resetWatchdog(4 * Q_PER_B);
         // on restart, the rate isn't established
         // so don't interpret slower than expected as stopped
-    }
-  }
 
-  captureLastSampleValid = true;
-  captureLastSample = sample;
+      captureLastSample = 0;
+      captureLastSampleValid = true;
+      break;
+    }
+
+    case clockSyncRunning: {
+      if (captureSequencePeriod != activePeriods.sequence) {
+        captureSequencePeriod = activePeriods.sequence;
+        captureLastSampleValid = false;
+          // can't rely on last sanple if period changd
+        INC_COUNTER(countRunningChangePeriod);
+      }
+
+      INC_COUNTER(countRunningInvalid);
+      if (captureLastSampleValid) {
+        DEC_COUNTER(countRunningInvalid);
+
+        q_t qdiff =
+          (sequenceSample + captureSequencePeriod - captureLastSample)
+          % captureSequencePeriod;
+
+        uint32_t dNext =
+          roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
+
+        if (!(runningDivisorMin <= dNext && dNext <= runningDivisorMax)) {
+          INC_COUNTER(countRunningPerplexed);
+          setState(clockPerplexed);
+          captureWatchdogStartCount = resetWatchdog(4 * Q_PER_B);
+            // on perplexed, wait much long for absence of clock to signal paused
+            // setting of the watchdog timer is the new last sample
+          break;
+        }
+
+        // record this in the capture buffer, and average it with up to
+        // captureBufferBeats' worth of measurements
+        captureSum += dNext;
+        if (captureCount >= captureBufferSpan) {
+          captureSum -= captureBuffer[captureNext];
+        } else {
+          captureCount += 1;
+        }
+        captureBuffer[captureNext] = (divisor_t)dNext;
+
+        // compute the average ext clk rate over the last captureBufferBeats
+        uint32_t dFilt = roundingDivide(captureSum, (uint32_t)captureCount);
+        captureHistory[captureNext] = (divisor_t)dFilt;
+
+        captureNext = (captureNext + 1) % captureBufferSpan;
+
+        // phase error (in Q)
+        q_t phase = sequenceSample % captureClkQ;
+        if (phase >= captureClkQHalf)
+          phase -= captureClkQ;
+
+        // adjust filterd divisor to fix the phase error over one beat
+        uint32_t dAdj = roundingDivide(dFilt * Q_PER_B, Q_PER_B - phase);
+        dAdj = constrain(dAdj, runningDivisorMin, runningDivisorMax);
+
+        setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
+        setState(clockSyncRunning);
+        resetWatchdog(captureClkQWait);
+        INC_COUNTER(countRuningWell);
+      }
+
+      captureLastSample = sequenceSample;
+      captureLastSampleValid = true;
+    }
+
+    case clockFreeRunning:
+      break;
+  }
 }
 
 
@@ -396,4 +467,18 @@ void dumpClock() {
     case clockSyncRunning:  Serial.println("sync running");   break;
     case clockFreeRunning:  Serial.println("free running");   break;
   }
+
+#if DEBUG_ISR
+  Serial.printf("countWatchdogISR = %d\n", countWatchdogISR);
+  Serial.printf("countClockISR = %d\n", countClockISR);
+  Serial.printf("countUnpausing = %d\n", countUnpausing);
+  Serial.printf("countStillPerplexed = %d\n", countStillPerplexed);
+  Serial.printf("countUnPerplexing = %d\n", countUnPerplexing);
+  Serial.printf("countRunningChangePeriod = %d\n", countRunningChangePeriod);
+  Serial.printf("countRunningInvalid = %d\n", countRunningInvalid);
+  Serial.printf("countRunningPerplexed = %d\n", countRunningPerplexed);
+  Serial.printf("countRuningWell = %d\n", countRuningWell);
+
+  zeroDebugCounts();
+#endif
 }

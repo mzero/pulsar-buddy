@@ -41,6 +41,9 @@ TODO
 [] make enums be uint8_t based
 	- probably not really worth it
 
+[] extended BPM range mode
+	- 5 to 1500 bpm, but it won't be perplexed as often!
+	- will four digits show on BPM display?!?!?!
 
 
 

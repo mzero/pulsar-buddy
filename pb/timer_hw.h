@@ -36,7 +36,7 @@ void writePeriods(const Timing&);
 
 void forceTriggersOff(bool);
 
-void resetWatchdog(q_t);
+q_t resetWatchdog(q_t);
 
 
 void dumpTimers();
