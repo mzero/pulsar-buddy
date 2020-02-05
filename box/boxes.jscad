@@ -233,19 +233,25 @@ const knobshaftdia = 6;
 const knobx = pcbx0 + mils(4300 + 200);
 const knoby = pcby0 + mils(400);
 
+const platet = 1.5;         // thickness of acrylic plate
 
+const standoffFoot = 6;     // standoff on bottom of box
+const standoffBoard = 15;   // standoff between box and main pcb
+const standoffPlate = 8;    // standoff between main pcb and acrylic plate
 
 const pcbMountXYs = (function(){
     const x = pcbw / 2 - pcbHoleInset;
     const y = pcbd / 2 - pcbHoleInset;
+    const hShort = standoffFoot + t + standoffBoard + pcbt;
+    const hLong = hShort + standoffPlate + platet;
 
     return [
-        { x:  x, y:  y},
-        { x:  x, y: -y},
-        { x:  0, y:  y},
-        { x:  0, y: -y},
-        { x: -x, y:  y},
-        { x: -x, y: -y}
+        { x:  x, y:  y, h: hLong},
+        { x:  x, y: -y, h: hLong},
+        { x:  0, y:  y, h: hLong},
+        { x:  0, y: -y, h: hLong},
+        { x: -x, y:  y, h: hShort},
+        { x: -x, y: -y, h: hShort}
         ];
     })();
 
@@ -306,12 +312,12 @@ function punchComponentHoles(obj) {
             union(
                 replicateAtXYs(pinXYs,
                     cylinder({ r: pindia/2 + gap, h: oh, center: ttf})),
-                replicateAtXYs(bananaXYs,
-                    cylinder({ r: banodia1/2 + gap, h: oh, center: ttf})),
+                // replicateAtXYs(bananaXYs,
+                //     cylinder({ r: banodia1/2 + gap, h: oh, center: ttf})),
                 translate([knobx, knoby, 0],
-                    cylinder({ r: knobshaftdia/2 + gap, h: oh, center: ttf})),
-                translate([featherx0 - gap, feathery0 - gap, 0],
-                    cube({ size: [featherw + 2*gap, featherd + 2*gap, oh], center: false}))
+                    cylinder({ r: knobdia/2 + gap, h: oh, center: ttf}))
+                // translate([featherx0 - gap, feathery0 - gap, 0],
+                //     cube({ size: [featherw + 2*gap, featherd + 2*gap, oh], center: false}))
         )));
 }
 
@@ -423,11 +429,21 @@ function boardAndPins() {
             difference(
                 translate([-mils(100), 0, 0],
                     colorize([0.98, 0.98, 1.0, 0.3],
-                            cube({size: [pcbw/2 + mils(100), pcbd, 1.5], center: [false, true, true]}))),
+                            cube({size: [pcbw/2 + mils(100), pcbd, platet], center: [false, true, true]}))),
                 pcbHoles(pcbHoleDrill),
                 translate([knobx, knoby, 0],
                     cylinder({ r: knobshaftdia/2 + 0.5, h: oh, center: ttf}))
                 ));
+
+    const standoffs =
+        union(pcbMountXYs.map(p =>
+            translate([p.x, p.y, 0],
+                colorize(hsv2rgb(0, 0, 0.31),
+                    union(
+                        translate([0, 0, p.h],
+                            scale([1, 1, 0.5], sphere({r: 3.5/2, center: true}))),
+                        cylinder({r: 4/Math.sqrt(3), fn: 6, h: p.h})
+                    )))));
 
     return union(
         pcb,
@@ -449,6 +465,9 @@ function boardAndPins() {
 
         // the button
         translate([knobx, knoby, pcbt], knob),
+
+
+        translate([0, 0, -(standoffBoard + t + standoffFoot)], standoffs),
 
         translate([0, 0, pcbt + 8], plate)
         );
@@ -530,7 +549,9 @@ function outerBox(flat, clear) {
 
     const parts = boxParts(w, d, h, c);
 
-    const tbTrim = difference(parts.tb, pcbHoles(standoffHeadDia));
+    const tbTrim =
+        punchComponentHoles(
+            difference(parts.tb, pcbHoles(standoffHeadDia)));
 
     const fbTrim =
         union(
@@ -547,10 +568,10 @@ function outerBox(flat, clear) {
 
     const lrTrim =
         difference(parts.lr,
-            translate([(h-t)/2, 0, 0],
-                cube({ size: [t, od - 2*foot, t], center: true })));
+            translate([(h-t-6)/2, 0, 0],
+                cube({ size: [t + 6, od - 2*foot, t], center: true })));
 
-    var top =   translate([0, 0, h - t/2],                                tbTrim);
+    var top =   translate([0, 0, oh - t/2],                                tbTrim);
     var bottom =translate([0, 0, t/2],                                   tbTrim);
     var front = translate([0, -((d-t)/2), h/2],   rotate([90, 180, 0],    fbTrim));
     var back =  translate([0, (d-t)/2, h/2],      rotate([-90, 0, 0],     fbTrim));
@@ -648,7 +669,7 @@ function innerBox(flat) {
         front = rotate([90, -180, 0],  translate([0, (id-t)/2, -ih/2],   front));
         back =  rotate([90, 0, 0],   translate([0, -(id-t)/2, -ih/2],      back));
         left =  rotate([180, 90, 0],  translate([(iw-t)/2, 0, -ih/2],     left));
-        right = rotate([0, -90, 0],    translate([-(iw-t)/2, 0, -ih/2],      right));
+        //right = rotate([0, -90, 0],    translate([-(iw-t)/2, 0, -ih/2],      right));
 
         // lay it out
         const [emin, emax] = lrTrim.getBounds();
@@ -658,7 +679,7 @@ function innerBox(flat) {
         front = translate([0, -((ih+id)/2 + cutGap), 0],          rotate([0, 0, 0], front));
         back =  translate([0, -((ih+id)/2 + ih + 2*cutGap), 0],    rotate([0, 0, 0], back));
         left =  translate([-(id+cutGap)/2, (eh + id)/2 + cutGap, 0], rotate([0, 0, 90], left));
-        right = translate([(id+cutGap)/2,  (eh + id)/2 + cutGap, 0], rotate([0, 0, 90], right));
+        //right = translate([(id+cutGap)/2,  (eh + id)/2 + cutGap, 0], rotate([0, 0, 90], right));
     }
 
     return union([top, bottom, left, right, front, back].filter(x => x));
@@ -709,18 +730,18 @@ function main(params) {
   }
 
   if (params.layout == 'nested' || params.layout == 'nested solid')
-      return union(translate([0, 0, 0], boxB), translate([0, 0, 0], boxA));
+      return union(translate([0, 0, standoffFoot], boxB), translate([0, 0, 0], boxA));
   if (params.layout == 'stacked')
       return union(translate([0, 0, 0], boxA), translate([0, 0, oh], boxB));
   if (params.layout == 'pulsar')
       return union(translate([0, 0, 0], boxA), translate([0, 0, oh], boxB),
         translate([-ow/2-59.5, -od/2-t, 0], pulsar23()));
   if (params.layout == 'apart')
-      return union(translate([0, od, 0], boxA), translate([0, -od, 0], boxB));
+      return union(translate([0, od, 0], boxA), translate([0, -od, standoffFoot], boxB));
   if (params.layout == 'outer only')
       return boxA;
   if (params.layout == 'inner only')
-      return boxB;
+      return translate([0, 0, standoffFoot], boxB);
   if (params.layout == 'pcb only')
       return boardAndPins();
   return [];
