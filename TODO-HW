@@ -6,32 +6,19 @@ Design
 ------
 
 [] vias for ground
-[] logo in mask/copper
-
-[] two-sided components
-	[] resistors & diodes that are just copied
-	[] transistors that need to be flipped
-	[] caps?
-	[] fuse
-	[] rectifier
-	[] power connector needs new package
-
 [] switch standoffs to M3?
 
 
 Circuit
 -------
 
-
-[] power
-	[] diode / solder pad as optiona rectifier replacement
-	[] check cap size
-	[] do we need the other diode?
-
-[] put back the 5v jumper?
-
 Later
 -----
 
 [] MIDI circuit
 
+
+
+Case
+----
+Northwest Bamboo: https://nwbamboo.com/

@@ -20253,7 +20253,7 @@ A pad for an uninsulated banana jack (so it makes contact),
 meant for a ground connection.
 This version has no restruction layer so that the ground pours will connect. 
 &lt;/p&gt;</description>
-<pad name="C" x="0" y="0" drill="6.35" diameter="10.16"/>
+<pad name="C" x="0" y="0" drill="6.35" diameter="10.16" thermals="no"/>
 <circle x="0" y="0" radius="5.388153125" width="0.127" layer="21"/>
 <circle x="0" y="0" radius="5.388153125" width="0.127" layer="22"/>
 <circle x="0" y="0" radius="6.35" width="0.127" layer="39"/>
