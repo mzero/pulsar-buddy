@@ -41,9 +41,10 @@ function unionInColor(o, a) {
 const t = 2.7;       // thickness
 const k = 0.2;      // kerf
 
-const pulsarH = 58.0;
-    // table surface to top of metal box, including the rubber feet
-
+const pulsarH = 61.0;
+    // table surface to top, including the rubber feet
+    // Surface of top is at 63.0, but the back plate is a little shorter
+    // this makes the unit line up with the back plate nicely.
 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -479,18 +480,28 @@ function boardAndPins() {
 //   PULSAR-23
 //
 
+const jackSpacing = 25;
+const jackDia = 18;
+const jackGap = jackSpacing - jackDia;
+const jackHeight = 15.5 + jackDia/2;
+
+const jackClearW = jackDia/2 + 5*jackSpacing + jackDia/2;
+const jackClearH = jackHeight + jackDia/2;
+
+const rubberFootH = 7;
+
 function pulsar23() {
     const body =
-        translate([0, -280, 0],
+        translate([0, -280, rubberFootH],
             colorize([247/255, 247/255, 245/255, 0.7],
-                cube({size:[380, 280, pulsarH], center: false})));
+                cube({size:[380, 280, pulsarH - rubberFootH], center: false})));
 
     const nut =
         rotate([-90, 0, 0],
             colorize([0, 0, 0.25],
                 union(
-                    cylinder({r: 17.2/2, fn: 6, h: 4.5}),
-                    cylinder({r: 17.2/2, h: 0.5}))));
+                    cylinder({r: jackDia/2, fn: 6, h: 4.5}),
+                    cylinder({r: jackDia/2, h: 0.5}))));
     const nuts =
         union(
             translate([ 50, 0, 0], nut),
@@ -503,7 +514,7 @@ function pulsar23() {
         )
     return union(
         body,
-        translate([0, 0, 12.5], nuts)
+        translate([0, 0, jackHeight], nuts)
         );
 }
 
@@ -520,70 +531,69 @@ const standoff1H = 15;
     // has to be at least 9mm to accomodate the banana jacks
     // has to be at least 11.6mm to accomodate feather m0
 
-const jackSpacing = 25;
-const jackDia = 17.2;
-const jackClear = jackDia/2 + 5*jackSpacing + jackDia/2;
 
-const clearance = 25.0;                 // gap to cover rear jacks
-const foot = 6.0;                      // foot size
+const clearance = 20.0;                 // gap to cover rear jacks
+const foot =  8;                   // foot size
 
-const boxGap = inch(0.01);  // gap between inner and outer box
+const boxGap = 0.25;  // gap between inner and outer box
 const cutGap = 1.0;         // gap between pieces when cut
+const pcbGap = 0.5;   // gap between pcb nd box
+
 
 // main dimensions
 const ih = t + standoff1H + pcbt;
-const oh = pulsarH - ih;
+const oh = pulsarH;
+const oTop = oh - ih;
 
-const ow = 156; // ≥ jackClear + 2 * t;
-const iw = ow - 2*t - 2*boxGap;
+// const ow = 6*jackSpacing + 2*t/2;
+// const iw = ow - 2*t - 2*boxGap;
 
-const od = 60.0;
-const id = od;
+const iw = pcbw + 2*pcbGap + 2*t;
+const ow = iw + 2*boxGap + 2*t;
+
+const id = pcbd + 2*pcbGap + 2*t; // 60.0;
+const od = id + 2*boxGap + 2*t;
+
+console.log("inner dimensions:", iw, "x", id, "x", ih);
+console.log("outer dimensions:", ow, "x", od, "x", oh);
 
 
 function outerBox(flat, clear) {
-    const w = ow;
-    const d = od + 2*t + 2*boxGap;
-    const h = oh;
     const c = hsv2rgb(42/360, 0.46, 0.99).concat(clear ? [0.35] : []);
 
-    const parts = boxParts(w, d, h, c);
+    const parts = boxParts(ow, od, oh, c);
 
     const tbTrim =
         punchComponentHoles(
             difference(parts.tb, pcbHoles(standoffHeadDia)));
 
     const fbTrim =
-        union(
-            difference(parts.fb,
-                translate([0, (h - clearance)/2, 0],
-                    cube({ size: [w, clearance, t], center: true })),
-                scale([8, 1, 1],
-                    translate([0, 1, 0],
-                        cylinder({ r: 10, h: h, center: true })))
-                ),
-            translate([-w/2 + 3, 0, 0], cube({size: [6, h, t], center: true})),
-            translate([w/2 - 3, 0, 0], cube({size: [6, h, t], center: true}))
+        difference(parts.fb,
+            translate([0, (oh - jackClearH)/2, 0],
+                cube({ size: [ow - 4*t, jackClearH, t], center: true }))
+            //,
+            // scale([8, 1, 1],
+            //     translate([0, 1, 0],
+            //         cylinder({ r: 10, h: oh, center: true })))
             );
 
     const lrTrim =
         difference(parts.lr,
-            translate([(h-t-6)/2, 0, 0],
-                cube({ size: [t + 6, od - 2*foot, t], center: true })));
+            translate([(oh-(t+6))/2, 0, 0],
+                cube({ size: [t+6, od - 2*foot, t], center: true })),
+            translate([-(oh-ih)/2, 0, 0],
+                cube({ size: [ih, od - 2*foot, t], center: true }))
 
-    var top =   translate([0, 0, oh - t/2],                                tbTrim);
+            );
+
+    var top =   translate([0, 0, oTop - t/2],                                tbTrim);
     var bottom =translate([0, 0, t/2],                                   tbTrim);
-    var front = translate([0, -((d-t)/2), h/2],   rotate([90, 180, 0],    fbTrim));
-    var back =  translate([0, (d-t)/2, h/2],      rotate([-90, 0, 0],     fbTrim));
-    var left =  translate([-(w-t)/2, 0, h/2],     rotate([180, 90, 0],    lrTrim));
-    var right = translate([(w-t)/2, 0, h/2],      rotate([0, 90, 0],      lrTrim));
+    var front = translate([0, -((od-t)/2), oh/2],   rotate([90, 180, 0],    fbTrim));
+    var back =  translate([0, (od-t)/2, oh/2],      rotate([-90, 0, 0],     fbTrim));
+    var left =  translate([-(ow-t)/2, 0, oh/2],     rotate([180, 90, 0],    lrTrim));
+    var right = translate([(ow-t)/2, 0, oh/2],      rotate([0, 90, 0],      lrTrim));
 
     bottom = null;  // no bottom
-
-    [top, front]    = tabJoin(top, front,   [0, 0, 0],      { indent: longEdgeInset });
-    [top, back]     = tabJoin(top, back,    [0, 0, 0],      { indent: longEdgeInset });
-    [top, left]     = tabJoin(top, left,    [0, 0, 90]);
-    [top, right]    = tabJoin(top, right,   [0, 0, -90]);
 
     [bottom, front] = tabJoin(bottom, front,    [0, 0, 0],      { indent: longEdgeInset });
     [bottom, back]  = tabJoin(bottom, back,     [0, 0, 0],      { indent: longEdgeInset });
@@ -595,24 +605,29 @@ function outerBox(flat, clear) {
     [back, left]    = tabJoin(back, left,   [0, 90, 0],     { tab: sideTab });
     [back, right]   = tabJoin(back, right,  [0, -90, 0],    { tab: sideTab });
 
+    [front, top]    = tabJoin(front, top,   [0, 0, 0],      { indent: longEdgeInset });
+    [back,  top]    = tabJoin(back,  top,   [0, 0, 0],      { indent: longEdgeInset });
+    [left,  top]    = tabJoin(left,  top,   [0, 0, 90]);
+    [right, top]    = tabJoin(right, top,   [0, 0, -90]);
+
     if (flat) {
 
         // deconstruct the box
-        top =                         translate([0, 0, -(h - t/2)],        top);
-        front = rotate([90, -180, 0],  translate([0, (d-t)/2, -h/2],   front));
-        back =  rotate([90, 0, 0],   translate([0, -(d-t)/2, -h/2],      back));
-        left =  rotate([180, 90, 0],  translate([(w-t)/2, 0, -h/2],     left));
-        right = rotate([0, -90, 0],    translate([-(w-t)/2, 0, -h/2],      right));
+        top =                         translate([0, 0, -(oh - t/2)],        top);
+        front = rotate([90, -180, 0],  translate([0, (od-t)/2, -oh/2],   front));
+        back =  rotate([90, 0, 0],   translate([0, -(od-t)/2, -oh/2],      back));
+        left =  rotate([180, 90, 0],  translate([(ow-t)/2, 0, -oh/2],     left));
+        right = rotate([0, -90, 0],    translate([-(ow-t)/2, 0, -oh/2],      right));
 
         // lay it out
         const [smin, smax] = fbTrim.getBounds();
         const sh = smax.y - smin.y;
 
         top =   translate([0, 0, 0], top);
-        front = translate([0, -(smax.y + d/2 + cutGap), 0],           front);
-        back =  translate([0, -(smax.y + d/2 + sh + 2*cutGap), 0],    back);
-        left =  translate([-(d+cutGap)/2, (d+h)/2+cutGap, 0],         rotate([0, 0, 90], left));
-        right = translate([(d+cutGap)/2, (d+h)/2+cutGap, 0],          rotate([0, 0, 90], right));
+        front = translate([0, -(smax.y + od/2 + cutGap), 0],           front);
+        back =  translate([0, -(smax.y + od/2 + sh + 2*cutGap), 0],    back);
+        left =  translate([-(od+cutGap)/2, (od+oh)/2+cutGap, 0],         rotate([0, 0, 90], left));
+        right = translate([(od+cutGap)/2, (od+oh)/2+cutGap, 0],          rotate([0, 0, 90], right));
     }
 
     return union([top, bottom, left, right, front, back].filter(x => x));
@@ -621,7 +636,7 @@ function outerBox(flat, clear) {
 
 
 function innerBox(flat) {
-    const parts = boxParts(iw, id, ih, hsv2rgb(42/360, 0.46, 0.99));
+    const parts = boxParts(iw, id, ih, hsv2rgb(42/360, 0.66, 0.99));
 
     const topCover = punchComponentHoles(parts.tb);
 
@@ -632,20 +647,38 @@ function innerBox(flat) {
                 face(ow, od - 2*foot - 2*boxGap))
             , pcbHoles(pcbHoleDrill));
 
-    const lrTrim =
+    const rTrim =
         difference(parts.lr,
-            translate([(11-6)/2, 0, 0],
-                cube({ size: [ih - 11 - 6, id - 15, t], center: true })));
+            translate([-(ih - 14)/2, 0, 0],
+                cube({ size: [14, id - 20, t], center: true })));
+
+    const lTrim =
+        difference(parts.lr,
+            intersection(
+                translate([-t/2, 0, 0], cube({ size: [8, id-6*t, t], center: true })),
+                union((function(){
+                    const slat = rotate([0, 0, 45], cube({size: [2*iw, 1.5, t], center: true} ));
+
+                    var r = [];
+                    for (y = 0; y <= id; y += 3*sqrt(2)) {
+                        r.push(translate([0, y, 0], slat));
+                        if (y>0) {
+                            r.push(translate([0, -y, 0], slat));
+                        }
+                    }
+
+                    return r;
+                })())
+            ));
 
     var top =   translate([0, 0, ih - t/2],        rotate([180, 180, 180],   topCover));
     var bottom =translate([0, 0, t/2],            rotate([0, 180, 0],     botFoot));
     var front = translate([0, -((id-t)/2), ih/2],   rotate([90, 180, 0],    parts.fb));
     var back =  translate([0, (id-t)/2, ih/2],      rotate([-90, 0, 0],     parts.fb));
-    var left =  translate([-(iw-t)/2, 0, ih/2],     rotate([180, 90, 0],    parts.lr));
-    var right = translate([(iw-t)/2, 0, ih/2],      rotate([0, 90, 0],      lrTrim));
+    var left =  translate([-(iw-t)/2, 0, ih/2],     rotate([180, 90, 0],    lTrim));
+    var right = translate([(iw-t)/2, 0, ih/2],      rotate([0, 90, 0],      rTrim));
 
     top = null;
-    right = null;
 
     [top, front] = tabJoin(top, front,    [0, 0, 0],      { indent: longEdgeInset });
     [top, back]  = tabJoin(top, back,     [0, 0, 0],      { indent: longEdgeInset });
@@ -669,17 +702,17 @@ function innerBox(flat) {
         front = rotate([90, -180, 0],  translate([0, (id-t)/2, -ih/2],   front));
         back =  rotate([90, 0, 0],   translate([0, -(id-t)/2, -ih/2],      back));
         left =  rotate([180, 90, 0],  translate([(iw-t)/2, 0, -ih/2],     left));
-        //right = rotate([0, -90, 0],    translate([-(iw-t)/2, 0, -ih/2],      right));
+        right = rotate([0, -90, 0],    translate([-(iw-t)/2, 0, -ih/2],      right));
 
         // lay it out
-        const [emin, emax] = lrTrim.getBounds();
+        const [emin, emax] = rTrim.getBounds();
         const eh = emax.x - emin.x;
 
         bottom =translate([0, 0, 0],                            rotate([0, 180, 0], bottom));
         front = translate([0, -((ih+id)/2 + cutGap), 0],          rotate([0, 0, 0], front));
         back =  translate([0, -((ih+id)/2 + ih + 2*cutGap), 0],    rotate([0, 0, 0], back));
         left =  translate([-(id+cutGap)/2, (eh + id)/2 + cutGap, 0], rotate([0, 0, 90], left));
-        //right = translate([(id+cutGap)/2,  (eh + id)/2 + cutGap, 0], rotate([0, 0, 90], right));
+        right = translate([(id+cutGap)/2,  (eh + id)/2 + cutGap, 0], rotate([0, 0, 90], right));
     }
 
     return union([top, bottom, left, right, front, back].filter(x => x));
@@ -732,10 +765,10 @@ function main(params) {
   if (params.layout == 'nested' || params.layout == 'nested solid')
       return union(translate([0, 0, standoffFoot], boxB), translate([0, 0, 0], boxA));
   if (params.layout == 'stacked')
-      return union(translate([0, 0, 0], boxA), translate([0, 0, oh], boxB));
+      return union(translate([0, 0, 0], boxA), translate([0, 0, oTop], boxB));
   if (params.layout == 'pulsar')
-      return union(translate([0, 0, 0], boxA), translate([0, 0, oh], boxB),
-        translate([-ow/2-59.5, -od/2-t, 0], pulsar23()));
+      return union(translate([0, 0, 0], boxA), translate([0, 0, oTop], boxB),
+        translate([-ow/2-59.5, -od/2, 0], pulsar23()));
   if (params.layout == 'apart')
       return union(translate([0, od, 0], boxA), translate([0, -od, standoffFoot], boxB));
   if (params.layout == 'outer only')
