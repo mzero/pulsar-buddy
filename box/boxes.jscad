@@ -202,8 +202,11 @@ const pcbHoleInset = mils(100);
 const pcbx0 = -pcbw/2;
 const pcby0 = -pcbd/2;
 
-const pinh = inch(1.00);
-const pindia = inch(0.138);     // pins are 6-32 screws
+// const pinh = inch(1.00);
+// const pindia = inch(69/500);     // pins are 6-32 screws
+
+const pinh = 15;
+const pindia = 3;     // pins are M3 screws
 
 const banodia1 = 12.7;
 const banodia2 = 12.0;
@@ -237,7 +240,7 @@ const knoby = pcby0 + mils(400);
 const platet = 1.5;         // thickness of acrylic plate
 
 const standoffFoot = 6;     // standoff on bottom of box
-const standoffBoard = 15;   // standoff between box and main pcb
+const standoffBoard = 12;   // standoff between box and main pcb
 const standoffPlate = 8;    // standoff between main pcb and acrylic plate
 
 const pcbMountXYs = (function(){
@@ -284,10 +287,6 @@ const bananaXYs = redBananaXYs.concat(blackBananaXYs);
 const featherw = inch(2);
 const featherd = inch(0.9);
 const feathert = pcbt;
-
-const featherhBelow = pcbt + 8 + 1;  // 1 for solder
-const featherhAbove = 2.54 + pcbt;
-const featherh = featherhBelow + pcbt + featherhAbove;
 
 const featherx0 = pcbx0 + mils(3700);
 const feathery0 = pcby0 + mils(850);
@@ -346,34 +345,22 @@ function boardAndPins() {
                 cylinder({r: banidia/2, h: banh, center: ttf})
                 ));
 
-    const feather =
-        union(
-            colorize(featherColor,
-                cube({size: [featherw, featherd, featherh]})),
-            translate(
-                [inch(0.28), inch(0.21), featherh],
-                colorize(hsv2rgb(0, 0, 0),
-                    cube({size: [inch(1.2), inch(0.45), 0.5]})))
-            // translate(
-            //     [0, 0, featherh + 4],
-            //     colorize([0.98, 0.98, 1.0, 0.3],
-            //         cube({size: [featherw, featherd, 1.5]})))
-        );
 
+    const featherUpperGap = 2.54;
     const featherOLED =
         union(
             colorize(featherColor,
-                translate([0, 0, 2.54],
+                translate([0, 0, featherUpperGap],
                     cube({size: [featherw, featherd, feathert]}))),
             translate(
-                [inch(0.28), inch(0.21), 2.54 + feathert],
+                [inch(0.28), inch(0.21), featherUpperGap + feathert],
                 colorize(hsv2rgb(0, 0, 0),
                     cube({size: [inch(1.2), inch(0.45), 0.5]}))),
             // spacers on pins
             translate([mils(200), 0, 0],
-                cube({size: [mils(1200), mils(100), 2.54]})),
+                cube({size: [mils(1200), mils(100), featherUpperGap]})),
             translate([mils(200), mils(800), 0],
-                cube({size: [mils(1600), mils(100), 2.54]}))
+                cube({size: [mils(1600), mils(100), featherUpperGap]}))
 
         );
 
@@ -457,8 +444,6 @@ function boardAndPins() {
                 colorize(hsv2rgb(0, 0, 0.05), bananaJack))
             ]),
 
-        // the feather stack
-        //translate([featherx0, feathery0, -featherhBelow], feather),
         translate([featherx0, feathery0 + mils(100), pcbt], featherOLED),
         translate([featherx0, feathery0, 0], featherM0),
 
@@ -470,7 +455,7 @@ function boardAndPins() {
 
         translate([0, 0, -(standoffBoard + t + standoffFoot)], standoffs),
 
-        translate([0, 0, pcbt + 8], plate)
+        translate([0, 0, pcbt + standoffPlate], plate)
         );
 }
 
@@ -526,7 +511,7 @@ function pulsar23() {
 
 const standoffHeadDia = 5.5;    // to accomodate hex heads,
         // this fits the nylon ones, some metal ones require 6
-const standoff1H = 15;
+const standoff1H = 15; // standoffBoard;
     // height of pcb off of bottom surface
     // has to be at least 9mm to accomodate the banana jacks
     // has to be at least 11.6mm to accomodate feather m0
@@ -542,8 +527,8 @@ const pcbGap = 0.5;   // gap between pcb nd box
 
 // main dimensions
 const ih = t + standoff1H + pcbt;
-const oh = pulsarH;
-const oTop = oh - ih;
+const oh = pulsarH - 10;
+const oTop = pulsarH - ih;
 
 // const ow = 6*jackSpacing + 2*t/2;
 // const iw = ow - 2*t - 2*boxGap;
@@ -569,20 +554,23 @@ function outerBox(flat, clear) {
 
     const fbTrim =
         difference(parts.fb,
-            translate([0, (oh - jackClearH)/2, 0],
+            translate([0, (oh - jackClearH)/2 + 2, 0],
                 cube({ size: [ow - 4*t, jackClearH, t], center: true }))
-            //,
-            // scale([8, 1, 1],
-            //     translate([0, 1, 0],
-            //         cylinder({ r: 10, h: oh, center: true })))
+            ,
+            translate([0, 0.7 - 5, 0],
+                intersection(
+                    scale([7.5, 1, 1], cylinder({ r: 10, h: t, fn: 80, center: true })),
+                    cube({ size: [ow-4*t, oh, t], center: true})
+                )
+            )
             );
 
     const lrTrim =
         difference(parts.lr,
             translate([(oh-(t+6))/2, 0, 0],
                 cube({ size: [t+6, od - 2*foot, t], center: true })),
-            translate([-(oh-ih)/2, 0, 0],
-                cube({ size: [ih, od - 2*foot, t], center: true }))
+            translate([-(oh-(ih - 10))/2, 0, 0],
+                cube({ size: [ih - 10, od - 2*foot, t], center: true }))
 
             );
 
@@ -605,15 +593,17 @@ function outerBox(flat, clear) {
     [back, left]    = tabJoin(back, left,   [0, 90, 0],     { tab: sideTab });
     [back, right]   = tabJoin(back, right,  [0, -90, 0],    { tab: sideTab });
 
-    [front, top]    = tabJoin(front, top,   [0, 0, 0],      { indent: longEdgeInset });
-    [back,  top]    = tabJoin(back,  top,   [0, 0, 0],      { indent: longEdgeInset });
+    const topEdgeInset = 45;
+
+    [front, top]    = tabJoin(front, top,   [0, 0, 0],      { indent: topEdgeInset });
+    [back,  top]    = tabJoin(back,  top,   [0, 0, 0],      { indent: topEdgeInset });
     [left,  top]    = tabJoin(left,  top,   [0, 0, 90]);
     [right, top]    = tabJoin(right, top,   [0, 0, -90]);
 
     if (flat) {
 
         // deconstruct the box
-        top =                         translate([0, 0, -(oh - t/2)],        top);
+        top =                         translate([0, 0, -(oTop - t/2)],        top);
         front = rotate([90, -180, 0],  translate([0, (od-t)/2, -oh/2],   front));
         back =  rotate([90, 0, 0],   translate([0, -(od-t)/2, -oh/2],      back));
         left =  rotate([180, 90, 0],  translate([(ow-t)/2, 0, -oh/2],     left));
@@ -649,8 +639,8 @@ function innerBox(flat) {
 
     const rTrim =
         difference(parts.lr,
-            translate([-(ih - 14)/2, 0, 0],
-                cube({ size: [14, id - 20, t], center: true })));
+            translate([+t/4, 0, 0],
+                cube({ size: [ih - 3.5*t, id - 25, t], center: true })));
 
     const lTrim =
         difference(parts.lr,
@@ -719,7 +709,7 @@ function innerBox(flat) {
 }
 
 function placedPcb() {
-    return translate([0, 0, t + standoff1H], boardAndPins());
+    return translate([0, 0, t + standoffBoard], boardAndPins());
 }
 
 function getParameterDefinitions() {
