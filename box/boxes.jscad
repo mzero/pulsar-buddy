@@ -5,6 +5,7 @@
 //
 
 const ttf = [true, true, false];
+const ftt = [false, true, true];
 
 // all measurements are in mm
 
@@ -53,7 +54,7 @@ const pulsarH = 61.0;
 //
 
 const defaultTab = 3*t;
-const defaultFit = 0;       // k?
+const defaultFit = k/2;     // k was too much for bamboo, 0 too little
 const sideTab = 1.5*t;
 const longEdgeInset = mils(500);
 
@@ -118,9 +119,9 @@ function tabJoin(objA, objB, orient, params, debug) {
     // add back a prisim the size of the joint to both objects
     // this fills in any curves they might have that intersect the joint
 
-    const jointBar = translate(jmin, cube({size: [jsize.x, jsize.y, jsize.z]}));
-    objA = unionInColor(objA, jointBar);
-    objB = unionInColor(objB, jointBar);
+    // const jointBar = translate(jmin, cube({size: [jsize.x, jsize.y, jsize.z]}));
+    // objA = unionInColor(objA, jointBar);
+    // objB = unionInColor(objB, jointBar);
 
     // we'll, construct the knockouts along the x axis, and rotate them
     // into location later.
@@ -329,6 +330,31 @@ function punchComponentHoles(obj) {
         )));
 }
 
+
+function clearPlate() {
+    const dw = mils(100);
+    const w = pcbw/2 + dw;
+    const d = pcbd;
+    const h = platet;
+    const r = mils(100);
+
+    return difference(
+        colorize([0.98, 0.98, 1.0, 0.3],
+            union(
+                translate([-dw, 0, 0],          cube({size: [w, d - 2*r, h], center: ftt})),
+                translate([-dw+r, 0, 0],            cube({size: [w - 2*r, d, h], center: ftt})),
+                translate([-(dw-r), -(d/2-r), 0],   cylinder({r: r, h: h, center: true})),
+                translate([-(dw-r), +(d/2-r), 0],   cylinder({r: r, h: h, center: true})),
+                translate([(w-dw-r), -(d/2-r), 0],   cylinder({r: r, h: h, center: true})),
+                translate([(w-dw-r), +(d/2-r), 0],   cylinder({r: r, h: h, center: true}))
+            )
+        ),
+        pcbHoles(pcbHoleDrill),
+        translate([knobx, knoby, 0],
+            cylinder({ r: knobshaftdia/2 + 0.5, h: oh, center: ttf}))
+    );
+}
+
 function boardAndPins() {
     const pcbColor =     hsv2rgb(120/360, 0.85, 0.48);
     const featherColor = hsv2rgb(120/360, 0.80, 0.30);
@@ -420,16 +446,7 @@ function boardAndPins() {
                 )
             );
 
-    const plate =
-        translate([0, 0, 1.5/2],
-            difference(
-                translate([-mils(100), 0, 0],
-                    colorize([0.98, 0.98, 1.0, 0.3],
-                            cube({size: [pcbw/2 + mils(100), pcbd, platet], center: [false, true, true]}))),
-                pcbHoles(pcbHoleDrill),
-                translate([knobx, knoby, 0],
-                    cylinder({ r: knobshaftdia/2 + 0.5, h: oh, center: ttf}))
-                ));
+    const plate = translate([0, 0, 1.5/2], clearPlate());
 
     const screwHead =
         intersection(
@@ -727,7 +744,7 @@ function placedPcb() {
 
 function getParameterDefinitions() {
     const values = [ 'flat', 'nested', 'nested solid', 'stacked', 'pulsar',
-                'apart', 'outer only', 'inner only', 'pcb only', 'svg']
+                'apart', 'outer only', 'inner only', 'pcb only', 'svg', 'plate']
     return [
         { name: 'layout', type: 'choice', caption: 'layout',
             values: values,
@@ -739,6 +756,11 @@ function getParameterDefinitions() {
 }
 
 function main(params) {
+
+  if (params.layout == 'plate') {
+    return clearPlate().projectToOrthoNormalBasis(CSG.OrthoNormalBasis.Z0Plane());
+  }
+
   const flat = params.layout == 'flat' || params.layout == 'svg';
   var boxA = outerBox(flat, params.layout == 'nested');
   var boxB = innerBox(flat);
