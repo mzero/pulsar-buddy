@@ -624,12 +624,13 @@ function outerBox(flat, clear) {
         // lay it out
         const [smin, smax] = fbTrim.getBounds();
         const sh = smax.y - smin.y;
+        const bh = oh - oTop + t;
 
-        top =   translate([0, 0, 0], top);
-        front = translate([0, -(smax.y + od/2 + cutGap), 0],           front);
-        back =  translate([0, -(smax.y + od/2 + sh + 2*cutGap), 0],    back);
-        left =  translate([-(od+cutGap)/2, (od+oh)/2+cutGap, 0],         rotate([0, 0, 90], left));
-        right = translate([(od+cutGap)/2, (od+oh)/2+cutGap, 0],          rotate([0, 0, 90], right));
+        top =   translate([0, -oh - od/2 - cutGap, 0],                  top);
+        front = translate([0, -oh/2,        0],                         front);
+        back =  translate([0,  oh/2+cutGap + 3, 0],     rotate([0, 0, 180], back));
+        left =  translate([-(od+cutGap)/2, -8, 0],  rotate([0, 0, 90],  left));
+        right = translate([(od+cutGap)/2,  -8, 0],  rotate([0, 0, 90],  right));
     }
 
     return union([top, bottom, left, right, front, back].filter(x => x));
@@ -711,10 +712,10 @@ function innerBox(flat) {
         const eh = emax.x - emin.x;
 
         bottom =translate([0, 0, 0],                            rotate([0, 180, 0], bottom));
-        front = translate([0, -((ih+id)/2 + cutGap), 0],          rotate([0, 0, 0], front));
-        back =  translate([0, -((ih+id)/2 + ih + 2*cutGap), 0],    rotate([0, 0, 0], back));
-        left =  translate([-(id+cutGap)/2, (eh + id)/2 + cutGap, 0], rotate([0, 0, 90], left));
-        right = translate([(id+cutGap)/2,  (eh + id)/2 + cutGap, 0], rotate([0, 0, 90], right));
+        front = translate([0, ((ih+id)/2 + cutGap), 0],          rotate([0, 0, 0], front));
+        back =  translate([0, ((ih+id)/2 + ih + 2*cutGap), 0],    rotate([0, 0, 0], back));
+        left =  translate([-(id+cutGap)/2, -(eh + id)/2 - cutGap - 16, 0], rotate([0, 0, 90], left));
+        right = translate([(id+cutGap)/2,  -(eh + id)/2 - cutGap - 16, 0], rotate([0, 0, 90], right));
     }
 
     return union([top, bottom, left, right, front, back].filter(x => x));
@@ -748,7 +749,7 @@ function main(params) {
 
       const jigsaw = union(
         translate([0, -(amax.y + cutGap/2), 0], boxA),
-        translate([0,  -(bmin.y - cutGap/2), 0], boxB)
+        translate([0,  -(bmin.y - cutGap/2) - (id/2) - 6, 0], boxB)
         );
 
       const [jmin, jmax] = jigsaw.getBounds();
