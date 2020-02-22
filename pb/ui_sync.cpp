@@ -1,5 +1,6 @@
 #include "ui_sync.h"
 
+#include "display.h"
 #include "timer_hw.h"
 
 
@@ -175,9 +176,9 @@ void SyncField::redraw() {
           const int16_t wr = h;
           const int16_t hr = w;
 
-          display.setRotation(3);
+          setRotationSideways();
           centerNumber(status.bpm, xr, yr, wr, hr);
-          display.setRotation(0);
+          setRotationNormal();
           break;
         }
 
