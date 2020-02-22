@@ -205,7 +205,7 @@ const pcby0 = -pcbd/2;
 // const pinh = inch(1.00);
 // const pindia = inch(69/500);     // pins are 6-32 screws
 
-const pinh = 15;
+const pinh = 16;
 const pindia = 3;     // pins are M3 screws
 
 const banodia1 = 12.7;
@@ -239,14 +239,22 @@ const knoby = pcby0 + mils(400);
 
 const platet = 1.5;         // thickness of acrylic plate
 
-const standoffFoot = 6;     // standoff on bottom of box
 const standoffBoard = 12;   // standoff between box and main pcb
 const standoffPlate = 8;    // standoff between main pcb and acrylic plate
+
+const screwDia = 4.5;
+const screwh = 2;
+
+// the "feet" of the pcb assembly are just standoff screws
+const footh = screwh;
+const footHoleDia = screwDia + 1;
+    // accomodates either the screw heads or standoffs,
+    // this fits the nylon hardware, some metal hardware require 6
 
 const pcbMountXYs = (function(){
     const x = pcbw / 2 - pcbHoleInset;
     const y = pcbd / 2 - pcbHoleInset;
-    const hShort = standoffFoot + t + standoffBoard + pcbt;
+    const hShort = t + standoffBoard + pcbt;
     const hLong = hShort + standoffPlate + platet;
 
     return [
@@ -423,13 +431,20 @@ function boardAndPins() {
                     cylinder({ r: knobshaftdia/2 + 0.5, h: oh, center: ttf}))
                 ));
 
+    const screwHead =
+        intersection(
+            cylinder({r: screwDia/2, h: screwh}),
+            translate([0, 0, -1.2*screwDia + screwh],
+                sphere({r: 1.2*screwDia, center: true}))
+            );
+
     const standoffs =
         union(pcbMountXYs.map(p =>
             translate([p.x, p.y, 0],
                 colorize(hsv2rgb(0, 0, 0.31),
                     union(
-                        translate([0, 0, p.h],
-                            scale([1, 1, 0.5], sphere({r: 3.5/2, center: true}))),
+                        translate([0, 0, p.h], screwHead),
+                        rotate([0, 180, 0], screwHead),
                         cylinder({r: 4/Math.sqrt(3), fn: 6, h: p.h})
                     )))));
 
@@ -453,7 +468,7 @@ function boardAndPins() {
         translate([knobx, knoby, pcbt], knob),
 
 
-        translate([0, 0, -(standoffBoard + t + standoffFoot)], standoffs),
+        translate([0, 0, -(t + standoffBoard)], standoffs),
 
         translate([0, 0, pcbt + standoffPlate], plate)
         );
@@ -509,12 +524,7 @@ function pulsar23() {
 //
 
 
-const standoffHeadDia = 5.5;    // to accomodate hex heads,
-        // this fits the nylon ones, some metal ones require 6
-const standoff1H = 15; // standoffBoard;
-    // height of pcb off of bottom surface
-    // has to be at least 9mm to accomodate the banana jacks
-    // has to be at least 11.6mm to accomodate feather m0
+const pcbNest = 3; // depth of PCB inside top box
 
 
 const clearance = 20.0;                 // gap to cover rear jacks
@@ -526,7 +536,7 @@ const pcbGap = 0.5;   // gap between pcb nd box
 
 
 // main dimensions
-const ih = t + standoff1H + pcbt;
+const ih = t + standoffBoard + pcbt + pcbNest;
 const oh = pulsarH - 10;
 const oTop = pulsarH - ih;
 
@@ -539,6 +549,8 @@ const ow = iw + 2*boxGap + 2*t;
 const id = pcbd + 2*pcbGap + 2*t; // 60.0;
 const od = id + 2*boxGap + 2*t;
 
+const nestingDepth = 11;    // height of inner box when nested
+
 console.log("inner dimensions:", iw, "x", id, "x", ih);
 console.log("outer dimensions:", ow, "x", od, "x", oh);
 
@@ -550,7 +562,7 @@ function outerBox(flat, clear) {
 
     const tbTrim =
         punchComponentHoles(
-            difference(parts.tb, pcbHoles(standoffHeadDia)));
+            difference(parts.tb, pcbHoles(footHoleDia)));
 
     const fbTrim =
         difference(parts.fb,
@@ -567,8 +579,8 @@ function outerBox(flat, clear) {
 
     const lrTrim =
         difference(parts.lr,
-            translate([(oh-(t+6))/2, 0, 0],
-                cube({ size: [t+6, od - 2*foot, t], center: true })),
+            translate([(oh-(t+nestingDepth))/2, 0, 0],
+                cube({ size: [t+nestingDepth, od - 2*foot, t], center: true })),
             translate([-(oh-(ih - 10))/2, 0, 0],
                 cube({ size: [ih - 10, od - 2*foot, t], center: true }))
 
@@ -753,18 +765,18 @@ function main(params) {
   }
 
   if (params.layout == 'nested' || params.layout == 'nested solid')
-      return union(translate([0, 0, standoffFoot], boxB), translate([0, 0, 0], boxA));
+      return union(translate([0, 0, nestingDepth], boxB), translate([0, 0, 0], boxA));
   if (params.layout == 'stacked')
       return union(translate([0, 0, 0], boxA), translate([0, 0, oTop], boxB));
   if (params.layout == 'pulsar')
       return union(translate([0, 0, 0], boxA), translate([0, 0, oTop], boxB),
         translate([-ow/2-59.5, -od/2, 0], pulsar23()));
   if (params.layout == 'apart')
-      return union(translate([0, od, 0], boxA), translate([0, -od, standoffFoot], boxB));
+      return union(translate([0, od, 0], boxA), translate([0, -od, footh], boxB));
   if (params.layout == 'outer only')
       return boxA;
   if (params.layout == 'inner only')
-      return translate([0, 0, standoffFoot], boxB);
+      return translate([0, 0, footh], boxB);
   if (params.layout == 'pcb only')
       return boardAndPins();
   return [];
