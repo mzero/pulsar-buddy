@@ -119,9 +119,9 @@ function tabJoin(objA, objB, orient, params, debug) {
     // add back a prisim the size of the joint to both objects
     // this fills in any curves they might have that intersect the joint
 
-    // const jointBar = translate(jmin, cube({size: [jsize.x, jsize.y, jsize.z]}));
-    // objA = unionInColor(objA, jointBar);
-    // objB = unionInColor(objB, jointBar);
+    const jointBar = translate(jmin, cube({size: [jsize.x, jsize.y, jsize.z]}));
+    objA = unionInColor(objA, jointBar);
+    objB = unionInColor(objB, jointBar);
 
     // we'll, construct the knockouts along the x axis, and rotate them
     // into location later.
@@ -235,8 +235,9 @@ const knobdia = Math.max(knobAdia, knobBdia, knobCdia);
 const knobh = Math.max(knobAh, knobBh, knobCh);
 
 const knobshaftdia = 6;
-const knobx = pcbx0 + mils(4300 + 200);
-const knoby = pcby0 + mils(400);
+const knobbushingdia = 7;   // it is M7 x 0.75 threaded
+const knobx = pcbx0 + mils(4600);
+const knoby = pcby0 + mils(425);
 
 const platet = 1.5;         // thickness of acrylic plate
 
@@ -351,7 +352,7 @@ function clearPlate() {
         ),
         pcbHoles(pcbHoleDrill),
         translate([knobx, knoby, 0],
-            cylinder({ r: knobshaftdia/2 + 0.5, h: oh, center: ttf}))
+            cylinder({ r: knobbushingdia/2 + 0.5, h: 3*h, center: true }))
     );
 }
 
@@ -547,7 +548,7 @@ const pcbNest = 3; // depth of PCB inside top box
 const clearance = 20.0;                 // gap to cover rear jacks
 const foot =  8;                   // foot size
 
-const boxGap = 0.25;  // gap between inner and outer box
+const boxGap = 0.75;  // gap between inner and outer box
 const cutGap = 1.0;         // gap between pieces when cut
 const pcbGap = 0.5;   // gap between pcb nd box
 
@@ -612,6 +613,13 @@ function outerBox(flat, clear) {
 
     bottom = null;  // no bottom
 
+    const topEdgeInset = 45;
+
+    [front, top]    = tabJoin(front, top,   [0, 0, 0],      { indent: topEdgeInset });
+    [back,  top]    = tabJoin(back,  top,   [0, 0, 0],      { indent: topEdgeInset });
+    [left,  top]    = tabJoin(left,  top,   [0, 0, 90]);
+    [right, top]    = tabJoin(right, top,   [0, 0, -90]);
+
     [bottom, front] = tabJoin(bottom, front,    [0, 0, 0],      { indent: longEdgeInset });
     [bottom, back]  = tabJoin(bottom, back,     [0, 0, 0],      { indent: longEdgeInset });
     [bottom, left]  = tabJoin(bottom, left,     [0, 0, 90]);
@@ -621,13 +629,6 @@ function outerBox(flat, clear) {
     [front, right]  = tabJoin(front, right, [0, -90, 0],    { tab: sideTab });
     [back, left]    = tabJoin(back, left,   [0, 90, 0],     { tab: sideTab });
     [back, right]   = tabJoin(back, right,  [0, -90, 0],    { tab: sideTab });
-
-    const topEdgeInset = 45;
-
-    [front, top]    = tabJoin(front, top,   [0, 0, 0],      { indent: topEdgeInset });
-    [back,  top]    = tabJoin(back,  top,   [0, 0, 0],      { indent: topEdgeInset });
-    [left,  top]    = tabJoin(left,  top,   [0, 0, 90]);
-    [right, top]    = tabJoin(right, top,   [0, 0, -90]);
 
     if (flat) {
 
@@ -669,8 +670,8 @@ function innerBox(flat) {
 
     const rTrim =
         difference(parts.lr,
-            translate([+t/4, 0, 0],
-                cube({ size: [ih - 3.5*t, id - 25, t], center: true })));
+            translate([5, 0, 0],
+                cube({ size: [ih, id - 25, t], center: true })));
 
     const lTrim =
         difference(parts.lr,
@@ -708,7 +709,7 @@ function innerBox(flat) {
     [bottom, front] = tabJoin(bottom, front,    [0, 0, 0],      { indent: longEdgeInset });
     [bottom, back]  = tabJoin(bottom, back,     [0, 0, 0],      { indent: longEdgeInset });
     [bottom, left]  = tabJoin(bottom, left,     [0, 0, 90]);
-    [bottom, right] = tabJoin(bottom, right,    [0, 0, -90]);
+    [bottom, right] = tabJoin(bottom, right,    [0, 0, -90],    { tab: 5.5*t});
 
     [front, left]   = tabJoin(front, left,  [0, 90, 0],         { tab: sideTab });
     [front, right]  = tabJoin(front, right, [0, -90, 0],        { tab: sideTab });
