@@ -759,7 +759,10 @@ function getParameterDefinitions() {
 function main(params) {
 
   if (params.layout == 'plate') {
-    return clearPlate().projectToOrthoNormalBasis(CSG.OrthoNormalBasis.Z0Plane());
+    const plate = clearPlate();
+    const [pmin, pmax] = plate.getBounds();
+    console.log("Flat extent: " + (pmax.x - pmin.x) + "mm x " + (pmax.y - pmin.y) + "mm");
+    return plate.projectToOrthoNormalBasis(CSG.OrthoNormalBasis.Z0Plane());
   }
 
   const flat = params.layout == 'flat' || params.layout == 'svg';
