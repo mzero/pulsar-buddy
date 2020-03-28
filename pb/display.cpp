@@ -156,3 +156,23 @@ bool updateSaver(bool redrawn) {
   return true;
 }
 
+void dumpDisplayPBM(Print& stream) {
+  stream.println("");
+  stream.println("P1");
+
+  auto w = display.width();
+  auto h = display.height();
+
+  stream.print(w); stream.print(' '); stream.println(h);
+
+  for (auto j = 0; j < h; ++j) {
+    for (auto i = 0; i < w; ++i) {
+      stream.print(display.getPixel(i, j) == WHITE ? " 0" : " 1");
+        // 1 is black in PBM
+    }
+    stream.println("");
+  }
+  stream.println("");
+}
+
+

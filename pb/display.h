@@ -28,4 +28,8 @@ void centerNumber(const N& n, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 
 bool updateSaver(bool);
 
+
+void dumpDisplayPBM(Print& stream);
+
+
 #endif // _INCLUDE_DISPLAY_H_

@@ -1,25 +1,6 @@
 TODO
 
 
-[x] Handle printing run-time errors
-	- write Serial if available, else to Display
-		- if writing to display, wait for press to resume
-	- a new Print subclass that does this
-	- use in Flash for errors
-	- use in timing for "shouldn't happen"
-
-[x] look into saving when clock goes perplexed
-[x] look into getting perplexed when shifting to very fast tempos
-
-[x] Version number from somewhere!
-
-[x] extended BPM range mode
-	- 10 to 900 bpm, but it won't be perplexed as often!
-	- will four digits show on BPM display?!?!?! no!
-
-
-
-
 --- Later
 
 [] probably should persist state only if it is stable

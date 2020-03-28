@@ -136,7 +136,8 @@ void loop() {
   }
 
   if (oledButtonA.update() == Button::Down) {
-    resetTiming(userSettings());
+    dumpDisplayPBM(Serial);
+    //resetTiming(userSettings());
     active = true;
   }
 

@@ -89,6 +89,15 @@ namespace {
       if (redraw) {
         drawConfiguration();
         redraw = false;
+
+#ifdef SCREENSHOT_CONFIG_SCREEN
+        static bool firstTime = true;
+        if (firstTime) {
+          while (!Serial);
+          dumpDisplayPBM(Serial);
+          firstTime = false;
+        }
+#endif
       }
 
       auto update = encoder.update();
