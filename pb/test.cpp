@@ -6,48 +6,172 @@
 
 namespace {
 
-  struct TestState {
-    bool outS, outM, outB, outT;
-    bool inC, inO;
+  struct Mode {
+      const char* name;
+      const char* pattern;
   };
 
-  void drawSignal(bool on,
-    int16_t xPin, int16_t yPin, int16_t xBanana, int16_t yBanana)
-  {
-    int16_t xtra = on ? 2 : 0;
+  const Mode modes[] = {
+    { "-",   "-" },
+    { "T",   "T" },
+    { "B",   "B" },
+    { "M",   "M" },
+    { "S",   "S" },
+    { "*",   "*" },
+    { "T~",  "T---" },
+    { "B~",  "B---" },
+    { "M~",  "M---" },
+    { "S~",  "S---" },
+    { "*~",  "TBMS" },
+    { 0, 0 }
+  };
 
-    display.fillCircle(xPin, yPin, 1 + xtra, WHITE);
-    display.fillCircle(xBanana, yBanana, 3 + xtra, WHITE);
-    display.fillCircle(xBanana, yBanana, 2, BLACK);
-  }
+  class TestState {
+    bool outS, outM, outB, outT;
+    bool inC, inO;
 
-  void drawState(const TestState& ts) {
-    display.clearDisplay();
-    display.drawFastHLine(2, 16, 12, WHITE);
+    int modeIndex;
+    const Mode* mode;
 
-    drawSignal(ts.inC,   8,  8, 22,  6);
-    drawSignal(ts.inO,   8, 23, 39,  6);
-    drawSignal(ts.outT, 33, 16, 22, 26);
-    drawSignal(ts.outB, 49, 16, 39, 26);
-    drawSignal(ts.outM, 66, 16, 56, 26);
-    drawSignal(ts.outS, 81, 16, 73, 26);
+    int phase;
 
-    display.display();
-  }
-}
+    bool needRedraw;
 
-void testLoop() {
-  TestState ts = { false, true, false, false, true, false };
 
-  while (true) {
-    drawState(ts);
+    TestState() { setMode(0); }
 
-    auto s = encoderButton.update();
-    if (s == Button::Down) {
-      return;
+    void draw() {
+      display.clearDisplay();
+      display.drawFastHLine(2, 16, 12, WHITE);
+
+      drawSignal(inC,   8,  8, 22,  6);
+      drawSignal(inO,   8, 23, 39,  6);
+      drawSignal(outT, 33, 16, 22, 26);
+      drawSignal(outB, 49, 16, 39, 26);
+      drawSignal(outM, 66, 16, 56, 26);
+      drawSignal(outS, 81, 16, 73, 26);
+
+      display.setCursor(100, 12);
+      display.setTextColor(WHITE, BLACK);
+      display.print(mode->name);
+
+      display.display();
+
+      needRedraw = false;
     }
 
-    delay(33);
-    yield();
-  }
+    static void drawSignal(bool on,
+      int16_t xPin, int16_t yPin, int16_t xBanana, int16_t yBanana)
+    {
+      int16_t xtra = on ? 2 : 0;
+
+      display.fillCircle(xPin, yPin, 1 + xtra, WHITE);
+      display.fillCircle(xBanana, yBanana, 3 + xtra, WHITE);
+      display.fillCircle(xBanana, yBanana, 2, BLACK);
+    }
+
+    void updateMode(Encoder::Update update) {
+      int i = modeIndex + update.dir();
+      if (i < 0 || modes[i].name == 0)
+        return;
+      if (i != modeIndex)
+        setMode(i);
+    }
+
+    void setMode(int i) {
+      modeIndex = i;
+      mode = &modes[i];
+      setPhase(0);
+
+      needRedraw |= true;
+    }
+
+    void incrementPhase() {
+      int p = phase + 1;
+      if (mode->pattern[p] == '\0') {
+        p = 0;
+      }
+      if (p != phase)
+        setPhase(p);
+    }
+
+    void setPhase(int p) {
+      phase = p;
+      setOutputs(mode->pattern[phase]);
+      setInputs();
+    }
+
+    void setOutputs(char op) {
+      bool t = op == 'T' || op == '*';
+      bool b = op == 'B' || op == '*';
+      bool m = op == 'M' || op == '*';
+      bool s = op == 'S' || op == '*';
+
+      needRedraw =
+        needRedraw || outT != t || outB != b || outM != m || outS != s;
+
+      outT = t;
+      outB = b;
+      outM = m;
+      outS = s;
+    }
+
+    void setInputs() {
+      // simulated
+      bool c = outT || outM;
+      bool o = outB || outS;
+
+      needRedraw =
+        needRedraw || inC != c || inO != o;
+
+      inO = o;
+      inC = c;
+    }
+
+    const unsigned long beatPeriod = 60000 / 120 / 4;
+      // sixteenth notes at 120bpm
+
+    void loop() {
+      auto nextPulse = millis() + beatPeriod;
+
+      while (true) {
+
+        if (millis() >= nextPulse) {
+          nextPulse += beatPeriod;
+          incrementPhase();
+        }
+
+        auto u = encoder.update();
+        if (u.active()) {
+          updateMode(u);
+        }
+
+        auto s = encoderButton.update();
+        if (s == Button::Down) {
+          return;
+        }
+
+        setInputs();
+
+        if (needRedraw)
+          draw();
+
+        delay(5);
+        yield();
+      }
+    }
+
+  public:
+    static void run() {
+      TestState ts;
+      ts.loop();
+    }
+
+  };
+}
+
+
+
+void testLoop() {
+  TestState::run();
 }
