@@ -3,8 +3,21 @@
 #include "controls.h"
 #include "display.h"
 
+#include <Arduino.h>
+#include <wiring_private.h>
+
 
 namespace {
+
+  const uint32_t pinT = PIN_SPI_MISO;
+  const uint32_t pinB = PIN_SPI_SCK;
+  const uint32_t pinM = PIN_SERIAL1_TX;
+  const uint32_t pinS = PIN_SPI_MOSI;
+  const uint32_t pinC = PIN_A1;
+  const uint32_t pinO = PIN_A2;
+    // FIXME: should be dervied from the same source as the pin constants
+    // in timer_hw.cpp
+
 
   struct Mode {
       const char* name;
@@ -27,7 +40,7 @@ namespace {
   };
 
   class TestState {
-    bool outS, outM, outB, outT;
+    bool outT, outB, outM, outS;
     bool inC, inO;
 
     int modeIndex;
@@ -44,8 +57,8 @@ namespace {
       display.clearDisplay();
       display.drawFastHLine(2, 16, 12, WHITE);
 
-      drawSignal(inC,   8,  8, 22,  6);
-      drawSignal(inO,   8, 23, 39,  6);
+      drawSignal(inO,   8,  8, 22,  6);
+      drawSignal(inC,   8, 23, 39,  6);
       drawSignal(outT, 33, 16, 22, 26);
       drawSignal(outB, 49, 16, 39, 26);
       drawSignal(outM, 66, 16, 56, 26);
@@ -101,6 +114,16 @@ namespace {
       setInputs();
     }
 
+    static void initPins() {
+      pinMode(pinT, OUTPUT); pinPeripheral(pinT, PIO_OUTPUT);
+      pinMode(pinB, OUTPUT); pinPeripheral(pinB, PIO_OUTPUT);
+      pinMode(pinM, OUTPUT); pinPeripheral(pinM, PIO_OUTPUT);
+      pinMode(pinS, OUTPUT); pinPeripheral(pinS, PIO_OUTPUT);
+
+      pinMode(pinC, INPUT_PULLUP);  pinPeripheral(pinC, PIO_INPUT_PULLUP);
+      pinMode(pinO, INPUT_PULLUP);  pinPeripheral(pinO, PIO_INPUT_PULLUP);
+    }
+
     void setOutputs(char op) {
       bool t = op == 'T' || op == '*';
       bool b = op == 'B' || op == '*';
@@ -110,16 +133,18 @@ namespace {
       needRedraw =
         needRedraw || outT != t || outB != b || outM != m || outS != s;
 
-      outT = t;
-      outB = b;
-      outM = m;
-      outS = s;
+      digitalWrite(pinT, (outT = t) ? LOW : HIGH);
+      digitalWrite(pinB, (outB = b) ? LOW : HIGH);
+      digitalWrite(pinM, (outM = m) ? LOW : HIGH);
+      digitalWrite(pinS, (outS = s) ? LOW : HIGH);
+        // outputs are inverted
     }
 
     void setInputs() {
       // simulated
-      bool c = outT || outM;
-      bool o = outB || outS;
+      bool c = digitalRead(pinC) == LOW;
+      bool o = digitalRead(pinO) == LOW;
+        // inputs are inverted
 
       needRedraw =
         needRedraw || inC != c || inO != o;
@@ -163,6 +188,8 @@ namespace {
 
   public:
     static void run() {
+      TestState::initPins();
+
       TestState ts;
       ts.loop();
     }
