@@ -3,6 +3,7 @@
 #include "controls.h"
 #include "display.h"
 #include "flash.h"
+#include "test.h"
 #include "version.h"
 
 Configuration configuration;
@@ -13,7 +14,7 @@ namespace {
 
   int selectedField = 0;
   const int minField = 0;
-  const int maxField = 7;
+  const int maxField = 8;
 
   bool clickSelectedField() {
     switch (selectedField) {
@@ -28,6 +29,11 @@ namespace {
       case 5: configuration.debug.flash             ^= 1; break;
       case 6: configuration.debug.timing            ^= 1; break;
       case 7: configuration.debug.plotClock         ^= 1; break;
+
+      case 8:
+        testLoop();
+        break;
+
       default: ;
     }
     return false;
@@ -78,6 +84,7 @@ namespace {
     drawFlag("f", configuration.debug.flash, 5);
     drawFlag("t", configuration.debug.timing, 6);
     drawFlag("p", configuration.debug.plotClock, 7);
+    drawButton("?", 8);
 
     display.display();
   }
