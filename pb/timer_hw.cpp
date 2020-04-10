@@ -3,7 +3,8 @@
 #include <initializer_list>
 
 #include <Arduino.h>
-#include <wiring_private.h>
+
+#include "pins.h"
 
 
 namespace {
@@ -48,6 +49,8 @@ divisor_t divisorFromBpm(float bpm) {
   TCC units: Sync is required because access while not sync'd will cause a HW
     interrupt. Post write sync isn't required, except to ensure completion
     before proceeding.
+
+  Note: Do not reassign which timer does what without consulting pins.cpp.
 */
 
 namespace {
@@ -307,51 +310,26 @@ void writePeriods(const Timing& periods) {
 }
 
 
-/*
-  Output pins are:
-                timer   wave    samd pin    arduino pin
-    SEQUENCE:   TCC0    WO4     PB10        29, PIN_SPI_MOSI
-    MEASURE:    TCC1    WO0     PA10         1, PIN_SERIAL1_TX
-    BEAT:       TC5     WO1     PB11        30, PIN_SPI_SCK
-    TUPLET:     TCC2    WO0     PA12        28, PIN_SPI_MISO
-
-    Despite the Adafruit's pinout diagram, these are the actual library pin
-    numbers for the SPI pins on the Feather M0 Express.
-
-  Input pins:
-    EXT CLK:                    PB08        15, PIN_A1
-    OTHER:                      PB09        16, PIN_A2
-*/
-
 namespace {
 
-  const std::initializer_list<uint8_t> outputPins =
-    {PIN_SPI_MOSI, PIN_SERIAL1_TX, PIN_SPI_SCK, PIN_SPI_MISO};
-
   void initializePins() {
-    // Pins are configured as outputs, first, set to HIGH...
-    // ...then configured to output the from the peripheral multiplexor.
-    // This way, all triggers can be forced off (HIGH, they invert), by just
-    // disabling the multiplexor for them.
-
-    for (uint32_t pin : outputPins) {
-      pinMode(pin, OUTPUT);
-      digitalWrite(pin, HIGH);
-      pinPeripheral(pin, pin == PIN_SPI_MOSI ? PIO_TIMER_ALT : PIO_TIMER);
-    }
+    TriggerOutput::S.initialize();
+    TriggerOutput::M.initialize();
+    TriggerOutput::B.initialize();
+    TriggerOutput::T.initialize();
 
     forceTriggersOff(true);
 
-    pinMode(PIN_A1, INPUT_PULLUP);
-    pinPeripheral(PIN_A1, PIO_EXTINT);
+    TriggerInput::C.initialize();
+    TriggerInput::O.initialize();   // though otherwise unused
   }
 }
 
-void forceTriggersOff(bool forceOff) {
-  for (uint32_t pin : outputPins)
-    PORT->Group[g_APinDescription[pin].ulPort]
-      .PINCFG[g_APinDescription[pin].ulPin]
-        .bit.PMUXEN = forceOff ? 0 : 1;
+void forceTriggersOff(bool off) {
+  TriggerOutput::S.forceOff(off);
+  TriggerOutput::M.forceOff(off);
+  TriggerOutput::B.forceOff(off);
+  TriggerOutput::T.forceOff(off);
 }
 
 

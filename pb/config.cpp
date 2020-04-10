@@ -48,7 +48,6 @@ namespace {
   }
 
   void drawFlag(const char* s, bool f, int field) {
-    display.print(' ');
     if (selectedField == field)
       display.setTextColor(BLACK, WHITE);
     display.print(f ? '+' : '-');
@@ -68,23 +67,25 @@ namespace {
 
     // options line
     display.setCursor(0, 8);
-    display.print("Opts:");
+    display.print("Opts: ");
     drawFlag("extBPM", configuration.options.extendedBpmRange, 1);
 
     // screen line
     display.setCursor(0, 16);
-    display.print("Screen:");
+    display.print("Screen: ");
     drawFlag("dim", configuration.options.alwaysDim, 2);
+    display.print(" ");
     drawFlag("saver", !configuration.options.saverDisable, 3);
 
     // debug line
     display.setCursor(0, 24);
-    display.print("Debug:");
-    drawFlag("wait", configuration.debug.waitForSerial, 4);
+    display.print("Debug: ");
+    drawFlag("w", configuration.debug.waitForSerial, 4);
     drawFlag("f", configuration.debug.flash, 5);
     drawFlag("t", configuration.debug.timing, 6);
     drawFlag("p", configuration.debug.plotClock, 7);
-    drawButton("?", 8);
+    display.print(" ");
+    drawButton("hw", 8);
 
     display.display();
   }

@@ -2,22 +2,13 @@
 
 #include "controls.h"
 #include "display.h"
+#include "pins.h"
+
 
 #include <Arduino.h>
-#include <wiring_private.h>
 
 
 namespace {
-
-  const uint32_t pinT = PIN_SPI_MISO;
-  const uint32_t pinB = PIN_SPI_SCK;
-  const uint32_t pinM = PIN_SERIAL1_TX;
-  const uint32_t pinS = PIN_SPI_MOSI;
-  const uint32_t pinC = PIN_A1;
-  const uint32_t pinO = PIN_A2;
-    // FIXME: should be dervied from the same source as the pin constants
-    // in timer_hw.cpp
-
 
   struct Mode {
       const char* name;
@@ -115,14 +106,14 @@ namespace {
     }
 
     static void initPins() {
-      pinMode(pinT, OUTPUT); pinPeripheral(pinT, PIO_OUTPUT);
-      pinMode(pinB, OUTPUT); pinPeripheral(pinB, PIO_OUTPUT);
-      pinMode(pinM, OUTPUT); pinPeripheral(pinM, PIO_OUTPUT);
-      pinMode(pinS, OUTPUT); pinPeripheral(pinS, PIO_OUTPUT);
+      TriggerOutput::T.testInitialize();
+      TriggerOutput::B.testInitialize();
+      TriggerOutput::M.testInitialize();
+      TriggerOutput::S.testInitialize();
 
-      pinMode(pinC, INPUT_PULLUP);  pinPeripheral(pinC, PIO_INPUT_PULLUP);
-      pinMode(pinO, INPUT_PULLUP);  pinPeripheral(pinO, PIO_INPUT_PULLUP);
-    }
+      TriggerInput::C.testInitialize();
+      TriggerInput::O.testInitialize();
+      }
 
     void setOutputs(char op) {
       bool t = op == 'T' || op == '*';
@@ -133,18 +124,21 @@ namespace {
       needRedraw =
         needRedraw || outT != t || outB != b || outM != m || outS != s;
 
-      digitalWrite(pinT, (outT = t) ? LOW : HIGH);
-      digitalWrite(pinB, (outB = b) ? LOW : HIGH);
-      digitalWrite(pinM, (outM = m) ? LOW : HIGH);
-      digitalWrite(pinS, (outS = s) ? LOW : HIGH);
-        // outputs are inverted
+      TriggerOutput::T.testWrite(t);
+      TriggerOutput::B.testWrite(b);
+      TriggerOutput::M.testWrite(m);
+      TriggerOutput::S.testWrite(s);
+
+      outT = t;
+      outB = b;
+      outM = m;
+      outS = s;
     }
 
     void setInputs() {
       // simulated
-      bool c = digitalRead(pinC) == LOW;
-      bool o = digitalRead(pinO) == LOW;
-        // inputs are inverted
+      bool c = TriggerInput::C.testRead();
+      bool o = TriggerInput::O.testRead();
 
       needRedraw =
         needRedraw || inC != c || inO != o;
