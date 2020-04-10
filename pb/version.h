@@ -1,7 +1,13 @@
 #ifndef _INCLUDE_VERSION_H_
 #define _INCLUDE_VERSION_H_
 
-#define PB_VERSION 103
+#define PB_VERSION 104
+/* 2020-04-09
+  - added hardware test mode
+  - updated boards and libraries
+*/
+
+// PB_VERSION 103
 /* 2020-01-17
   - extended BPM range option
   - improve long press behavior
