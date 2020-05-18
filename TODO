@@ -47,6 +47,14 @@ NOTES
 	compiler.c.extra_flags="-DEK_BUILD"
 	compiler.cpp.extra_flags="-DEK_BUILD"
 
+- to build release UF2 file:
+	- build in Arduino
+	- note directory of output items in verbose output
+	- cd there
+	- run
+		python ~/bin/uf2conv.py pb.ino.bin -c -o pulsar-buddy-v1xx.uf2
+	- uf2conf.py script comes from:
+		https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py
 
 
 SYNC

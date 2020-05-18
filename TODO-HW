@@ -2,18 +2,101 @@ Hardware TODO
 
 
 
-Design
-------
+=== Rev D ===
+- the SMD verison
+
+[x] USB
+	[x] ground the shield? yes!
+	[x] distance to edge
+		1.45mm says data sheet (57mil)
+		currently @ 62.5mil
+		- placed exactly
+
+[x] Flash chip
+	- original is S25FL116K, now depricated
+		http://www.cypress.com/file/196886/download
+	- replacement from Cypress is S25FL064L, pin compatible
+		S25FL064LABM[FH][IV]01[013]
+
+[x] CPU
+	[x] version of CPU & footprint
+		SAMD21G18A-A[UF](T?)  -- this is TQFP-48
+		SAMD21G18A-M[UF](T?)  -- this is QFN-48
+		[-] find a mixed-footprint? some say this is a bad idea
+		[x] pick one or the other! QFN
+	[x] xtal version and cap sizing
+		Ecsxtal ECS-.327-12.5-12-C-TR
+			-- the C is 2x tollerance (10ppm)
+	[x] remove reset button - it is on the display!
+
+[-] switches to select voltage out?
+	- no room unless doing pin only
+
+[x] display
+	[x] will it fit over CPU section
+		- relayout to move CPU section over?
+		- put on headers, changing vertical clearances?
+		- will fit over CPU etc... but not over USB
+	[x] flip display or slide display over
+		- keep flipped, but slid over to clear USB connector
+
+[x] power section
+	[x] fuse part & footprint
+	[x] power diodes
+	[-] jack part in MF - they just don't have it
+
+[x] add part numbers into attributes
+	HOUSEPART	(supplied by part)
+	MPN
+	POPULATE	1/0
+
+	maybe MOUSER and/or DIGIKEY ?
+	maybe Manufacturer and Part Number or Manufacturer Part ?
+
+[x] LED power cut pad
+
+[-] power switch?
+	- not now - would stick out side, and then unit won't fit in cover
 
 
-Circuit
--------
 
-Later
+
+[] misc
+	[] wattage needed on resistors as 0603 Rs are less than 1/4W
+
+	[] programming
+		[] Pogo pin things or just bare copper?
+		[] power/gnd near the pads?
+		[] location
+
+		[] programming onto unused pins for OLED headers?
+
+
+[] trace cleanup
+	[-] diff. routing for USB data - good enough!
+	[] power no Y
+	[] power away from data
+
+
+=== QUESTIONS ===
+
+	[] vias under the CPU? tented?
+	[] layout considerations for regulator?
+
+
+
+Ideas
 -----
 
-[] MIDI circuit
-
+[] MIDI in/out on 3.5mm
+[] pin only?
+[] clock in/out?
+[] break out board for jacks
+	[] pin board
+	[] banana board
+	[] 3.5mm board
+[] HW version detection
+[] socketed display on std sockets?
 
 
 Case
