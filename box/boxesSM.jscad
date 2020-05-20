@@ -307,7 +307,8 @@ const usbw = 7.86;   // centered on usbyc
 const usbd = 5.05;   // from usbx1 back
 const usbh = 2.70;   // from surface of pcb up
 
-
+const powerx0 = pcbx0 + mils(5200);
+const powery0 = pcby0 + mils(500);
 
 function replicateAtXYs(xys, item) {
     return union(xys.map(xy => translate([ xy.x, xy.y, 0], item)));
@@ -475,7 +476,7 @@ function boardAndPins() {
         translate([oledx0, oledy0, pcbt], featherOLED),
         translate([usbx1-usbd, usbyc, pcbt], usb),
 
-        translate([pcbx0 + mils(5200), pcby0 + mils(500), -11], powerJack),
+        translate([powerx0, powery0, -11], powerJack),
 
         // the button
         translate([knobx, knoby, pcbt], knob),
@@ -663,14 +664,6 @@ function innerBox(flat) {
                 face(ow, od - 2*foot - 2*boxGap))
             , pcbHoles(pcbHoleDrill));
 
-    const rTrim =
-        difference(parts.lr,
-            translate([5, 0-pcbd/2+mils(500), 0],
-                cube({ size: [ih, 11.8, t], center: true })),
-            translate([-ih/2, usbyc, 0],
-                cube({ size: [10, 12, t], center: true}))
-        );
-
     const lTrim =
         difference(parts.lr,
             intersection(
@@ -690,6 +683,33 @@ function innerBox(flat) {
                 })())
             ));
 
+    const rTrim = (function(){
+
+        const frame = function(w, h, x, y){
+            const fw = t;
+
+            return {
+                hole: translate([x, y, 0],
+                    cube({ size: [w, h, t], center: true })),
+                edge: translate([x, y, 0],
+                    cube({ size: [w + 2*fw, h + 2*fw, t], center: true }))
+            };
+        };
+
+        const a = frame(standoffBoard, 11.8,
+                (ih - standoffBoard)/2 - t, powery0);
+
+        const b = frame(9.5, 12,
+                ih/2 - standoffBoard - t - pcbt - usbh/2, usbyc);
+
+        const full =
+            union(lTrim,
+                intersection(parts.lr, a.edge),
+                intersection(parts.lr, b.edge)
+            );
+        return difference(full, a.hole, b.hole);
+    })();
+
     var top =   translate([0, 0, ih - t/2],        rotate([180, 180, 180],   topCover));
     var bottom =translate([0, 0, t/2],            rotate([0, 180, 0],     botFoot));
     var front = translate([0, -((id-t)/2), ih/2],   rotate([90, 180, 0],    parts.fb));
@@ -707,7 +727,7 @@ function innerBox(flat) {
     [bottom, front] = tabJoin(bottom, front,    [0, 0, 0],      { indent: longEdgeInset });
     [bottom, back]  = tabJoin(bottom, back,     [0, 0, 0],      { indent: longEdgeInset });
     [bottom, left]  = tabJoin(bottom, left,     [0, 0, 90]);
-    [bottom, right] = tabJoin(bottom, right,    [0, 0, -90],    { tab: 5.5*t});
+    [bottom, right] = tabJoin(bottom, right,    [0, 0, -90],    { indent: 20 });
 
     [front, left]   = tabJoin(front, left,  [0, 90, 0],         { tab: sideTab });
     [front, right]  = tabJoin(front, right, [0, -90, 0],        { tab: sideTab });
