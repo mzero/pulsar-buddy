@@ -5,6 +5,14 @@ Hardware TODO
 === Rev D ===
 - the SMD verison
 
+
+--- ISSUES ----
+
+[ ] Flash not working
+[ ] size of post holes
+[ ] location of image on box top
+
+
 [x] USB
 	[x] ground the shield? yes!
 	[x] distance to edge
