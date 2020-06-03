@@ -34,19 +34,27 @@ namespace {
 }
 
 size_t Critical::write(uint8_t c) {
+  size_t r;
+
   Serial.clearWriteError();
-  Serial.write(c);
+  r = Serial.write(c);
   if (writeOnDisplay()) {
-    display.write(c);
+    r = display.write(c);
   }
+
+  return r;
 }
 
 size_t Critical::write(const uint8_t *buffer, size_t size) {
+  size_t r;
+
   Serial.clearWriteError();
-  Serial.write(buffer, size);
+  r = Serial.write(buffer, size);
   if (writeOnDisplay()) {
-    display.write(buffer, size);
+    r = display.write(buffer, size);
   }
+
+  return r;
 }
 
 
