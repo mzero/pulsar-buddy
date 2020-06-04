@@ -848,7 +848,7 @@ Has a largeish restriction area so that ground pours will stay way clear.
 </package>
 <package name="M3">
 <description>Pad to mount an M3 machine screw as a binding post.</description>
-<pad name="1" x="0" y="0" drill="3.5" diameter="7.62"/>
+<pad name="1" x="0" y="0" drill="3.1" diameter="7.62"/>
 <circle x="0" y="0" radius="4.57905" width="0.127" layer="21"/>
 <text x="0" y="5.08" size="1.27" layer="25" align="bottom-center">&gt;NAME</text>
 <circle x="0" y="0" radius="5.388153125" width="0.127" layer="39"/>

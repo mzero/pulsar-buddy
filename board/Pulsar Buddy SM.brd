@@ -3,10 +3,10 @@
 <eagle version="9.6.1">
 <drawing>
 <settings>
-<setting alwaysvectorfont="yes"/>
+<setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="50" unitdist="mil" unit="mil" style="lines" multiple="1" display="yes" altdistance="12.5" altunitdist="mil" altunit="mil"/>
+<grid distance="12.5" unitdist="mil" unit="mil" style="lines" multiple="1" display="yes" altdistance="6.25" altunitdist="mil" altunit="mil"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -165,7 +165,7 @@
 <text x="15.24" y="15.24" size="1.778" layer="25" align="bottom-center">Tuplet</text>
 <text x="63.5" y="49.53" size="1.778" layer="25" rot="SR180" align="top-center">⏚</text>
 <text x="100.0125" y="50.165" size="1.778" layer="25">Pulsar Buddy</text>
-<text x="110.4265" y="48.895" size="0.889" layer="25">rev. D</text>
+<text x="110.4265" y="48.895" size="0.889" layer="25">rev. E</text>
 <hole x="2.54" y="50.8" drill="2.54"/>
 <hole x="142.24" y="50.8" drill="2.54"/>
 <hole x="142.24" y="2.54" drill="2.54"/>
@@ -5497,7 +5497,7 @@ Has a largeish restriction area so that ground pours will stay way clear.
 </package>
 <package name="M3">
 <description>Pad to mount an M3 machine screw as a binding post.</description>
-<pad name="1" x="0" y="0" drill="3.5" diameter="7.62"/>
+<pad name="1" x="0" y="0" drill="3.1" diameter="7.62"/>
 <circle x="0" y="0" radius="4.57905" width="0.127" layer="21"/>
 <text x="0" y="5.08" size="1.27" layer="25" align="bottom-center">&gt;NAME</text>
 <circle x="0" y="0" radius="5.388153125" width="0.127" layer="39"/>
@@ -7242,9 +7242,13 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <wire x1="66.50325625" y1="24.01023125" x2="66.04" y2="25.4" width="0.508" layer="16"/>
 <wire x1="66.04" y1="25.4" x2="64.77" y2="26.67" width="0.508" layer="16"/>
 <contactref element="R1" pad="P$2"/>
-<wire x1="64.77" y1="26.67" x2="64.77" y2="20.6375" width="0.1524" layer="1"/>
-<wire x1="64.77" y1="20.6375" x2="66.3575" y2="19.05" width="0.1524" layer="1" curve="90"/>
-<wire x1="66.3575" y1="19.05" x2="77.355" y2="19.05" width="0.1524" layer="1"/>
+<wire x1="72.011975" y1="19.630525" x2="72.220525" y2="19.421975" width="0.1524" layer="1"/>
+<wire x1="72.220525" y1="19.421975" x2="73.11855" y2="19.05" width="0.1524" layer="1" curve="45"/>
+<wire x1="73.11855" y1="19.05" x2="77.355" y2="19.05" width="0.1524" layer="1"/>
+<wire x1="72.011975" y1="19.630525" x2="71.11395" y2="20.0025" width="0.1524" layer="1" curve="45"/>
+<wire x1="71.11395" y1="20.0025" x2="66.04" y2="20.0025" width="0.1524" layer="1"/>
+<wire x1="66.04" y1="20.0025" x2="64.77" y2="21.2725" width="0.1524" layer="1" curve="-90"/>
+<wire x1="64.77" y1="21.2725" x2="64.77" y2="26.67" width="0.1524" layer="1"/>
 </signal>
 <signal name="N$38">
 <contactref element="PIN_M" pad="1"/>
@@ -7253,14 +7257,13 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <wire x1="45.759834375" y1="10.199834375" x2="51.587140625" y2="22.324265625" width="0.508" layer="16" curve="38.659781"/>
 <wire x1="51.587140625" y1="22.324265625" x2="52.07" y2="26.67" width="0.508" layer="16"/>
 <contactref element="R2" pad="P$2"/>
-<wire x1="52.503059375" y1="18.848059375" x2="52.07" y2="19.89355" width="0.1524" layer="1" curve="-45"/>
-<wire x1="52.07" y1="19.89355" x2="52.07" y2="26.67" width="0.1524" layer="1"/>
+<wire x1="66.389415625" y1="19.3675" x2="53.34" y2="19.3675" width="0.1524" layer="1"/>
+<wire x1="53.34" y1="19.3675" x2="52.07" y2="20.6375" width="0.1524" layer="1" curve="-90"/>
+<wire x1="52.07" y1="20.6375" x2="52.07" y2="26.67" width="0.1524" layer="1"/>
 <wire x1="77.355" y1="13.97" x2="74.18605" y2="13.97" width="0.1524" layer="1"/>
 <wire x1="74.18605" y1="13.97" x2="73.288025" y2="14.341975" width="0.1524" layer="1" curve="-45"/>
 <wire x1="73.288025" y1="14.341975" x2="69.586975" y2="18.043025" width="0.1524" layer="1"/>
-<wire x1="69.586975" y1="18.043025" x2="68.68895" y2="18.415" width="0.1524" layer="1" curve="45"/>
-<wire x1="68.68895" y1="18.415" x2="53.54855" y2="18.415" width="0.1524" layer="1"/>
-<wire x1="53.54855" y1="18.415" x2="52.503059375" y2="18.848059375" width="0.1524" layer="1" curve="-45"/>
+<wire x1="69.586975" y1="18.043025" x2="66.389415625" y2="19.3675" width="0.1524" layer="1" curve="45"/>
 </signal>
 <signal name="N$39">
 <contactref element="PIN_T" pad="1"/>
@@ -7269,16 +7272,15 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <wire x1="17.782009375" y1="11.43150625" x2="24.867253125" y2="21.261759375" width="0.508" layer="16" curve="34.695156"/>
 <wire x1="24.867253125" y1="21.261759375" x2="26.67" y2="26.67" width="0.508" layer="16"/>
 <contactref element="R4" pad="P$2"/>
-<wire x1="67.41895" y1="17.145" x2="28.0170375" y2="17.145" width="0.1524" layer="1"/>
-<wire x1="28.0170375" y1="17.145" x2="27.0645375" y2="17.5395375" width="0.1524" layer="1" curve="-45"/>
-<wire x1="27.0645375" y1="17.5395375" x2="26.67" y2="18.4920375" width="0.1524" layer="1" curve="-45"/>
-<wire x1="26.67" y1="18.4920375" x2="26.67" y2="26.67" width="0.1524" layer="1"/>
+<wire x1="65.119415625" y1="18.0975" x2="27.94" y2="18.0975" width="0.1524" layer="1"/>
+<wire x1="27.94" y1="18.0975" x2="26.67" y2="19.3675" width="0.1524" layer="1" curve="-90"/>
+<wire x1="26.67" y1="19.3675" x2="26.67" y2="26.67" width="0.1524" layer="1"/>
 <wire x1="77.355" y1="3.81" x2="75.936975" y2="5.228025" width="0.1524" layer="1"/>
 <wire x1="75.936975" y1="5.228025" x2="75.565" y2="6.12605" width="0.1524" layer="1" curve="-45"/>
 <wire x1="75.565" y1="6.12605" x2="75.565" y2="8.99895" width="0.1524" layer="1"/>
 <wire x1="75.565" y1="8.99895" x2="75.193025" y2="9.896975" width="0.1524" layer="1" curve="45"/>
 <wire x1="75.193025" y1="9.896975" x2="68.316975" y2="16.773025" width="0.1524" layer="1"/>
-<wire x1="68.316975" y1="16.773025" x2="67.41895" y2="17.145" width="0.1524" layer="1" curve="45"/>
+<wire x1="68.316975" y1="16.773025" x2="65.119415625" y2="18.0975" width="0.1524" layer="1" curve="45"/>
 </signal>
 <signal name="N$40">
 <contactref element="PIN_B" pad="1"/>
@@ -7287,13 +7289,12 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <wire x1="31.687303125" y1="10.831975" x2="38.29934375" y2="21.852046875" width="0.508" layer="16" curve="36.86991"/>
 <wire x1="38.29934375" y1="21.852046875" x2="39.37" y2="26.67" width="0.508" layer="16"/>
 <contactref element="R3" pad="P$2"/>
-<wire x1="68.05395" y1="17.78" x2="41.16605" y2="17.78" width="0.1524" layer="1"/>
-<wire x1="41.16605" y1="17.78" x2="39.896053125" y2="18.306053125" width="0.1524" layer="1" curve="-45"/>
-<wire x1="39.896053125" y1="18.306053125" x2="39.37" y2="19.57605" width="0.1524" layer="1" curve="-45"/>
-<wire x1="39.37" y1="19.57605" x2="39.37" y2="26.67" width="0.1524" layer="1"/>
+<wire x1="65.754415625" y1="18.7325" x2="40.64" y2="18.7325" width="0.1524" layer="1"/>
+<wire x1="40.64" y1="18.7325" x2="39.37" y2="20.0025" width="0.1524" layer="1" curve="-90"/>
+<wire x1="39.37" y1="20.0025" x2="39.37" y2="26.67" width="0.1524" layer="1"/>
 <wire x1="77.355" y1="8.89" x2="77.355" y2="9.005" width="0.1524" layer="1"/>
 <wire x1="77.355" y1="9.005" x2="68.951975" y2="17.408025" width="0.1524" layer="1"/>
-<wire x1="68.951975" y1="17.408025" x2="68.05395" y2="17.78" width="0.1524" layer="1" curve="45"/>
+<wire x1="68.951975" y1="17.408025" x2="65.754415625" y2="18.7325" width="0.1524" layer="1" curve="45"/>
 </signal>
 <signal name="N$36">
 <contactref element="D8" pad="C"/>
@@ -7337,12 +7338,11 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <wire x1="106.25355" y1="31.115" x2="112.222503125" y2="31.115" width="0.1524" layer="1"/>
 <wire x1="112.222503125" y1="31.115" x2="113.120528125" y2="31.486975" width="0.1524" layer="1" curve="45"/>
 <wire x1="113.120528125" y1="31.486975" x2="113.289578125" y2="31.656025" width="0.1524" layer="1"/>
-<wire x1="71.12" y1="22.9370375" x2="71.12" y2="28.36645" width="0.1524" layer="1"/>
+<wire x1="71.12" y1="28.36645" x2="71.12" y2="22.86" width="0.1524" layer="1"/>
+<wire x1="71.12" y1="22.86" x2="72.39" y2="21.59" width="0.1524" layer="1" curve="90"/>
+<wire x1="72.39" y1="21.59" x2="77.355" y2="21.59" width="0.1524" layer="1"/>
 <wire x1="71.12" y1="28.36645" x2="70.748025" y2="29.264475" width="0.1524" layer="1" curve="45"/>
 <wire x1="70.748025" y1="29.264475" x2="66.094475" y2="33.918025" width="0.1524" layer="1"/>
-<wire x1="71.12" y1="22.9370375" x2="71.5145375" y2="21.9845375" width="0.1524" layer="1" curve="45"/>
-<wire x1="71.5145375" y1="21.9845375" x2="72.4670375" y2="21.59" width="0.1524" layer="1" curve="45"/>
-<wire x1="72.4670375" y1="21.59" x2="77.355" y2="21.59" width="0.1524" layer="1"/>
 <contactref element="LED1" pad="K"/>
 <wire x1="105.355525" y1="31.486975" x2="102.235" y2="34.6075" width="0.1524" layer="1"/>
 <wire x1="61.16855" y1="33.3375" x2="60.270525" y2="33.709475" width="0.1524" layer="16" curve="-45"/>
@@ -7371,12 +7371,11 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <wire x1="76.085" y1="8.14605" x2="76.085" y2="9.11395" width="0.1524" layer="1"/>
 <wire x1="76.085" y1="9.11395" x2="75.713025" y2="10.011975" width="0.1524" layer="1" curve="45"/>
 <wire x1="75.713025" y1="10.011975" x2="68.634475" y2="17.090525" width="0.1524" layer="1"/>
-<wire x1="68.634475" y1="17.090525" x2="67.73645" y2="17.4625" width="0.1524" layer="1" curve="45"/>
-<wire x1="67.73645" y1="17.4625" x2="34.817921875" y2="17.4625" width="0.1524" layer="1"/>
-<wire x1="34.817921875" y1="17.4625" x2="33.5466" y2="17.9891" width="0.1524" layer="1" curve="-45.000249"/>
+<wire x1="68.634475" y1="17.090525" x2="65.436915625" y2="18.415" width="0.1524" layer="1" curve="45"/>
+<wire x1="65.436915625" y1="18.415" x2="34.29" y2="18.415" width="0.1524" layer="1"/>
+<wire x1="34.29" y1="18.415" x2="33.02" y2="19.685" width="0.1524" layer="1" curve="-90"/>
+<wire x1="33.02" y1="19.685" x2="33.02" y2="28.36645" width="0.1524" layer="1"/>
 <contactref element="LED4" pad="K"/>
-<wire x1="33.5466" y1="17.9891" x2="33.02" y2="19.260421875" width="0.1524" layer="1" curve="-45.000352"/>
-<wire x1="33.02" y1="19.260421875" x2="33.02" y2="28.36645" width="0.1524" layer="1"/>
 <wire x1="33.02" y1="28.36645" x2="32.648025" y2="29.264475" width="0.1524" layer="1" curve="45"/>
 <wire x1="32.648025" y1="29.264475" x2="27.994475" y2="33.918025" width="0.1524" layer="1"/>
 <wire x1="27.994475" y1="33.918025" x2="27.09645" y2="34.29" width="0.1524" layer="1" curve="45"/>
@@ -7390,7 +7389,9 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <wire x1="104.775" y1="30.7975" x2="112.612109375" y2="30.7975" width="0.1524" layer="1"/>
 <wire x1="112.612109375" y1="30.7975" x2="113.510134375" y2="31.169475" width="0.1524" layer="1" curve="45"/>
 <wire x1="113.510134375" y1="31.169475" x2="113.64313125" y2="31.302471875" width="0.1524" layer="1"/>
-<wire x1="45.72" y1="19.89355" x2="45.72" y2="28.36645" width="0.1524" layer="1"/>
+<wire x1="66.071915625" y1="19.05" x2="46.99" y2="19.05" width="0.1524" layer="1"/>
+<wire x1="46.99" y1="19.05" x2="45.72" y2="20.32" width="0.1524" layer="1" curve="-90"/>
+<wire x1="45.72" y1="20.32" x2="45.72" y2="28.36645" width="0.1524" layer="1"/>
 <wire x1="45.72" y1="28.36645" x2="45.348025" y2="29.264475" width="0.1524" layer="1" curve="45"/>
 <wire x1="45.348025" y1="29.264475" x2="40.694475" y2="33.918025" width="0.1524" layer="1"/>
 <wire x1="40.694475" y1="33.918025" x2="39.79645" y2="34.29" width="0.1524" layer="1" curve="45"/>
@@ -7398,10 +7399,7 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <wire x1="77.355" y1="11.43" x2="76.09105" y2="11.43" width="0.1524" layer="1"/>
 <wire x1="76.09105" y1="11.43" x2="75.193025" y2="11.801975" width="0.1524" layer="1" curve="-45"/>
 <wire x1="75.193025" y1="11.801975" x2="69.269475" y2="17.725525" width="0.1524" layer="1"/>
-<wire x1="69.269475" y1="17.725525" x2="68.37145" y2="18.0975" width="0.1524" layer="1" curve="45"/>
-<wire x1="68.37145" y1="18.0975" x2="47.51605" y2="18.0975" width="0.1524" layer="1"/>
-<wire x1="47.51605" y1="18.0975" x2="46.246053125" y2="18.623553125" width="0.1524" layer="1" curve="-45"/>
-<wire x1="46.246053125" y1="18.623553125" x2="45.72" y2="19.89355" width="0.1524" layer="1" curve="-45"/>
+<wire x1="69.269475" y1="17.725525" x2="66.071915625" y2="19.05" width="0.1524" layer="1" curve="45"/>
 <contactref element="LED3" pad="K"/>
 <wire x1="102.87" y1="32.7025" x2="36.40355" y2="32.7025" width="0.1524" layer="16"/>
 <wire x1="36.40355" y1="32.7025" x2="35.505525" y2="33.074475" width="0.1524" layer="16" curve="-45"/>
@@ -7622,11 +7620,10 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <wire x1="77.355" y1="16.51" x2="72.28105" y2="16.51" width="0.1524" layer="1"/>
 <wire x1="72.28105" y1="16.51" x2="71.383025" y2="16.881975" width="0.1524" layer="1" curve="-45"/>
 <wire x1="71.383025" y1="16.881975" x2="69.904475" y2="18.360525" width="0.1524" layer="1"/>
-<wire x1="69.904475" y1="18.360525" x2="69.00645" y2="18.7325" width="0.1524" layer="1" curve="45"/>
-<wire x1="69.00645" y1="18.7325" x2="60.3475625" y2="18.7325" width="0.1524" layer="1"/>
-<wire x1="60.3475625" y1="18.7325" x2="59.019784375" y2="19.282484375" width="0.1524" layer="1" curve="-45"/>
-<wire x1="59.019784375" y1="19.282484375" x2="58.42" y2="20.730496875" width="0.1524" layer="1" curve="-45"/>
-<wire x1="58.42" y1="20.730496875" x2="58.42" y2="28.36645" width="0.1524" layer="1"/>
+<wire x1="69.904475" y1="18.360525" x2="66.706915625" y2="19.685" width="0.1524" layer="1" curve="45"/>
+<wire x1="66.706915625" y1="19.685" x2="59.69" y2="19.685" width="0.1524" layer="1"/>
+<wire x1="59.69" y1="19.685" x2="58.42" y2="20.955" width="0.1524" layer="1" curve="-90"/>
+<wire x1="58.42" y1="20.955" x2="58.42" y2="28.36645" width="0.1524" layer="1"/>
 <wire x1="58.42" y1="28.36645" x2="58.048025" y2="29.264475" width="0.1524" layer="1" curve="45"/>
 <wire x1="58.048025" y1="29.264475" x2="53.394475" y2="33.918025" width="0.1524" layer="1"/>
 <contactref element="LED2" pad="K"/>
