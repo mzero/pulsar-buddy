@@ -8,9 +8,13 @@ Hardware TODO
 
 --- ISSUES ----
 
-[ ] Flash not working
-[ ] size of post holes
-[ ] location of image on box top
+[-] Flash not working
+	- need to either add descriptor to library's list
+	- or add begin() that takes a descriptor list
+	- or do the double begin() thing
+
+[x] size of post holes
+[x] location of image on box top
 
 
 [x] USB
