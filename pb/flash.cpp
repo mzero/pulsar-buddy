@@ -1,5 +1,7 @@
 #include "flash.h"
 
+#include <initializer_list>
+
 #include "Adafruit_SPIFlashBase.h"
 
 #include "config.h"
@@ -20,6 +22,10 @@ namespace {
 
   Adafruit_SPIFlashBase flash(&flashTransport);
   bool flashBegun = false;
+
+  const std::initializer_list<SPIFlash_Device_t> additional_devices = {
+    S25FL064L,
+  };
 
   /* Header
 
@@ -96,7 +102,7 @@ bool FlashMemoryLog::begin(uint32_t startSector, uint32_t sectorCount)
   currentIndex = 0;
 
   if (!flashBegun) {
-    if (!flash.begin()) {
+    if (!flash.begin(additional_devices.begin(), additional_devices.size())) {
       critical.println("flash begin failure");
       return false;
     }
