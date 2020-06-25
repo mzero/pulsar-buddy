@@ -4,6 +4,83 @@
 
 #include "flash.h"
 
+namespace {
+
+
+  template <typename T, uint32_t currentVersion, size_t maxSize>
+  class Container {
+
+  public:
+    bool begin(uint32_t startSector, uint32_t sectorCount);
+    void save()
+      { _containerLog.save(_box); }
+
+    T&       data()       { return _box._data; }
+    const T& data() const { return _box._data; }
+
+    static void initialize(T&);
+    static bool upgrade(uint32_t, const uint8_t*, T&);
+
+  private:
+    static const uint32_t MAGIC = 1284161520 + maxSize;
+
+    struct Box {
+      uint32_t  _magic;
+      uint32_t  _version;
+      union {
+        T       _data;
+        uint8_t _bytes[maxSize];
+      };
+    };
+
+    Box _box;
+
+    FlashLog<Box> _containerLog;
+  };
+
+
+  template <typename T, uint32_t currentVersion, size_t maxSize>
+  bool Container<T, currentVersion, maxSize>::
+    begin(uint32_t startSector, uint32_t sectorCount) {
+      _containerLog.begin(startSector, sectorCount);
+
+      _box._magic = 0;
+
+      if (_containerLog.load(_box)) {
+        if (_box._magic == MAGIC) {
+          if (_box._version == currentVersion) {
+            return true;
+          }
+
+          T newData;
+          if (upgrade(_box._version, _box._bytes, newData)) {
+            _box._magic = MAGIC;
+            _box._version = currentVersion;
+            _box._data = newData;
+            return true;
+          }
+        }
+      }
+
+      _box._magic = MAGIC;
+      _box._version = currentVersion;
+      initialize(_box._data);
+      return false;
+    }
+
+  template <typename T, uint32_t currentVersion, size_t maxSize>
+  void Container<T, currentVersion, maxSize>::
+    initialize(T& data)
+      { data = T(); }
+
+  template <typename T, uint32_t currentVersion, size_t maxSize>
+  bool Container<T, currentVersion, maxSize>::
+    upgrade(uint32_t, const uint8_t*, T&)
+      { return false; }
+}
+
+
+
 
 namespace {
   State _userState;             // displayed in UI
@@ -82,15 +159,14 @@ void persistState() {
 
 namespace {
   struct Storage_v1 {
-    static const uint32_t version = 1;
     static const int numSlots = 4;
 
-    Settings    settings[numSlots];
+    Settings settings[numSlots];
   };
 
-  typedef Storage_v1 Storage;
-
-  const Storage defaultStorage =
+  template<>
+  void Container<Storage_v1, 1, 112>::initialize(Storage_v1& data) {
+    static const Storage_v1 defaultStorage =
     { .settings =
       { { 4, 16, 16,    3, 2,  4 },
         { 4,  3,  4,    2, 3,  4 },
@@ -99,50 +175,21 @@ namespace {
       }
     };
 
-  struct StorageContainer {
-    uint32_t      magic;
-    uint32_t      version;
-    union {
-      Storage_v1  v1;
-      uint8_t     spacer[112];
-        // If this code ever needs a Storage version that exceeds this
-        // size, then MAGIC has to change, and no updates from older
-        // versions are possible.
-        // Current sizeof(Storage_v1) is 50, so there is room to grow.
-    };
-  };
+    data = defaultStorage;
+  }
 
-  const uint32_t STORAGE_MAGIC = 1284161632;
+  Container<Storage_v1, 1, 112> storageContainer;
 
-  StorageContainer container;
 
-  inline Storage& storage() { return container.v1; }
+
+  typedef Storage_v1 Storage;
+
+  inline Storage& storage() { return storageContainer.data(); }
+
   bool checkIndex(int i) {
     return 1 <= i && i <= Storage::numSlots;
   }
 
-  FlashLog<StorageContainer> containerLog;
-
-  void initializeStorage() {
-    memset(&container, 0, sizeof(container));
-    containerLog.load(container);
-
-    if (container.magic == STORAGE_MAGIC) {
-      if (container.version == Storage::version)
-        return;
-
-      switch (container.version) {
-        // case on older versions, and if possible, convert in place and return
-      }
-    }
-
-    // either nothing in flash, or couldn't convert version
-
-    container.magic = STORAGE_MAGIC;
-    container.version = Storage::version;
-
-    storage() = defaultStorage;
-  }
 }
 
 
@@ -161,7 +208,7 @@ void storeToMemory(int index) {
   _userState.memoryIndex = index;
   storage().settings[index-1] = _userState.settings;
 
-  containerLog.save(container);
+  storageContainer.save();
 }
 
 void showMemoryPreview(int index) {
@@ -181,13 +228,11 @@ void endMemoryPreview() {
 
 void initializeState() {
   stateLog.begin(0, 8);
-  containerLog.begin(8, 8);
+  storageContainer.begin(8, 8);
     // The Feather M0 Express has 2MB of Flash, or 512 pages.
     // But 64KB units are cheap and common, so this is sized to fit into
     // just 16 pages. Still, at expected update rates, these will take 100
     // years to reach the minimum supported erase cycles of the chips.
-
-  initializeStorage();
 
   if (stateLog.load(_flashState)) {
     _userState = _activeState = _flashState;
