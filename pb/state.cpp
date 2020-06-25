@@ -89,10 +89,13 @@ namespace {
   State _savedUserState;        // previous state, while displaying memories
   bool previewActive = false;
 
-  State _flashState;            // state pending write to flash
-  unsigned long writeFlashAt = 0;
 
-  FlashLog<State> stateLog;
+  typedef State State_v1;
+
+  Container<State_v1, 1, 40> stateContainer;
+
+  State& _flashState = stateContainer.data();  // state pending write to flash
+  unsigned long writeFlashAt = 0;
 
   bool sameState(const State& a, const State& b) {
     return memcmp(&a, &b, sizeof(State)) == 0;
@@ -135,7 +138,7 @@ void commitState() {
   _activeState = _userState;
 
   _flashState = _userState;
-  stateLog.save(_flashState);
+  stateContainer.save();
   writeFlashAt = 0;
 }
 
@@ -150,7 +153,7 @@ void persistState() {
   }
 
   if (writeFlashAt && writeFlashAt <= millis()) {
-    stateLog.save(_flashState);
+    stateContainer.save();
     writeFlashAt = 0;
   }
 }
@@ -227,14 +230,14 @@ void endMemoryPreview() {
 }
 
 void initializeState() {
-  stateLog.begin(0, 8);
+  bool stateLoaded = stateContainer.begin(0, 8);
   storageContainer.begin(8, 8);
     // The Feather M0 Express has 2MB of Flash, or 512 pages.
     // But 64KB units are cheap and common, so this is sized to fit into
     // just 16 pages. Still, at expected update rates, these will take 100
     // years to reach the minimum supported erase cycles of the chips.
 
-  if (stateLog.load(_flashState)) {
+  if (stateLoaded) {
     _userState = _activeState = _flashState;
   } else {
     loadFromMemory(1);
