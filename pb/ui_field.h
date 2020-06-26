@@ -19,7 +19,7 @@ public:
       selected(false), selectedAsDrawn(false)
     { };
 
-  bool render(bool refresh);
+  virtual bool render(bool refresh);
   inline bool render() { return render(false); };
 
   virtual void select(bool s);

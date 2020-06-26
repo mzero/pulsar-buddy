@@ -1,0 +1,111 @@
+#include "ui_layout.h"
+
+
+bool Layout::render(bool refresh) {
+  refresh |= this->Field::render(refresh);
+
+  bool updated = refresh;
+
+  for (auto&& f : fields) {
+    updated |= f->render(refresh);
+  }
+
+  return updated;
+}
+
+void Layout::select(bool s) {
+  if (focus == focusField) {
+    selectedField()->select(s);
+  }
+}
+
+void Layout::enter(bool alternate) {
+  focus = focusNavigate;
+  selectedField()->select();
+}
+
+void Layout::exit() {
+  if (focus == focusField)
+    selectedField()->exit();
+
+  selectedField()->deselect();
+  focus = focusNone;
+}
+
+bool Layout::click(Button::State s) {
+  switch (focus) {
+
+    case focusNone:
+      focus = focusNavigate;
+      selectedField()->select();
+      // fall through;
+
+    case focusNavigate:
+      switch (s) {
+        case Button::DownLong:
+          selectedField()->enter(true);
+          break;
+        case Button::Up:
+          selectedField()->enter(false);
+          // fall through
+        case Button::UpLong:
+          focus = focusField;
+          break;
+        default:
+          break;
+      }
+      break;
+
+    case focusField:
+      if (selectedField()->click(s)) {
+        break;
+      }
+      switch (s) {
+        case Button::DownLong:
+          // held down after selecting... so exit and re-enter
+          selectedField()->exit();
+          selectedField()->enter(true);
+          focus = focusNavigate;
+          break;
+        case Button::Up:
+        case Button::UpLong:
+          selectedField()->exit();
+          focus = focusNavigate;
+          break;
+        default:
+          break;
+      }
+      break;
+  }
+}
+
+void Layout::update(Encoder::Update u) {
+  switch (focus) {
+
+    case focusNone:
+      focus = focusNavigate;
+      selectedField()->select();
+      break;
+
+    case focusNavigate:
+      selectedField()->deselect();
+      selectedIndex =
+        constrain(selectedIndex + u.dir(),
+          0, (int)(fields.size()) - 1);
+      selectedField()->select();
+      break;
+
+    case focusField:
+      selectedField()->update(u);
+      break;
+  }
+
+}
+
+Field* Layout::selectedField() const {
+  return fields.begin()[selectedIndex];
+}
+
+void Layout::redraw() {
+  // nothing by default
+}

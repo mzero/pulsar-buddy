@@ -3,6 +3,7 @@
 #include "display.h"
 #include "state.h"
 #include "ui_field.h"
+#include "ui_layout.h"
 #include "ui_memory.h"
 #include "ui_music.h"
 #include "ui_sync.h"
@@ -90,96 +91,28 @@ namespace {
       &fieldMemory
     };
 
-  int selectedFieldIndex = 1;   // start on number of measures
 
-  void updateSelectedField(Encoder::Update update) {
-    selectedFieldIndex =
-      constrain(selectedFieldIndex + update.dir(),
-        0, (int)(selectableFields.size()) - 1);
-  }
+    class MainPage : public Layout {
+    public:
+      MainPage() : Layout(selectableFields, 1) { }
+    protected:
+      void redraw();
+    };
 
-  Field* selectedField() {    // "class" needed due to auto-prototype gen.
-    return selectableFields.begin()[selectedFieldIndex];
-  }
 
-  enum SelectMode { selectNone, selectField, selectValue };
-
-  SelectMode selectMode = selectNone;
+    MainPage layout;
 }
 
 void resetSelection() {
-  if (selectMode == selectValue)
-    selectedField()->exit();
-
-  selectMode = selectNone;
-  selectedField()->deselect();
+  layout.exit();
 }
 
 void updateSelection(Encoder::Update update) {
-  switch (selectMode) {
-
-    case selectNone:
-      selectMode = selectField;
-      selectedField()->select();
-      break;
-
-    case selectField:
-      selectedField()->deselect();
-      updateSelectedField(update);
-      selectedField()->select();
-      break;
-
-    case selectValue:
-      selectedField()->update(update);
-      break;
-  }
+  layout.update(update);
 }
 
 void clickSelection(Button::State s) {
-  switch (selectMode) {
-
-    case selectNone:
-      selectMode = selectField;
-      selectedField()->select();
-      // fall through;
-
-    case selectField:
-      switch (s) {
-        case Button::DownLong:
-          selectedField()->enter(true);
-          break;
-        case Button::Up:
-          selectedField()->enter(false);
-          // fall through
-        case Button::UpLong:
-          selectMode = selectValue;
-          break;
-        default:
-          break;
-      }
-      break;
-
-    case selectValue:
-      if (selectedField()->click(s)) {
-        break;
-      }
-      switch (s) {
-        case Button::DownLong:
-          // held down after selecting... so exit and re-enter
-          selectedField()->exit();
-          selectedField()->enter(true);
-          selectMode = selectField;
-          break;
-        case Button::Up:
-        case Button::UpLong:
-          selectedField()->exit();
-          selectMode = selectField;
-          break;
-        default:
-          break;
-      }
-      break;
-  }
+  layout.click(s);
 }
 
 namespace {
@@ -189,7 +122,17 @@ namespace {
       display.drawPixel(x, y, WHITE);
     }
   }
+
+  void MainPage::redraw() {
+    drawSeparator(16);
+    drawSeparator(64);
+    drawSeparator(109);
+    // the x
+    display.drawLine(31, 12, 37, 18, WHITE);
+    display.drawLine(31, 18, 37, 12, WHITE);
+  }
 }
+
 
 bool drawAll(bool refresh) {
   bool drew = refresh;
@@ -199,37 +142,7 @@ bool drawAll(bool refresh) {
     resetText();
   }
 
-  // BPM area
-  drew |= fieldBpm.render(refresh);
-
-  if (refresh) drawSeparator(16);
-
-  // Repeat area
-  drew |= fieldNumberMeasures.render(refresh);
-  if (refresh) {
-    // the x
-    display.drawLine(31, 12, 37, 18, WHITE);
-    display.drawLine(31, 18, 37, 12, WHITE);
-  }
-  drew |= fieldBeatsPerMeasure.render(refresh);
-  drew |= commonTimeSignatures.render(refresh);
-  drew |= fieldBeatUnit.render(refresh);
-  drew |= pendingLoopIndicator.render(refresh);
-
-  if (refresh) drawSeparator(64);
-
-  // Tuplet area
-  drew |= fieldTupletCount.render(refresh);
-  drew |= commonTuplets.render(refresh);
-  drew |= fieldTupletTime.render(refresh);
-  drew |= fieldTupletUnit.render(refresh);
-  drew |= pendingTupletIndicator.render(refresh);
-
-  if (refresh) drawSeparator(109);
-
-  // Memory area
-  drew |= fieldMemory.render(refresh);
-  drew |= pendingMemoryIndicator.render(refresh);
+  drew |= layout.render(refresh);
 
   if (drew)
     display.display();
