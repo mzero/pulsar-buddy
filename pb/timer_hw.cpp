@@ -19,6 +19,18 @@ divisor_t divisorFromBpm(float bpm) {
   return (divisor_t)(roundf(cpuFactor / bpm));
 }
 
+namespace {
+
+  const uint32_t cpuTicksInMinWidth = F_CPU / 1000 * 2667 / 1000;
+    // ticks_sec / ms_per_sec * width_in_micros / micros_per_ms
+    // Becareful to keep this calc. from over- or under- flowing!
+
+  q_t divisorToMinWidth(divisor_t divisor) {
+    return max(6, divisor ? cpuTicksInMinWidth / divisor : 0);
+      // handle zero divisor at start, and also make sure always sane
+  }
+}
+
 
 // *** NOTE: This implementation is for the SAMD21 only.
 #if defined(__SAMD21__) || defined(TC4) || defined(TC5)
@@ -292,7 +304,12 @@ void zeroCounts() {
   writeCounts(zeros);
 }
 
-void writePeriods(const Timing& periods) {
+namespace {
+  q_t lastBeatWidth = 0;
+}
+
+void writePeriods(
+    const Timing& periods, divisor_t divisor, const Timing& widths) {
   // sync as a group - though quantum is stopped, so shouldn't matter
   sync(measureTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
   sync(sequenceTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
@@ -303,10 +320,31 @@ void writePeriods(const Timing& periods) {
   beatTc->COUNT16.CC[0].reg = static_cast<uint16_t>(periods.beat - 1);
   tupletTcc->PER.reg = periods.tuplet - 1;
 
-  measureTcc->CC[0].reg = min(Q_PER_B, periods.measure) / 4 - 1;
-  sequenceTcc->CC[0].reg = min(Q_PER_B, periods.sequence) / 4 - 1;
-  beatTc->COUNT16.CC[1].reg = static_cast<uint16_t>(periods.beat / 4 - 1);
-  tupletTcc->CC[0].reg = min(Q_PER_B, periods.tuplet) / 4 - 1;
+  q_t minQ = divisorToMinWidth(divisor);
+
+  measureTcc->CC[0].reg     = max(minQ, widths.measure) - 1;
+  sequenceTcc->CC[0].reg    = max(minQ, widths.sequence) - 1;
+  beatTc->COUNT16.CC[1].reg =
+    lastBeatWidth           = max(minQ, widths.beat) - 1;
+  tupletTcc->CC[0].reg      = max(minQ, widths.tuplet) - 1;
+}
+
+void updateWidths(divisor_t divisor, const Timing& widths) {
+  q_t minQ = divisorToMinWidth(divisor);
+
+  // TCC versions are buffered, changes on next cycle, don't need sync
+  // TC version happens immediately, and will stall if sync'ing
+
+  measureTcc->CCB[0].reg    = max(minQ, widths.measure) - 1;
+  sequenceTcc->CCB[0].reg   = max(minQ, widths.sequence) - 1;
+
+  q_t beatWidth = max(minQ, widths.beat) - 1;
+  if (beatWidth != lastBeatWidth) {
+      // avoid writing (and stalling for sync) if not changed
+      beatTc->COUNT16.CC[1].reg = lastBeatWidth = beatWidth;
+  }
+
+  tupletTcc->CCB[0].reg     = max(minQ, widths.tuplet) - 1;
 }
 
 

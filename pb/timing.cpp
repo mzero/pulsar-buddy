@@ -22,6 +22,20 @@ namespace {
     return Q_PER_B;
   }
 
+  q_t qForWidth(PulseType pt, q_t period) {
+    switch (pt) {
+      case pulseFixedShort:   return 0;
+      case pulseDutyHalf:     return period / 2;
+      case pulseDutyThird:    return period / 3;
+      case pulseDutyQuarter:  return period / 4;
+      case pulseDuration16:   return min(Q_PER_B, period) / 4;
+      case pulseDuration32:   return min(Q_PER_B, period) / 8;
+    }
+
+    // should never happen!
+    critical.printf("Unsupported pulse type: %d\n", pt);
+    return 0;
+  }
 }
 
 void dumpQ(q_t q){
@@ -42,11 +56,16 @@ void dumpTiming(const Timing& t) {
 }
 
 
-void computePeriods(const Settings& s, Timing& p) {
-  p.measure = qcast(s.beatsPerMeasure) * qPerBeatUnit(s.beatUnit);
-  p.sequence = qcast(s.numberMeasures) * p.measure;
-  p.beat = qPerBeatUnit(s.tupletUnit);
-  p.tuplet = qcast(s.tupletTime) * p.beat / qcast(s.tupletCount);
+void computePeriods(const Settings& s, Timing& p, Timing& w) {
+  p.measure   = qcast(s.beatsPerMeasure) * qPerBeatUnit(s.beatUnit);
+  p.sequence  = qcast(s.numberMeasures) * p.measure;
+  p.beat      = qPerBeatUnit(s.tupletUnit);
+  p.tuplet    = qcast(s.tupletTime) * p.beat / qcast(s.tupletCount);
+
+  w.measure   = qForWidth(pulseDuration16,  p.measure);
+  w.sequence  = qForWidth(pulseDuration16,  p.sequence);
+  w.beat      = qForWidth(pulseDuration16,  p.beat);
+  w.tuplet    = qForWidth(pulseDuration16,  p.tuplet);
 
   if (configuration.debug.timing) {
     Serial.println("computed new periods:");

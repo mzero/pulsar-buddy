@@ -12,6 +12,10 @@
 #pragma GCC diagnostic error "-Wconversion"
 
 namespace {
+
+  Timing activePeriods;
+  Timing activeWidths;
+
   // the divisor currently set on the timer, may jitter to correct phase
   divisor_t activeDivisor = 0;  // so it will be set the first time
 
@@ -27,12 +31,11 @@ namespace {
       activeDivisor = active;
     }
 
-    targetDivisor = target;
+    if (targetDivisor != target) {
+      updateWidths(target, activeWidths);
+      targetDivisor = target;
+    }
   }
-
-
-  Timing activePeriods;
-
 
   /** CLOCK STATE **/
 
@@ -416,16 +419,16 @@ void setSync(SyncMode sync) {
 
 
 void resetTiming(const Settings& settings) {
-  computePeriods(settings, activePeriods);
+  computePeriods(settings, activePeriods, activeWidths);
   {
     PauseQuantum pq;
     zeroCounts();
-    writePeriods(activePeriods);
+    writePeriods(activePeriods, targetDivisor, activeWidths);
   }
 }
 
 void updateTiming(const Settings& settings) {
-  computePeriods(settings, activePeriods);
+  computePeriods(settings, activePeriods, activeWidths);
   {
     PauseQuantum pq;
 
@@ -433,7 +436,7 @@ void updateTiming(const Settings& settings) {
     readCounts(counts);
     adjustOffsets(activePeriods, counts);
     writeCounts(counts);
-    writePeriods(activePeriods);
+    writePeriods(activePeriods, targetDivisor, activeWidths);
   }
 }
 

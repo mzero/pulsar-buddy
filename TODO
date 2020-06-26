@@ -1,6 +1,37 @@
 TODO
 
 
+
+
+[] pulse size in Settings
+[x] use pulse width to set CC[1]s
+[x] support fixed pulse width
+
+[] layout as a field
+[] layers as a field
+[] swap layers on long press
+[] split BPM and sync controls
+	[] move to different layers
+[] add static pin field image
+[] pulse size control
+	[] one for each output
+
+--------------
+
+
+[] move measure changes to S timer
+
+--- Flexible Outputs
+
+[] options for output
+	[] determine ranges for timers in use
+	[] figure out which options can go on which outputs
+	[] images for options
+	[] program timers based on options
+	[] reset timers correctly
+
+
+
 --- Later
 
 [] probably should persist state only if it is stable

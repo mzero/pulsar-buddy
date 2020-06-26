@@ -30,7 +30,8 @@ private:
 void readCounts(Timing&);
 void writeCounts(const Timing&);
 void zeroCounts();
-void writePeriods(const Timing&);
+void writePeriods(const Timing&, divisor_t, const Timing&);
+void updateWidths(divisor_t, const Timing&);
 
 void forceTriggersOff(bool);
 
