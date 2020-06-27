@@ -22,7 +22,7 @@ namespace {
     return Q_PER_B;
   }
 
-  q_t qForWidth(PulseType pt, q_t period) {
+  q_t qForWidth(PulseWidth pt, q_t period) {
     switch (pt) {
       case pulseFixedShort:   return 0;
       case pulseDutyHalf:     return period / 2;

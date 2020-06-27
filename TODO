@@ -7,14 +7,14 @@ TODO
 [x] use pulse width to set CC[1]s
 [x] support fixed pulse width
 
-[] layout as a field
-[] layers as a field
+[x] layout as a field
+[x] frame as a field
 [] swap layers on long press
-[] split BPM and sync controls
-	[] move to different layers
+[x] split BPM and sync controls
+	[x] move to different layers
 [] add static pin field image
-[] pulse size control
-	[] one for each output
+[x] pulse size control
+	[x] one for each output
 
 --------------
 

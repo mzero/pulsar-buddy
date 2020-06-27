@@ -6,6 +6,7 @@
 #include "ui_layout.h"
 #include "ui_memory.h"
 #include "ui_music.h"
+#include "ui_setup.h"
 #include "ui_sync.h"
 
 
@@ -103,8 +104,20 @@ namespace {
   auto fieldSync
     = SyncField(0, 0, 15, 32, userState());
 
+  PulseWidth widths[4] =
+    { pulseFixedShort, pulseDutyHalf, pulseDutyQuarter, pulseDuration16 };
+
+  auto pulseWitdhT = PulseWidthField(18, 20, 15, 12, widths[0]);
+  auto pulseWitdhB = PulseWidthField(34, 20, 15, 12, widths[1]);
+  auto pulseWitdhM = PulseWidthField(50, 20, 15, 12, widths[2]);
+  auto pulseWitdhS = PulseWidthField(66, 20, 15, 12, widths[3]);
+
   const std::initializer_list<Field*> setupFields =
     { &fieldSync,
+      &pulseWitdhT,
+      &pulseWitdhB,
+      &pulseWitdhM,
+      &pulseWitdhS
     };
 
 

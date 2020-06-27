@@ -36,7 +36,7 @@ enum SyncMode : uint8_t {
   syncMidi = 0xd8,     // clock = 24ppqn MIDI sync
 };
 
-enum PulseType : uint8_t {
+enum PulseWidth : uint8_t {
   pulseFixedShort = 0x00,  // just a short, ~2ms pulse
 
   pulseDutyHalf = 0x12,   //
