@@ -1,42 +1,9 @@
 #include "ui_sync.h"
 
 #include "display.h"
+#include "layout.h"
 #include "timer_hw.h"
 
-
-bool SyncField::isOutOfDate() {
-  if (modeAsDrawn != mode)
-    return true;
-
-  switch (mode) {
-    case displayClock: {
-      auto status = ClockStatus::current();
-      if (clockAsDrawn != status)
-        return true;
-      break;
-    }
-
-    case displaySync:
-      if (syncAsDrawn != pendingSync)
-        return true;
-      break;
-  }
-
-  return Field::isOutOfDate();
-}
-
-void SyncField::enter(bool alternate) {
-  mode = alternate ? displaySync : displayClock;
-  pendingSync = state.syncMode;
-}
-
-void SyncField::exit() {
-  if (mode == displaySync) {
-    state.syncMode = pendingSync;
-    setSync(state.syncMode);
-    mode = displayClock;
-  }
-}
 
 namespace SyncImages {
   const unsigned char paused[] = { // 15 x 32
@@ -113,6 +80,98 @@ namespace SyncImages {
   };
 }
 
+
+
+/**
+ **  BPM Field
+ **/
+
+bool BpmField::isOutOfDate() {
+  auto status = ClockStatus::current();
+
+  return
+    (clockAsDrawn != status)
+    || Field::isOutOfDate();
+}
+
+void BpmField::enter(bool alternate) {
+  if (alternate)
+    showSetup();
+}
+
+
+void BpmField::update(Encoder::Update update) {
+  auto status = ClockStatus::current();
+
+  setBpm(status.bpm + update.accel(5));
+}
+
+void BpmField::redraw() {
+
+  display.setTextColor(foreColor());
+
+  auto status = ClockStatus::current();
+
+  switch (status.state) {
+    case clockFreeRunning:
+    case clockSyncRunning: {
+      // rotated coordinates of the field
+      const int16_t xr = display.height() - (y + h);
+      const int16_t yr = x;
+      const int16_t wr = h;
+      const int16_t hr = w;
+
+      setRotationSideways();
+      centerNumber(status.bpm, xr, yr, wr, hr);
+      setRotationNormal();
+      break;
+    }
+
+    case clockPaused: {
+      display.drawBitmap(x, y, SyncImages::paused, 15, 32, foreColor());
+      break;
+    }
+
+    case clockPerplexed: {
+      auto image = SyncImages::clkbad;
+      switch (state.syncMode) {
+        case sync24ppqn:
+        case sync48ppqn:
+          image = SyncImages::dinbad;
+          break;
+        default:
+          break;
+      }
+      display.drawBitmap(x, y, image, 15, 32, foreColor());
+      break;
+    }
+  }
+
+  clockAsDrawn = status;
+}
+
+
+/**
+ **  Sync Field
+ **/
+
+bool SyncField::isOutOfDate() {
+  return
+    (syncAsDrawn != pendingSync)
+    || Field::isOutOfDate();
+}
+
+void SyncField::enter(bool alternate) {
+  if (alternate)
+    showMain();
+}
+
+void SyncField::exit() {
+  state.syncMode = pendingSync;
+  setSync(state.syncMode);
+  showMain();
+}
+
 namespace {
   struct SyncInfo {
     SyncMode              mode;
@@ -142,79 +201,18 @@ namespace {
 }
 
 void SyncField::update(Encoder::Update update) {
-  switch (mode) {
-    case displayClock: {
-      auto status = ClockStatus::current();
-
-      setBpm(status.bpm + update.accel(5));
-      break;
-    }
-
-    case displaySync: {
-      int i = findSyncModeIndex(pendingSync);
-      int j = constrain(i + update.dir(), 0, numSyncOptions - 1);
-      pendingSync = syncOptions[j].mode;
-      break;
-    }
-  }
+  int i = findSyncModeIndex(pendingSync);
+  int j = constrain(i + update.dir(), 0, numSyncOptions - 1);
+  pendingSync = syncOptions[j].mode;
 }
 
 void SyncField::redraw() {
-
   display.setTextColor(foreColor());
 
-  switch (mode) {
-    case displayClock: {
-      auto status = ClockStatus::current();
-
-      switch (status.state) {
-        case clockFreeRunning:
-        case clockSyncRunning: {
-          // rotated coordinates of the field
-          const int16_t xr = display.height() - (y + h);
-          const int16_t yr = x;
-          const int16_t wr = h;
-          const int16_t hr = w;
-
-          setRotationSideways();
-          centerNumber(status.bpm, xr, yr, wr, hr);
-          setRotationNormal();
-          break;
-        }
-
-        case clockPaused: {
-          display.drawBitmap(x, y, SyncImages::paused, 15, 32, foreColor());
-          break;
-        }
-
-        case clockPerplexed: {
-          auto image = SyncImages::clkbad;
-          switch (state.syncMode) {
-            case sync24ppqn:
-            case sync48ppqn:
-              image = SyncImages::dinbad;
-              break;
-            default:
-              break;
-          }
-          display.drawBitmap(x, y, image, 15, 32, foreColor());
-          break;
-        }
-      }
-
-      clockAsDrawn = status;
-      break;
-    }
-
-    case displaySync:
-      int i = findSyncModeIndex(pendingSync);
-      if (i >= 0)
-        display.drawBitmap(x, y, syncOptions[i].image, 15, 32, foreColor());
-      else
-        centerText("?", x, y, w, h);
-      syncAsDrawn = pendingSync;
-      break;
-  }
-
-  modeAsDrawn = mode;
+  int i = findSyncModeIndex(pendingSync);
+  if (i >= 0)
+    display.drawBitmap(x, y, syncOptions[i].image, 15, 32, foreColor());
+  else
+    centerText("?", x, y, w, h);
+  syncAsDrawn = pendingSync;
 }

@@ -4,6 +4,9 @@
 #include "ui_input.h"
 
 
+void showMain();
+void showSetup();
+
 void resetSelection();
 void updateSelection(Encoder::Update update);
 void clickSelection(Button::State);

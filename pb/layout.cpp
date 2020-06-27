@@ -15,7 +15,7 @@ namespace {
   // are too big for the timers.
 
   auto fieldBpm
-    = SyncField(0, 0, 15, 32, userState());
+    = BpmField(0, 0, 15, 32, userState());
 
   auto fieldNumberMeasures
     = ValueField<uint8_t>(18,  5, 12, 20,
@@ -78,7 +78,7 @@ namespace {
     = PendingIndicator(111, 0, pendingMemory);
 
 
-  const std::initializer_list<Field*> selectableFields =
+  const std::initializer_list<Field*> mainFields =
     { &fieldBpm,
       &fieldNumberMeasures,
       &fieldBeatsPerMeasure,
@@ -92,28 +92,52 @@ namespace {
     };
 
 
-    class MainPage : public Layout {
-    public:
-      MainPage() : Layout(selectableFields, 1) { }
-    protected:
-      void redraw();
+  class MainPage : public Layout {
+  public:
+    MainPage() : Layout(mainFields, 1) { }
+  protected:
+    void redraw();
+  };
+
+
+  auto fieldSync
+    = SyncField(0, 0, 15, 32, userState());
+
+  const std::initializer_list<Field*> setupFields =
+    { &fieldSync,
     };
 
 
-    MainPage layout;
+  class SetupPage : public Layout {
+  public:
+    SetupPage() : Layout(setupFields) { }
+  protected:
+    void redraw();
+  };
+
+
+  MainPage mainPage;
+  SetupPage setupPage;
+
+
+  Frame screen(mainPage);
 }
 
 void resetSelection() {
-  layout.exit();
+  screen.exit();
 }
 
 void updateSelection(Encoder::Update update) {
-  layout.update(update);
+  screen.update(update);
 }
 
 void clickSelection(Button::State s) {
-  layout.click(s);
+  screen.click(s);
 }
+
+void showMain() { screen.show(mainPage); }
+void showSetup() { screen.show(setupPage); }
+
 
 namespace {
 
@@ -131,6 +155,11 @@ namespace {
     display.drawLine(31, 12, 37, 18, WHITE);
     display.drawLine(31, 18, 37, 12, WHITE);
   }
+
+  void SetupPage::redraw() {
+    drawSeparator(16);
+    drawSeparator(109);
+  }
 }
 
 
@@ -142,7 +171,7 @@ bool drawAll(bool refresh) {
     resetText();
   }
 
-  drew |= layout.render(refresh);
+  drew |= screen.render(refresh);
 
   if (drew)
     display.display();
