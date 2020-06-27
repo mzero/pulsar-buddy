@@ -109,3 +109,22 @@ Field* Layout::selectedField() const {
 void Layout::redraw() {
   // nothing by default
 }
+
+
+
+bool Frame::render(bool force) {
+  bool drew = this->Field::render(force);
+  drew |= content ? content->render(drew) : false;
+  drawnContent = content;
+  return drew;
+}
+
+void Frame::select(bool s)             {    if (content)  content->select(s); }
+void Frame::enter(bool a)              {    if (content)  content->enter(a); }
+void Frame::exit()                     {    if (content)  content->exit(); }
+bool Frame::click(Button::State s)     { return content ? content->click(s) : false; }
+void Frame::update(Encoder::Update u)  {    if (content)  content->update(u); }
+
+bool Frame::isOutOfDate() { return content != drawnContent; }
+void Frame::redraw() { }
+
