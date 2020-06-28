@@ -56,16 +56,18 @@ void dumpTiming(const Timing& t) {
 }
 
 
-void computePeriods(const Settings& s, Timing& p, Timing& w) {
-  p.measure   = qcast(s.beatsPerMeasure) * qPerBeatUnit(s.beatUnit);
-  p.sequence  = qcast(s.numberMeasures) * p.measure;
-  p.beat      = qPerBeatUnit(s.tupletUnit);
-  p.tuplet    = qcast(s.tupletTime) * p.beat / qcast(s.tupletCount);
+void computePeriods(const State& s, Timing& p, Timing& w) {
+  const Settings& t = s.settings;
 
-  w.measure   = qForWidth(pulseDuration16,  p.measure);
-  w.sequence  = qForWidth(pulseDuration16,  p.sequence);
-  w.beat      = qForWidth(pulseDuration16,  p.beat);
-  w.tuplet    = qForWidth(pulseDuration16,  p.tuplet);
+  p.measure   = qcast(t.beatsPerMeasure) * qPerBeatUnit(t.beatUnit);
+  p.sequence  = qcast(t.numberMeasures) * p.measure;
+  p.beat      = qPerBeatUnit(t.tupletUnit);
+  p.tuplet    = qcast(t.tupletTime) * p.beat / qcast(t.tupletCount);
+
+  w.measure   = qForWidth(s.pulseWidthM,  p.measure);
+  w.sequence  = qForWidth(s.pulseWidthS,  p.sequence);
+  w.beat      = qForWidth(s.pulseWidthB,  p.beat);
+  w.tuplet    = qForWidth(s.pulseWidthT,  p.tuplet);
 
   if (configuration.debug.timing) {
     Serial.println("computed new periods:");

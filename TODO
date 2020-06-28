@@ -1,46 +1,44 @@
 TODO
 
 
+[x] pulse size in Settings
+	[x] hook up to UI
 
-
-[] pulse size in Settings
-[x] use pulse width to set CC[1]s
-[x] support fixed pulse width
-
-[x] layout as a field
-[x] frame as a field
-[] swap layers on long press
-[x] split BPM and sync controls
-	[x] move to different layers
-[] add static pin field image
-[x] pulse size control
-	[x] one for each output
+[] something still not right about page swapping
+	[] when returning, seems like other BPM field is active?
 
 --------------
 
-
 [] move measure changes to S timer
 
---- Flexible Outputs
+[] let M be one of { M, 1/4, 1/8, 1/16, 1/32 }
+	[] settings member
+	[] ui field
+	[] icons
 
-[] options for output
-	[] determine ranges for timers in use
-	[] figure out which options can go on which outputs
-	[] images for options
-	[] program timers based on options
-	[] reset timers correctly
+[] let B be one of { B, 1/4, 1/8, 1/16, 1/32 }
 
+[] support DIN24 and DIN48 sync outputs
+	[] force 50% duty cycle
+	[] icons
 
+[] support 2nd tuplet option for B
+	[] icon
+	[] UI for setting second Tuplet
 
---- Later
-
-[] probably should persist state only if it is stable
 
 [] ? MIDI Clock code: include? or keep #ifdef'd? or configuration?
 	- currently using #if 0 in several places
 [] MIDI clock sync mode
 	[] timing to 24th
 	[] enable / disable event system for sw event on entry/exit
+
+
+
+
+--- Later
+
+[] probably should persist state only if it is stable
 
 [] ? ZeroRegs: compile in for production? or keep out?
 

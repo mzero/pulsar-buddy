@@ -47,8 +47,8 @@ void setSync(SyncMode);
 
 // void midiClock();
 
-void resetTiming(const Settings&);
-void updateTiming(const Settings&);
+void resetTiming(const State&);
+void updateTiming(const State&);
 
 
 // ISR routines

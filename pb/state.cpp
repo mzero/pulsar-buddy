@@ -159,9 +159,23 @@ bool pendingMemory() {
       _userState.memoryIndex != _activeState.memoryIndex;
 }
 
+bool pendingOutputSettings() {
+  return
+       _userState.pulseWidthS != _activeState.pulseWidthS
+    || _userState.pulseWidthM != _activeState.pulseWidthM
+    || _userState.pulseWidthB != _activeState.pulseWidthB
+    || _userState.pulseWidthT != _activeState.pulseWidthT
+    || _userState.outputModeS != _activeState.outputModeS
+    || _userState.outputModeM != _activeState.outputModeM
+    || _userState.outputModeB != _activeState.outputModeB
+    || _userState.outputModeT != _activeState.outputModeT
+    ;
+}
+
 bool pendingState() {
   if (previewActive) return false;
-  return pendingLoop() || pendingTuplet() || pendingMemory();
+  return pendingLoop() || pendingTuplet() || pendingMemory()
+    || pendingOutputSettings();
 }
 
 void commitState() {

@@ -418,8 +418,8 @@ void setSync(SyncMode sync) {
 #pragma GCC diagnostic pop
 
 
-void resetTiming(const Settings& settings) {
-  computePeriods(settings, activePeriods, activeWidths);
+void resetTiming(const State& state) {
+  computePeriods(state, activePeriods, activeWidths);
   {
     PauseQuantum pq;
     zeroCounts();
@@ -427,8 +427,8 @@ void resetTiming(const Settings& settings) {
   }
 }
 
-void updateTiming(const Settings& settings) {
-  computePeriods(settings, activePeriods, activeWidths);
+void updateTiming(const State& state) {
+  computePeriods(state, activePeriods, activeWidths);
   {
     PauseQuantum pq;
 

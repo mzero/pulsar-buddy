@@ -60,7 +60,7 @@ void setup() {
 
   setBpm(userState().userBpm);
   setSync(userState().syncMode);
-  resetTiming(userState().settings);
+  resetTiming(userState());
 
   if (configuration.options.alwaysDim)
     display.dim(true);
@@ -83,7 +83,7 @@ void loop() {
   if (measureEvent) {
     measureEvent = false;
     if (pendingState()) {
-      updateTiming(userSettings());
+      updateTiming(userState());
       commitState();
       active = true;
     }

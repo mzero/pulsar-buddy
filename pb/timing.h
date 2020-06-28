@@ -32,7 +32,7 @@ struct Timing {
   q_t   tuplet;
 };
 
-void computePeriods(const Settings& setting, Timing& periods, Timing& widths);
+void computePeriods(const State& state, Timing& periods, Timing& widths);
 
 void adjustOffsets(const Timing& periods, Timing& offsets);
 
