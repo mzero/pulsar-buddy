@@ -28,9 +28,11 @@ namespace {
       uint32_t  _magic;
       uint32_t  _version;
       union {
-        T       _data;
         uint8_t _bytes[maxSize];
+        T       _data;
       };
+
+      Box() : _bytes() { }  // tell compiler which union member to construct
     };
 
     Box _box;
@@ -90,9 +92,37 @@ namespace {
   bool previewActive = false;
 
 
-  typedef State State_v1;
+  typedef Container<State, 2, 40> StateContainer;
+  StateContainer stateContainer;
 
-  Container<State_v1, 1, 40> stateContainer;
+  struct State_v1 {
+    Settings    settings;
+    uint8_t     memoryIndex;
+    SyncMode    syncMode;
+    uint16_t    userBpm;
+    uint16_t    reserved;
+  };
+
+  template<>
+  bool StateContainer::upgrade(uint32_t version, const uint8_t* bytes, State& s) {
+    switch (version) {
+      case 1: {
+        const State_v1& u = *reinterpret_cast<const State_v1*>(bytes);
+        s.settings = u.settings;
+        s.memoryIndex = u.memoryIndex;
+        s.syncMode = u.syncMode;
+        s.userBpm = u.userBpm;
+        // but the defaults for pulsewidth were different:
+        s.pulseWidthS = pulseDuration16;
+        s.pulseWidthM = pulseDuration16;
+        s.pulseWidthB = pulseDuration16;
+        s.pulseWidthT = pulseDuration16;
+        return true;
+      }
+    }
+    return false;
+  }
+
 
   State& _flashState = stateContainer.data();  // state pending write to flash
   unsigned long writeFlashAt = 0;

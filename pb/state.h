@@ -33,7 +33,7 @@ enum SyncMode : uint8_t {
   sync24ppqn = 0x98,   // clock = 24ppqn DIN sync
   sync48ppqn = 0xb0,   // clock = 48ppqn DIN sync
 
-  syncMidi = 0xd8,     // clock = 24ppqn MIDI sync
+  syncMidiUSB = 0xd8,     // clock = 24ppqn MIDI sync over USB
 };
 
 enum PulseWidth : uint8_t {
@@ -48,12 +48,29 @@ enum PulseWidth : uint8_t {
 
 };
 
+enum OutputMode : uint8_t {
+  outputSequence  = 0x00,
+  outputMeasure   = 0x01,
+  outputBeat      = 0x02,
+  otuputTuplet    = 0x03,
+};
+
 struct State {
   Settings    settings;
   uint8_t     memoryIndex;
   SyncMode    syncMode;
   uint16_t    userBpm;
-  uint16_t    reserved;
+
+  // added in V2 (first two bytes overwrite a 'reserved' area)
+  PulseWidth  pulseWidthS = pulseFixedShort;
+  PulseWidth  pulseWidthM = pulseFixedShort;
+  PulseWidth  pulseWidthB = pulseFixedShort;
+  PulseWidth  pulseWidthT = pulseFixedShort;
+
+  OutputMode  outputModeS = outputSequence;
+  OutputMode  outputModeM = outputMeasure;
+  OutputMode  outputModeB = outputBeat;
+  OutputMode  outputModeT = otuputTuplet;
 };
 
 // Settings and the memory index are buffered:

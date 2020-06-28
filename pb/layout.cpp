@@ -116,15 +116,12 @@ namespace {
   constexpr int16_t x_pinM = x_pins + 2 * x_pin_width;
   constexpr int16_t x_pinS = x_pins + 3 * x_pin_width;
 
-  PulseWidth widths[4] =
-    { pulseFixedShort, pulseDutyHalf, pulseDutyQuarter, pulseDuration16 };
-
   const int16_t x_pw = x_pins + 4;
 
-  auto pulseWitdhT = PulseWidthField(x_pinT + 4, 19, 15, 12, widths[0]);
-  auto pulseWitdhB = PulseWidthField(x_pinB + 4, 19, 15, 12, widths[1]);
-  auto pulseWitdhM = PulseWidthField(x_pinM + 4, 19, 15, 12, widths[2]);
-  auto pulseWitdhS = PulseWidthField(x_pinS + 4, 19, 15, 12, widths[3]);
+  auto pulseWitdhT = PulseWidthField(x_pinT + 4, 19, 15, 12, userState().pulseWidthT);
+  auto pulseWitdhB = PulseWidthField(x_pinB + 4, 19, 15, 12, userState().pulseWidthB);
+  auto pulseWitdhM = PulseWidthField(x_pinM + 4, 19, 15, 12, userState().pulseWidthM);
+  auto pulseWitdhS = PulseWidthField(x_pinS + 4, 19, 15, 12, userState().pulseWidthS);
 
   const std::initializer_list<Field*> setupFields =
     { &fieldReturnToMain,
