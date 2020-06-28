@@ -50,4 +50,16 @@ private:
 };
 
 
+class ReturnField : public Field {
+public:
+  ReturnField(int16_t x, int16_t y, uint16_t w, uint16_t h)
+    : Field(x, y, w, h)
+    { }
+
+    virtual void enter(bool);
+
+protected:
+    virtual void redraw();
+};
+
 #endif // _INCLUDE_UI_SYNC_H_
