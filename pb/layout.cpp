@@ -109,13 +109,22 @@ namespace {
   auto fieldSync
     = SyncField(19, 0, 15, 32, userState());
 
+  constexpr int16_t x_pins = 37;
+  constexpr int16_t x_pin_width = 16;
+  constexpr int16_t x_pinT = x_pins + 0 * x_pin_width;
+  constexpr int16_t x_pinB = x_pins + 1 * x_pin_width;
+  constexpr int16_t x_pinM = x_pins + 2 * x_pin_width;
+  constexpr int16_t x_pinS = x_pins + 3 * x_pin_width;
+
   PulseWidth widths[4] =
     { pulseFixedShort, pulseDutyHalf, pulseDutyQuarter, pulseDuration16 };
 
-  auto pulseWitdhT = PulseWidthField(18, 20, 15, 12, widths[0]);
-  auto pulseWitdhB = PulseWidthField(34, 20, 15, 12, widths[1]);
-  auto pulseWitdhM = PulseWidthField(50, 20, 15, 12, widths[2]);
-  auto pulseWitdhS = PulseWidthField(66, 20, 15, 12, widths[3]);
+  const int16_t x_pw = x_pins + 4;
+
+  auto pulseWitdhT = PulseWidthField(x_pinT + 4, 19, 15, 12, widths[0]);
+  auto pulseWitdhB = PulseWidthField(x_pinB + 4, 19, 15, 12, widths[1]);
+  auto pulseWitdhM = PulseWidthField(x_pinM + 4, 19, 15, 12, widths[2]);
+  auto pulseWitdhS = PulseWidthField(x_pinS + 4, 19, 15, 12, widths[3]);
 
   const std::initializer_list<Field*> setupFields =
     { &fieldReturnToMain,
@@ -179,6 +188,22 @@ namespace {
     drawSeparator(16);
     drawSeparator(36);
     drawSeparator(109);
+
+    smallText();
+    display.setTextColor(WHITE, BLACK);
+
+    display.setCursor(x_pinT + 9, 2);    display.print('T');
+    display.setCursor(x_pinB + 9, 2);    display.print('B');
+    display.setCursor(x_pinM + 9, 2);    display.print('M');
+    display.setCursor(x_pinS + 9, 2);    display.print('S');
+
+    resetText();
+
+    display.fillCircle(x_pinT + 11, 14, 2, WHITE);
+    display.fillCircle(x_pinB + 11, 14, 2, WHITE);
+    display.fillCircle(x_pinM + 11, 14, 2, WHITE);
+    display.fillCircle(x_pinS + 11, 14, 2, WHITE);
+
   }
 }
 
