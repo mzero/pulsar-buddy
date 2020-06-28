@@ -43,13 +43,12 @@ bool Layout::click(Button::State s) {
     case focusNavigate:
       switch (s) {
         case Button::DownLong:
+          focus = focusField;
           selectedField()->enter(true);
           break;
         case Button::Up:
-          selectedField()->enter(false);
-          // fall through
-        case Button::UpLong:
           focus = focusField;
+          selectedField()->enter(false);
           break;
         default:
           break;
@@ -63,14 +62,14 @@ bool Layout::click(Button::State s) {
       switch (s) {
         case Button::DownLong:
           // held down after selecting... so exit and re-enter
+          focus = focusNavigate;
           selectedField()->exit();
           selectedField()->enter(true);
-          focus = focusNavigate;
           break;
         case Button::Up:
         case Button::UpLong:
-          selectedField()->exit();
           focus = focusNavigate;
+          selectedField()->exit();
           break;
         default:
           break;
@@ -111,6 +110,12 @@ void Layout::redraw() {
 }
 
 
+void Frame::show(Field* f) {
+  if (f != content) {
+    exit();
+    content = f;
+  }
+}
 
 bool Frame::render(bool force) {
   bool drew = this->Field::render(force);

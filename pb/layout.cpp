@@ -101,8 +101,13 @@ namespace {
   };
 
 
+
+  auto fieldReturnToMain
+    = ReturnField(0, 5, 15, 22);
+
+
   auto fieldSync
-    = SyncField(0, 0, 15, 32, userState());
+    = SyncField(19, 0, 15, 32, userState());
 
   PulseWidth widths[4] =
     { pulseFixedShort, pulseDutyHalf, pulseDutyQuarter, pulseDuration16 };
@@ -113,7 +118,8 @@ namespace {
   auto pulseWitdhS = PulseWidthField(66, 20, 15, 12, widths[3]);
 
   const std::initializer_list<Field*> setupFields =
-    { &fieldSync,
+    { &fieldReturnToMain,
+      &fieldSync,
       &pulseWitdhT,
       &pulseWitdhB,
       &pulseWitdhM,
@@ -171,6 +177,7 @@ namespace {
 
   void SetupPage::redraw() {
     drawSeparator(16);
+    drawSeparator(36);
     drawSeparator(109);
   }
 }

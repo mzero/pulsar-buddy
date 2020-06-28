@@ -95,8 +95,10 @@ bool BpmField::isOutOfDate() {
 }
 
 void BpmField::enter(bool alternate) {
-  if (alternate)
+  if (alternate) {
     showSetup();
+    return;
+  }
 }
 
 
@@ -162,14 +164,12 @@ bool SyncField::isOutOfDate() {
 }
 
 void SyncField::enter(bool alternate) {
-  if (alternate)
-    showMain();
+  pendingSync = state.syncMode;
 }
 
 void SyncField::exit() {
   state.syncMode = pendingSync;
   setSync(state.syncMode);
-  showMain();
 }
 
 namespace {

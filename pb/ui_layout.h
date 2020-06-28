@@ -42,7 +42,7 @@ public:
     { }
   Frame(Field& c) : Frame(&c) { }
 
-  void show(Field* c) { content = c; }
+  void show(Field* c);
   void show(Field& c) { content = &c; }
   void clear()        { show(nullptr); }
 
