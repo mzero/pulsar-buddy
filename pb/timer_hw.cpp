@@ -263,44 +263,44 @@ namespace {
 }
 
 
-void readCounts(Timing& counts) {
+void readCounts(Offsets& counts) {
   // request read sync, with command written to ctrlb
-  sync(measureTcc, TCC_SYNCBUSY_CTRLB);
   sync(sequenceTcc, TCC_SYNCBUSY_CTRLB);
+  sync(measureTcc, TCC_SYNCBUSY_CTRLB);
   sync(tupletTcc, TCC_SYNCBUSY_CTRLB);
-  measureTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
   sequenceTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
+  measureTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
   tupletTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
 
   // wait for command to complete
-  while (measureTcc->CTRLBSET.bit.CMD);
   while (sequenceTcc->CTRLBSET.bit.CMD);
+  while (measureTcc->CTRLBSET.bit.CMD);
   while (tupletTcc->CTRLBSET.bit.CMD);
 
   // sync for count (probably redudant with the above?)
-  sync(measureTcc, TCC_SYNCBUSY_COUNT);
   sync(sequenceTcc, TCC_SYNCBUSY_COUNT);
+  sync(measureTcc, TCC_SYNCBUSY_COUNT);
   sync(tupletTcc, TCC_SYNCBUSY_COUNT);
-  counts.measure = measureTcc->COUNT.reg;
-  counts.sequence = sequenceTcc->COUNT.reg;
-  counts.beat = qcast(beatTc->COUNT16.COUNT.reg);
-  counts.tuplet = tupletTcc->COUNT.reg;
+  counts.countS = sequenceTcc->COUNT.reg;
+  counts.countM = measureTcc->COUNT.reg;
+  counts.countB = qcast(beatTc->COUNT16.COUNT.reg);
+  counts.countT = tupletTcc->COUNT.reg;
 }
 
-void writeCounts(const Timing& counts) {
+void writeCounts(const Offsets& counts) {
   // sync as a group - though quantum is stopped, so shouldn't matter
-  sync(measureTcc, TCC_SYNCBUSY_COUNT);
   sync(sequenceTcc, TCC_SYNCBUSY_COUNT);
+  sync(measureTcc, TCC_SYNCBUSY_COUNT);
   sync(tupletTcc, TCC_SYNCBUSY_COUNT);
 
-  measureTcc->COUNT.reg = counts.measure;
-  sequenceTcc->COUNT.reg = counts.sequence;
-  beatTc->COUNT16.COUNT.reg = static_cast<uint16_t>(counts.beat);
-  tupletTcc->COUNT.reg = counts.tuplet;
+  sequenceTcc->COUNT.reg = counts.countS;
+  measureTcc->COUNT.reg = counts.countM;
+  beatTc->COUNT16.COUNT.reg = static_cast<uint16_t>(counts.countB);
+  tupletTcc->COUNT.reg = counts.countT;
 }
 
 void zeroCounts() {
-  Timing zeros = { 0, 0, 0, 0 };
+  Offsets zeros = { 0, 0, 0, 0, 0 };
   writeCounts(zeros);
 }
 
@@ -308,43 +308,43 @@ namespace {
   q_t lastBeatWidth = 0;
 }
 
-void writePeriods(
-    const Timing& periods, divisor_t divisor, const Timing& widths) {
+void writePeriods(const Timing& timing, divisor_t divisor) {
   // sync as a group - though quantum is stopped, so shouldn't matter
-  sync(measureTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
   sync(sequenceTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
+  sync(measureTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
   sync(tupletTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
 
-  measureTcc->PER.reg = periods.measure - 1;
-  sequenceTcc->PER.reg = periods.sequence - 1;
-  beatTc->COUNT16.CC[0].reg = static_cast<uint16_t>(periods.beat - 1);
-  tupletTcc->PER.reg = periods.tuplet - 1;
+  sequenceTcc->PER.reg = timing.periodS - 1;
+  measureTcc->PER.reg = timing.periodM - 1;
+  beatTc->COUNT16.CC[0].reg = static_cast<uint16_t>(timing.periodB - 1);
+  tupletTcc->PER.reg = timing.periodT - 1;
+
 
   q_t minQ = divisorToMinWidth(divisor);
 
-  measureTcc->CC[0].reg     = max(minQ, widths.measure) - 1;
-  sequenceTcc->CC[0].reg    = max(minQ, widths.sequence) - 1;
+  sequenceTcc->CC[0].reg    = max(minQ, timing.widthS) - 1;
+  measureTcc->CC[0].reg     = max(minQ, timing.widthM) - 1;
   beatTc->COUNT16.CC[1].reg =
-    lastBeatWidth           = max(minQ, widths.beat) - 1;
-  tupletTcc->CC[0].reg      = max(minQ, widths.tuplet) - 1;
+    lastBeatWidth           = max(minQ, timing.widthB) - 1;
+  tupletTcc->CC[0].reg      = max(minQ, timing.widthT) - 1;
 }
 
-void updateWidths(divisor_t divisor, const Timing& widths) {
+void updateWidths(divisor_t divisor, const Timing& timing) {
   q_t minQ = divisorToMinWidth(divisor);
 
   // TCC versions are buffered, changes on next cycle, don't need sync
   // TC version happens immediately, and will stall if sync'ing
 
-  measureTcc->CCB[0].reg    = max(minQ, widths.measure) - 1;
-  sequenceTcc->CCB[0].reg   = max(minQ, widths.sequence) - 1;
+  sequenceTcc->CCB[0].reg   = max(minQ, timing.widthS) - 1;
+  measureTcc->CCB[0].reg    = max(minQ, timing.widthM) - 1;
 
-  q_t beatWidth = max(minQ, widths.beat) - 1;
+  q_t beatWidth = max(minQ, timing.widthB) - 1;
   if (beatWidth != lastBeatWidth) {
       // avoid writing (and stalling for sync) if not changed
       beatTc->COUNT16.CC[1].reg = lastBeatWidth = beatWidth;
   }
 
-  tupletTcc->CCB[0].reg     = max(minQ, widths.tuplet) - 1;
+  tupletTcc->CCB[0].reg     = max(minQ, timing.widthT) - 1;
 }
 
 
@@ -506,7 +506,7 @@ void initializeTimers() {
 
 
 void dumpTimers() {
-  Timing counts;
+  Offsets counts;
 
   Serial.printf("quantum events %s\n",
     quantumRunning ? "running" : "stopped");
@@ -516,7 +516,7 @@ void dumpTimers() {
     readCounts(counts);
   }
 
-  dumpTiming(counts);
+  dumpOffsets(counts);
 
   uint16_t watchCount = watchdogTc->COUNT16.COUNT.reg;
   Serial.printf("watchdogTimer count: %d\n", watchCount);

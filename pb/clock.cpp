@@ -13,8 +13,7 @@
 
 namespace {
 
-  Timing activePeriods;
-  Timing activeWidths;
+  Timing activeTiming;
 
   // the divisor currently set on the timer, may jitter to correct phase
   divisor_t activeDivisor = 0;  // so it will be set the first time
@@ -32,7 +31,7 @@ namespace {
     }
 
     if (targetDivisor != target) {
-      updateWidths(target, activeWidths);
+      updateWidths(target, activeTiming);
       targetDivisor = target;
     }
   }
@@ -71,11 +70,13 @@ namespace {
 
       // set just "before" zero so first quantum after pause will trigger
       // all the outputs
-      Timing preZeros;
-      preZeros.measure = activePeriods.measure - 1;
-      preZeros.sequence = activePeriods.sequence - 1;
-      preZeros.beat = activePeriods.beat - 1;
-      preZeros.tuplet = activePeriods.tuplet - 1;
+      Offsets preZeros;
+      preZeros.nextMeasure = 0;
+      preZeros.countS = activeTiming.periodS - 1;
+      preZeros.countM = activeTiming.periodM - 1;
+      preZeros.countB = activeTiming.periodB - 1;
+      preZeros.countT = activeTiming.periodT - 1;
+
       writeCounts(preZeros);
     }
   }
@@ -274,8 +275,8 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
     }
 
     case clockSyncRunning: {
-      if (captureSequencePeriod != activePeriods.sequence) {
-        captureSequencePeriod = activePeriods.sequence;
+      if (captureSequencePeriod != activeTiming.sequence) {
+        captureSequencePeriod = activeTiming.sequence;
         captureLastSampleValid = false;
           // can't rely on last sanple if period changd
         INC_COUNTER(countRunningChangePeriod);
@@ -419,24 +420,24 @@ void setSync(SyncMode sync) {
 
 
 void resetTiming(const State& state) {
-  computePeriods(state, activePeriods, activeWidths);
+  computePeriods(state, activeTiming);
   {
     PauseQuantum pq;
+    writePeriods(activeTiming, targetDivisor);
     zeroCounts();
-    writePeriods(activePeriods, targetDivisor, activeWidths);
   }
 }
 
 void updateTiming(const State& state) {
-  computePeriods(state, activePeriods, activeWidths);
+  computePeriods(state, activeTiming);
   {
     PauseQuantum pq;
 
-    Timing counts;
+    Offsets counts;
     readCounts(counts);
-    adjustOffsets(activePeriods, counts);
+    adjustOffsets(activeTiming, counts);
+    writePeriods(activeTiming, targetDivisor);
     writeCounts(counts);
-    writePeriods(activePeriods, targetDivisor, activeWidths);
   }
 }
 

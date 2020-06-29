@@ -49,48 +49,76 @@ void dumpQ(q_t q){
 }
 
 void dumpTiming(const Timing& t) {
-  Serial.print("  measure  = "); dumpQ(t.measure);   Serial.println();
   Serial.print("  sequence = "); dumpQ(t.sequence);  Serial.println();
-  Serial.print("  beat     = "); dumpQ(t.beat);      Serial.println();
-  Serial.print("  tuplet   = "); dumpQ(t.tuplet);    Serial.println();
+  Serial.print("  measure  = "); dumpQ(t.measure);   Serial.println();
+  Serial.println();
+  Serial.print("  periodS  = "); dumpQ(t.periodS);   Serial.println();
+  Serial.print("  periodM  = "); dumpQ(t.periodM);   Serial.println();
+  Serial.print("  periodB  = "); dumpQ(t.periodB);   Serial.println();
+  Serial.print("  periodT  = "); dumpQ(t.periodT);   Serial.println();
+  Serial.println();
+  Serial.print("  widthS   = "); dumpQ(t.widthS);    Serial.println();
+  Serial.print("  widthM   = "); dumpQ(t.widthM);    Serial.println();
+  Serial.print("  widthB   = "); dumpQ(t.widthB);    Serial.println();
+  Serial.print("  widthT   = "); dumpQ(t.widthT);    Serial.println();
+}
+
+void dumpOffsets(const Offsets& t) {
+  Serial.print("  next mes.= "); dumpQ(t.nextMeasure);   Serial.println();
+  Serial.println();
+  Serial.print("  countS   = "); dumpQ(t.countS);    Serial.println();
+  Serial.print("  countM   = "); dumpQ(t.countM);    Serial.println();
+  Serial.print("  countB   = "); dumpQ(t.countB);    Serial.println();
+  Serial.print("  countT   = "); dumpQ(t.countT);    Serial.println();
 }
 
 
-void computePeriods(const State& s, Timing& p, Timing& w) {
-  const Settings& t = s.settings;
+void computePeriods(const State& s, Timing& t) {
+  const Settings& u = s.settings;
 
-  p.measure   = qcast(t.beatsPerMeasure) * qPerBeatUnit(t.beatUnit);
-  p.sequence  = qcast(t.numberMeasures) * p.measure;
-  p.beat      = qPerBeatUnit(t.tupletUnit);
-  p.tuplet    = qcast(t.tupletTime) * p.beat / qcast(t.tupletCount);
+  auto measure  = qcast(u.beatsPerMeasure) * qPerBeatUnit(u.beatUnit);
+  auto sequence = qcast(u.numberMeasures) * measure;
+  auto beat     = qPerBeatUnit(u.tupletUnit);
+  auto tuplet   = qcast(u.tupletTime) * beat / qcast(u.tupletCount);
 
-  w.measure   = qForWidth(s.pulseWidthM,  p.measure);
-  w.sequence  = qForWidth(s.pulseWidthS,  p.sequence);
-  w.beat      = qForWidth(s.pulseWidthB,  p.beat);
-  w.tuplet    = qForWidth(s.pulseWidthT,  p.tuplet);
+  t.sequence  = sequence;
+  t.measure   = measure;
+
+  t.periodS   = sequence;
+  t.periodM   = measure;
+  t.periodB   = beat;
+  t.periodT   = tuplet;
+
+  t.widthS    = qForWidth(s.pulseWidthS,  t.periodS);
+  t.widthM    = qForWidth(s.pulseWidthM,  t.periodM);
+  t.widthB    = qForWidth(s.pulseWidthB,  t.periodB);
+  t.widthT    = qForWidth(s.pulseWidthT,  t.periodT);
 
   if (configuration.debug.timing) {
     Serial.println("computed new periods:");
-    dumpTiming(p);
+    dumpTiming(t);
   }
 }
 
-void adjustOffsets(const Timing& periods, Timing& offsets) {
-  q_t sequence = offsets.sequence % periods.sequence;
+void adjustOffsets(const Timing& t, Offsets& offsets) {
+  q_t now = offsets.countS % t.sequence;
 
   if (configuration.debug.timing) {
     Serial.println("old offsets:");
-    dumpTiming(offsets);
+    dumpOffsets(offsets);
   }
 
-  offsets.sequence = sequence % periods.sequence;
-  offsets.measure = sequence % periods.measure;
-  offsets.beat = sequence % periods.beat;
-  offsets.tuplet = sequence % periods.tuplet;
+  offsets.countS = now % t.periodS;
+  offsets.countM = now % t.periodM;
+  offsets.countB = now % t.periodB;
+  offsets.countT = now % t.periodT;
+
+  offsets.nextMeasure =
+    ((now - now % t.measure) + t.measure) % t.sequence;
 
   if (configuration.debug.timing) {
     Serial.println("new offsets:");
-    dumpTiming(offsets);
+    dumpOffsets(offsets);
   }
 }
 

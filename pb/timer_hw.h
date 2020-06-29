@@ -27,10 +27,10 @@ private:
 };
 
 
-void readCounts(Timing&);
-void writeCounts(const Timing&);
+void readCounts(Offsets&);
+void writeCounts(const Offsets&);
 void zeroCounts();
-void writePeriods(const Timing&, divisor_t, const Timing&);
+void writePeriods(const Timing&, divisor_t);
 void updateWidths(divisor_t, const Timing&);
 
 void forceTriggersOff(bool);

@@ -26,15 +26,33 @@ inline q_t qcast(const T& x) { return static_cast<q_t>(x); }
 
 
 struct Timing {
-  q_t   measure;
   q_t   sequence;
-  q_t   beat;
-  q_t   tuplet;
+  q_t   measure;
+
+  q_t   periodS;  // must always be the same as sequence
+  q_t   periodM;
+  q_t   periodB;
+  q_t   periodT;
+
+  q_t   widthS;
+  q_t   widthM;
+  q_t   widthB;
+  q_t   widthT;
 };
 
-void computePeriods(const State& state, Timing& periods, Timing& widths);
+struct Offsets {
+  q_t   nextMeasure;
 
-void adjustOffsets(const Timing& periods, Timing& offsets);
+  q_t   countS;
+  q_t   countM;
+  q_t   countB;
+  q_t   countT;
+};
+
+
+void computePeriods(const State& state, Timing& timing);
+
+void adjustOffsets(const Timing& periods, Offsets& offsets);
 
 
 
@@ -46,6 +64,7 @@ const bpm_t bpmMax = 300;
 
 void dumpQ(q_t);
 void dumpTiming(const Timing&);
+void dumpOffsets(const Offsets&);
 
 
 #endif // _INCLUDE_TIMING_H_
