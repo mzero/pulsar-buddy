@@ -96,10 +96,18 @@ namespace {
   class MainPage : public Layout {
   public:
     MainPage() : Layout(mainFields, 1) { }
+    bool render(bool refresh);
   protected:
     void redraw();
   };
 
+  bool MainPage::render(bool refresh) {
+    bool updated = Layout::render(refresh);
+    updated |= pendingLoopIndicator.render(refresh);
+    updated |= pendingTupletIndicator.render(refresh);
+    updated |= pendingMemoryIndicator.render(refresh);
+    return updated;
+  }
 
 
   auto fieldReturnToMain
