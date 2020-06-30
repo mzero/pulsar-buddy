@@ -322,11 +322,11 @@ void writePeriods(const Timing& timing, divisor_t divisor) {
 
   q_t minQ = divisorToMinWidth(divisor);
 
-  sequenceTcc->CC[0].reg    = max(minQ, timing.widthS) - 1;
-  measureTcc->CC[0].reg     = max(minQ, timing.widthM) - 1;
+  sequenceTcc->CCB[0].reg   = max(minQ, timing.widthS) - 1;
+  measureTcc->CCB[0].reg    = max(minQ, timing.widthM) - 1;
   beatTc->COUNT16.CC[1].reg =
     lastBeatWidth           = max(minQ, timing.widthB) - 1;
-  tupletTcc->CC[0].reg      = max(minQ, timing.widthT) - 1;
+  tupletTcc->CCB[0].reg     = max(minQ, timing.widthT) - 1;
 }
 
 void updateWidths(divisor_t divisor, const Timing& timing) {
