@@ -229,9 +229,6 @@ namespace {
       | ((tcc == sequenceTcc) ? TCC_EVCTRL_MCEI1 : 0)
       ;
 
-    if (tcc == measureTcc) {
-      tcc->INTENSET.reg = TCC_INTENSET_OVF;
-    }
     if (tcc == sequenceTcc) {
       tcc->INTENSET.reg =
         TCC_INTENSET_OVF | TCC_INTENSET_MC1 | TCC_INTENSET_MC2;
@@ -265,7 +262,10 @@ namespace {
   q_t activeMeasure;
 
   inline q_t nextMeasure(q_t currSequence) {
-    auto m = (currSequence - currSequence % activeMeasure) + activeMeasure;
+    auto m =
+      activeMeasure
+        ? (currSequence - currSequence % activeMeasure) + activeMeasure
+        : 0;
     if (m >= activeSequence)
       m = 0;
         // zero doesn't work for CC match, BUT interrupt on overflow is
@@ -509,8 +509,6 @@ void initializeTimers() {
   enable(beatTc);
 
   initializeTcc(measureTcc);
-  NVIC_SetPriority(TCC1_IRQn, 0);
-  NVIC_EnableIRQ(TCC1_IRQn);
 
   initializeTcc(sequenceTcc);
   NVIC_SetPriority(TCC0_IRQn, 0);
@@ -562,16 +560,9 @@ void TCC0_Handler() {
     sync(sequenceTcc, TCC_SYNCBUSY_CC2);
     sequenceTcc->CC[2].reg = m;
 
-    isrMeasure2(s, m);
+    isrMeasure();
   }
   TCC0->INTFLAG.reg = TCC_INTFLAG_OVF | TCC_INTFLAG_MC1 | TCC_INTFLAG_MC2;
-}
-
-void TCC1_Handler() {
-  if (TCC1->INTFLAG.reg & TCC_INTFLAG_OVF) {
-    isrMeasure();
-    TCC1->INTFLAG.reg = TCC_INTFLAG_OVF;  // writing 1 clears the flag
-  }
 }
 
 void TC3_Handler() {

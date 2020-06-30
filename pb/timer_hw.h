@@ -6,7 +6,6 @@
 void initializeTimers();
 
 extern void isrMeasure();
-extern void isrMeasure2(q_t, q_t);
 extern void isrClockCapture(q_t, q_t);
 extern void isrWatchdog();
 
