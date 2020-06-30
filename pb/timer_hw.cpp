@@ -233,7 +233,8 @@ namespace {
       tcc->INTENSET.reg = TCC_INTENSET_OVF;
     }
     if (tcc == sequenceTcc) {
-      tcc->INTENSET.reg = TCC_INTENSET_MC1;
+      tcc->INTENSET.reg =
+        TCC_INTENSET_OVF | TCC_INTENSET_MC1 | TCC_INTENSET_MC2;
     }
 
     tcc->WEXCTRL.reg
@@ -260,6 +261,17 @@ namespace {
     sync(tcc, TCC_SYNCBUSY_ENABLE);
   }
 
+  q_t activeSequence;
+  q_t activeMeasure;
+
+  inline q_t nextMeasure(q_t currSequence) {
+    auto m = (currSequence - currSequence % activeMeasure) + activeMeasure;
+    if (m >= activeSequence)
+      m = 0;
+        // zero doesn't work for CC match, BUT interrupt on overflow is
+        // effectively the same thing, so it is caught.
+    return m;
+  }
 }
 
 
@@ -289,7 +301,7 @@ void readCounts(Offsets& counts) {
 
 void writeCounts(const Offsets& counts) {
   // sync as a group - though quantum is stopped, so shouldn't matter
-  sync(sequenceTcc, TCC_SYNCBUSY_COUNT);
+  sync(sequenceTcc, TCC_SYNCBUSY_COUNT | TCC_SYNCBUSY_CC2);
   sync(measureTcc, TCC_SYNCBUSY_COUNT);
   sync(tupletTcc, TCC_SYNCBUSY_COUNT);
 
@@ -297,6 +309,8 @@ void writeCounts(const Offsets& counts) {
   measureTcc->COUNT.reg = counts.countM;
   beatTc->COUNT16.COUNT.reg = static_cast<uint16_t>(counts.countB);
   tupletTcc->COUNT.reg = counts.countT;
+
+  sequenceTcc->CC[2].reg = nextMeasure(counts.countS);
 }
 
 void zeroCounts() {
@@ -309,6 +323,9 @@ namespace {
 }
 
 void writePeriods(const Timing& timing, divisor_t divisor) {
+  activeSequence = timing.sequence;
+  activeMeasure = timing.measure;
+
   // sync as a group - though quantum is stopped, so shouldn't matter
   sync(sequenceTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
   sync(measureTcc, TCC_SYNCBUSY_PER | TCC_SYNCBUSY_CC0);
@@ -526,13 +543,28 @@ void dumpTimers() {
 
 
 void TCC0_Handler() {
-  if (TCC0->INTFLAG.reg & TCC_INTFLAG_MC1) {
+  auto intflag = TCC0->INTFLAG.reg;
+  if (intflag & TCC_INTFLAG_MC1) {
     sync(sequenceTcc, TCC_SYNCBUSY_CC1);
     auto sequenceCapture = sequenceTcc->CC[1].reg;
     auto watchdogCapture = watchdogTc->COUNT16.COUNT.reg;
     isrClockCapture(sequenceCapture, watchdogCapture);
     TCC0->INTFLAG.reg = TCC_INTFLAG_MC1;    // writing 1 clears the flag
   }
+  if (intflag & (TCC_INTFLAG_OVF | TCC_INTFLAG_MC2)) {
+    sync(sequenceTcc, TCC_SYNCBUSY_CTRLB);
+    sequenceTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
+    while (sequenceTcc->CTRLBSET.bit.CMD);
+    sync(sequenceTcc, TCC_SYNCBUSY_COUNT); // redudant with the above?
+    auto s = sequenceTcc->COUNT.reg;
+
+    auto m = nextMeasure(s);
+    sync(sequenceTcc, TCC_SYNCBUSY_CC2);
+    sequenceTcc->CC[2].reg = m;
+
+    isrMeasure2(s, m);
+  }
+  TCC0->INTFLAG.reg = TCC_INTFLAG_OVF | TCC_INTFLAG_MC1 | TCC_INTFLAG_MC2;
 }
 
 void TCC1_Handler() {

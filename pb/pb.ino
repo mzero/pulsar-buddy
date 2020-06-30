@@ -24,6 +24,14 @@ void isrMeasure() {
   measureEvent = true;
 }
 
+volatile bool measureEvent2 = false;
+volatile q_t m1, m2;
+
+void isrMeasure2(q_t x, q_t y) {
+  m1 = x;
+  m2 = y;
+  measureEvent2 = true;
+}
 
 extern "C" char* sbrk(int incr);
 
@@ -80,8 +88,15 @@ void setup() {
 void loop() {
   bool active = false;
 
+  if (measureEvent2) {
+    auto _m1 = m1;
+    auto _m2 = m2;
+    measureEvent2 = false;
+    Serial.printf("** isrMeasure2: %6d -> %6d\n", _m1, _m2);
+  }
   if (measureEvent) {
     measureEvent = false;
+    Serial.println("** isrMeasure");
     if (pendingState()) {
       updateTiming(userState());
       commitState();
@@ -137,16 +152,17 @@ void loop() {
 
   if (oledButtonA.update() == Button::Down) {
     //dumpDisplayPBM(Serial);
-    //resetTiming(userSettings());
+    resetTiming(userState());
     active = true;
   }
 
   if (oledButtonB.update() == Button::Down) {
 #ifdef ZERO_REGS_H
-    printZeroRegs(zeroOpts);
+    // printZeroRegs(zeroOpts);
+    printZeroRegTCC(zeroOpts, TCC0, 0);
 #endif
-    critical.printf("ouch @ %dms\n", millis());
-    critical.println("  something went wrong");
+    //critical.printf("ouch @ %dms\n", millis());
+    //critical.println("  something went wrong");
     active = true;
   }
 
