@@ -71,7 +71,6 @@ namespace {
       // set just "before" zero so first quantum after pause will trigger
       // all the outputs
       Offsets preZeros;
-      preZeros.nextMeasure = 0;
       preZeros.countS = activeTiming.periodS - 1;
       preZeros.countM = activeTiming.periodM - 1;
       preZeros.countB = activeTiming.periodB - 1;

@@ -64,8 +64,6 @@ void dumpTiming(const Timing& t) {
 }
 
 void dumpOffsets(const Offsets& t) {
-  Serial.print("  next mes.= "); dumpQ(t.nextMeasure);   Serial.println();
-  Serial.println();
   Serial.print("  countS   = "); dumpQ(t.countS);    Serial.println();
   Serial.print("  countM   = "); dumpQ(t.countM);    Serial.println();
   Serial.print("  countB   = "); dumpQ(t.countB);    Serial.println();
@@ -112,9 +110,6 @@ void adjustOffsets(const Timing& t, Offsets& offsets) {
   offsets.countM = now % t.periodM;
   offsets.countB = now % t.periodB;
   offsets.countT = now % t.periodT;
-
-  offsets.nextMeasure =
-    ((now - now % t.measure) + t.measure) % t.sequence;
 
   if (configuration.debug.timing) {
     Serial.println("new offsets:");

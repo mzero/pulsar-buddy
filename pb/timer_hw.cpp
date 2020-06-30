@@ -300,7 +300,7 @@ void writeCounts(const Offsets& counts) {
 }
 
 void zeroCounts() {
-  Offsets zeros = { 0, 0, 0, 0, 0 };
+  Offsets zeros = { 0, 0, 0, 0 };
   writeCounts(zeros);
 }
 

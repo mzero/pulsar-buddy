@@ -41,8 +41,6 @@ struct Timing {
 };
 
 struct Offsets {
-  q_t   nextMeasure;
-
   q_t   countS;
   q_t   countM;
   q_t   countB;
