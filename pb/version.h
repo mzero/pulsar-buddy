@@ -1,7 +1,15 @@
 #ifndef _INCLUDE_VERSION_H_
 #define _INCLUDE_VERSION_H_
 
-#define PB_VERSION 105
+#define PB_VERSION 106
+#define PB_DEVELOPMENT
+/*
+  - settings page UI
+  - pulse width control
+  - new measure timer
+*/
+
+// PB_VERSION 105
 /* 2020-06-06
   - support flash chip used in SMT board
   - tiny clean up of code in critical.cpp
