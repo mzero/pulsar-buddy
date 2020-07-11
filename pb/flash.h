@@ -46,6 +46,10 @@ public:
 };
 
 
+// Just for flash_reset.cpp
+
+class Adafruit_SPIFlashBase;
+extern Adafruit_SPIFlashBase flash;
 
 
 #endif // _INCLUDE_FLASH_H_

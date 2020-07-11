@@ -3,6 +3,7 @@
 #include "controls.h"
 #include "display.h"
 #include "flash.h"
+#include "flash_reset.h"
 #include "test.h"
 #include "version.h"
 
@@ -14,7 +15,7 @@ namespace {
 
   int selectedField = 0;
   const int minField = 0;
-  const int maxField = 8;
+  const int maxField = 9;
 
   bool clickSelectedField() {
     switch (selectedField) {
@@ -32,6 +33,10 @@ namespace {
 
       case 8:
         testLoop();
+        break;
+
+      case 9:
+        flashTestAndReset();
         break;
 
       default: ;
@@ -90,6 +95,8 @@ namespace {
     drawFlag("p", configuration.debug.plotClock, 7);
     display.print(" ");
     drawButton("hw", 8);
+    display.print(" ");
+    drawButton("xx", 9);
 
     display.display();
   }

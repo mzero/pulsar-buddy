@@ -1,8 +1,19 @@
 TODO
 
 
+== 106 ==
 
-[x] move measure changes to S timer
+[] Flash issues
+	[] drop to 12MHz or 6Mhz in chip description
+	[] check SPI bus on scope
+	[] mini-flash tester & erase in config menus
+
+[] UI issue
+	[] when switching frame contents, new fields in bad state
+
+
+
+== 107 ==
 
 [] let M be one of { M, 1/4, 1/8, 1/16, 1/32 }
 	[] settings member
@@ -12,16 +23,11 @@ TODO
 [] let B be one of { B, 1/4, 1/8, 1/16, 1/32 }
 
 
-[] something still not right about page swapping
-	[] when returning, seems like other BPM field is active?
-
-[x] update pulse widths via buffered CC
-	- if pulse is set longish (33% or 50% duty) on a long trigger, like M or S
-	  and the user sets the pulse width to fixed short after 3ms of the trigger
-	  going high, but before the tirgger goes low...
-	  then the pulse will stay high through the whole period (100% duty),
-	  because the count will have not yet hit the compare when it was long, and
-	  already bypassed the new short compare cycle.
+[] ? MIDI Clock code: include? or keep #ifdef'd? or configuration?
+	- currently using #if 0 in several places
+[] MIDI clock sync mode
+	[] timing to 24th
+	[] enable / disable event system for sw event on entry/exit
 
 
 --------------
@@ -36,11 +42,6 @@ TODO
 	[] UI for setting second Tuplet
 
 
-[] ? MIDI Clock code: include? or keep #ifdef'd? or configuration?
-	- currently using #if 0 in several places
-[] MIDI clock sync mode
-	[] timing to 24th
-	[] enable / disable event system for sw event on entry/exit
 
 
 

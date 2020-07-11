@@ -19,8 +19,11 @@ namespace {
       Adafruit_FlashTransport_SPI flashTransport(SS1, &SPI1);
     #endif
   #endif
+}
 
   Adafruit_SPIFlashBase flash(&flashTransport);
+
+namespace {
   bool flashBegun = false;
 
   const std::initializer_list<SPIFlash_Device_t> additional_devices = {
