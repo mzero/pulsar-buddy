@@ -92,7 +92,7 @@ bool MemoryField::click(Button::State s) {
       return false;
 
     case Button::UpLong:
-      return false;
+      return true;
 
     default:
       return false;

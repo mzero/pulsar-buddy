@@ -37,13 +37,13 @@ protected:
 class Frame : public Field {
 public:
   Frame(Field* c = nullptr)
-    : Field(0, 0, 128, 32), // FIXME: hack!! compute from field list
-      content(c), drawnContent(nullptr)
-    { }
+    : Field(0, 0, 128, 32), // FIXME: hack!! where can we get this?
+      content(nullptr), drawnContent(nullptr)
+    { show(c); }
   Frame(Field& c) : Frame(&c) { }
 
   void show(Field* c);
-  void show(Field& c) { content = &c; }
+  void show(Field& c) { show(&c); }
   void clear()        { show(nullptr); }
 
   bool render(bool refresh);

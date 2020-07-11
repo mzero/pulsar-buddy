@@ -114,6 +114,7 @@ void Frame::show(Field* f) {
   if (f != content) {
     exit();
     content = f;
+    enter(false);
   }
 }
 
