@@ -4,8 +4,8 @@ TODO
 == 106 ==
 
 [] Flash issues
-	[] check SPI bus on scope
-		[] drop to lower rate in chip description
+	[x] check SPI bus on scope
+		[x] drop to lower rate in chip description
 			- somewhere between 12MHz to 2MHz, based on scope readings
 	[x] mini-flash tester & erase in config menus
 

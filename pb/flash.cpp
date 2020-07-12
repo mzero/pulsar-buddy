@@ -27,7 +27,20 @@ namespace {
   bool flashBegun = false;
 
   const std::initializer_list<SPIFlash_Device_t> additional_devices = {
-    S25FL064L,
+    // Settings for the Cypress (was Spansion) S25FL064L 8MiB SPI flash.
+    // Datasheet: http://www.cypress.com/file/316661/download
+    {
+      .total_size = (1 << 23), /* 8 MiB */
+          .start_up_time_us = 300, .manufacturer_id = 0x01, .memory_type = 0x60,
+      .capacity = 0x17,
+      .max_clock_speed_mhz = 4,
+          // Speeed must be limited due to bad routing on board (for caop. C7),
+          // 12MHz works in tests 100% reliably, but picking 4 just to be safe.
+      .quad_enable_bit_mask = 0x02, .has_sector_protection = false,
+      .supports_fast_read = true, .supports_qspi = true,
+      .supports_qspi_writes = true, .write_status_register_split = false,
+      .single_status_byte = false,
+    }
   };
 
   /* Header
