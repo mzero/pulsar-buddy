@@ -13,7 +13,7 @@ namespace {
   public:
     bool begin(uint32_t startSector, uint32_t sectorCount);
     void save()
-      { _containerLog.save(_box); }
+      { _log.save(_box); }
 
     T&       data()       { return _box._data; }
     const T& data() const { return _box._data; }
@@ -35,20 +35,19 @@ namespace {
       Box() : _bytes() { }  // tell compiler which union member to construct
     };
 
-    Box _box;
-
-    FlashLog<Box> _containerLog;
+    Box           _box;
+    FlashLog<Box> _log;
   };
 
 
   template <typename T, uint32_t currentVersion, size_t maxSize>
   bool Container<T, currentVersion, maxSize>::
     begin(uint32_t startSector, uint32_t sectorCount) {
-      _containerLog.begin(startSector, sectorCount);
+      _log.begin(startSector, sectorCount);
 
       _box._magic = 0;
 
-      if (_containerLog.load(_box)) {
+      if (_log.load(_box)) {
         if (_box._magic == MAGIC) {
           if (_box._version == currentVersion) {
             return true;
