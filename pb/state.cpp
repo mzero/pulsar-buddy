@@ -18,9 +18,6 @@ namespace {
     T&       data()       { return _box._data; }
     const T& data() const { return _box._data; }
 
-    static void initialize(T&);
-    static bool upgrade(uint32_t, const uint8_t*, T&);
-
   private:
     static const uint32_t MAGIC = 1284161520 + maxSize;
 
@@ -39,6 +36,13 @@ namespace {
     FlashLog<Box> _log;
   };
 
+  template <typename T>
+  void initialize(T& data)
+      { data = T(); }
+
+  template <typename T>
+  bool upgrade(T&, uint32_t, const uint8_t*)
+      { return false; }
 
   template <typename T, uint32_t currentVersion, size_t maxSize>
   bool Container<T, currentVersion, maxSize>::
@@ -54,7 +58,7 @@ namespace {
           }
 
           T newData;
-          if (upgrade(_box._version, _box._bytes, newData)) {
+          if (upgrade(newData, _box._version, _box._bytes)) {
             _box._magic = MAGIC;
             _box._version = currentVersion;
             _box._data = newData;
@@ -69,15 +73,6 @@ namespace {
       return false;
     }
 
-  template <typename T, uint32_t currentVersion, size_t maxSize>
-  void Container<T, currentVersion, maxSize>::
-    initialize(T& data)
-      { data = T(); }
-
-  template <typename T, uint32_t currentVersion, size_t maxSize>
-  bool Container<T, currentVersion, maxSize>::
-    upgrade(uint32_t, const uint8_t*, T&)
-      { return false; }
 }
 
 
@@ -91,7 +86,9 @@ namespace {
   bool previewActive = false;
 
 
-  typedef Container<State, 2, 40> StateContainer;
+  typedef State State_v2;
+
+  typedef Container<State_v2, 2, 40> StateContainer;
   StateContainer stateContainer;
 
   struct State_v1 {
@@ -102,21 +99,28 @@ namespace {
     uint16_t    reserved;
   };
 
+  bool upgrade(State_v2& s, const State_v1& u) {
+    s.settings = u.settings;
+    s.memoryIndex = u.memoryIndex;
+    s.syncMode = u.syncMode;
+    s.userBpm = u.userBpm;
+    // the only pulsewidth originally supported was pulseDuration16:
+    s.pulseWidthS = pulseDuration16;
+    s.pulseWidthM = pulseDuration16;
+    s.pulseWidthB = pulseDuration16;
+    s.pulseWidthT = pulseDuration16;
+    s.outputModeS = outputSequence;
+    s.outputModeM = outputMeasure;
+    s.outputModeB = outputBeat;
+    s.outputModeT = otuputTuplet;
+    return true;
+  }
+
   template<>
-  bool StateContainer::upgrade(uint32_t version, const uint8_t* bytes, State& s) {
+  bool upgrade(State_v2& s, uint32_t version, const uint8_t* bytes) {
     switch (version) {
       case 1: {
-        const State_v1& u = *reinterpret_cast<const State_v1*>(bytes);
-        s.settings = u.settings;
-        s.memoryIndex = u.memoryIndex;
-        s.syncMode = u.syncMode;
-        s.userBpm = u.userBpm;
-        // but the defaults for pulsewidth were different:
-        s.pulseWidthS = pulseDuration16;
-        s.pulseWidthM = pulseDuration16;
-        s.pulseWidthB = pulseDuration16;
-        s.pulseWidthT = pulseDuration16;
-        return true;
+        return upgrade(s, *reinterpret_cast<const State_v1*>(bytes));
       }
     }
     return false;
@@ -211,7 +215,7 @@ namespace {
   };
 
   template<>
-  void Container<Storage_v1, 1, 112>::initialize(Storage_v1& data) {
+  void initialize(Storage_v1& data) {
     static const Storage_v1 defaultStorage =
     { .settings =
       { { 4, 16, 16,    3, 2,  4 },
