@@ -276,13 +276,47 @@ void endMemoryPreview() {
   }
 }
 
+
+/* FLASH USAGE
+
+  The Feather M0 Express has 2MB of Flash, or 512 pages.
+  The Pulsar Buddy rev. D & E boards have 8MB of Flash, or 2048 pages.
+
+  Storage here is sized to fit in 2MB, leaving some space for future options.
+
+  Sectors         Versions      Format & Purpose
+    0 ~   7       v100 ~ v105   LogContainer<State_v1>
+    8 ~  15       v100 ~ v105   Container<Storage>
+   16 ~  23       all           LogContainer<Configuration> (see config.cpp)
+   32 ~ 191       v106 ~ on     Container<State>
+  129 ~ 351       v106 ~ on     Container<Storage>
+
+*/
+
 void initializeState() {
-  bool stateLoaded = stateContainer.begin(0, 8);
-  storageContainer.begin(8, 8);
-    // The Feather M0 Express has 2MB of Flash, or 512 pages.
-    // But 64KB units are cheap and common, so this is sized to fit into
-    // just 16 pages. Still, at expected update rates, these will take 100
-    // years to reach the minimum supported erase cycles of the chips.
+  bool stateLoaded = stateContainer.begin(32, 160);
+  if (!stateLoaded) {
+    FlashLog<State_v1> oldStateLog;
+    if (oldStateLog.begin(0, 8)) {
+      State_v1 oldState;
+      if (oldStateLog.load(oldState)) {
+        if (upgrade(_flashState, oldState)) {
+          stateContainer.save();
+          stateLoaded = true;
+        }
+      }
+    }
+  }
+
+  bool storageLoaded = storageContainer.begin(192, 160);
+  if (!storageLoaded) {
+    Container<Storage_v1, 1, 112> oldStorageContainer;
+    if (oldStorageContainer.begin(8, 8)) {
+      storageContainer.data() = oldStorageContainer.data();
+      storageContainer.save();
+      storageLoaded = true;
+    }
+  }
 
   if (stateLoaded) {
     _userState = _activeState = _flashState;
