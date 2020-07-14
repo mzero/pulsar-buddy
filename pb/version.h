@@ -1,12 +1,21 @@
 #ifndef _INCLUDE_VERSION_H_
 #define _INCLUDE_VERSION_H_
 
+//#define PB_DEVELOPMENT
+
 #define PB_VERSION 106
-#define PB_DEVELOPMENT
 /*
-  - settings page UI
-  - pulse width control
-  - new measure timer
+  - user facing:
+    - settings page UI
+    - pulse width control
+  - internal:
+    - trigger measure changes off the Sequence timer to leave Measure time free
+    - settings data structure updated to support pulse widths & future output
+      pin assignments
+    - reduce speed of flash SPI clock to improve reliability on rev. E boards
+    - increase size of flash log area for Settings & State, migrating older
+      settings if present
+    - flash erase and test feature in configuration screen
 */
 
 // PB_VERSION 105

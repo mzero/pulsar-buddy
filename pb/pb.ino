@@ -49,8 +49,6 @@ void setup() {
     while (!Serial);
        // wait for native usb, there is a delay in that call
        // so no need for one here
-       // FIXME: Take this out for production
-
   }
 
   initializeState();
