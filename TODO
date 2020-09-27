@@ -1,26 +1,45 @@
 TODO
 
 
-== 106 ==
-
-[x] Flash issues
-	[x] check SPI bus on scope
-		[x] drop to lower rate in chip description
-			- somewhere between 12MHz to 2MHz, based on scope readings
-	[x] mini-flash tester & erase in config menus
-
-[x] data storage
-	[x] use all (most?) of Flash for data storage
-	[x] redo upgrade data path from older data...
-
-[x] UI issue
-	[x] when switching frame contents, new fields in bad state
-
-
-
 
 
 == 107 ==
+
+[] MIDI Clock sync
+	[] sync clock messages
+		- already have #if'd code, check if will still work
+	[] what does Ableton send in the two modes?
+		Pattern sync mode:
+			- always sends: start - clock - stop
+			- sometimes sends double stop
+			- no clocks when transport stopped
+			- if continuing mid-measure, it waits to next measure to send
+				start, and then clocks
+				- based on the meter!
+
+		Song sync mode:
+			- uses SPP, clock stopped when transport stopped
+			- sends SPP as needed, will wait untiil transport hits 1/16th
+			- typical: stop - spp - continue when jumping
+			-  spp - stop - spp - continue when starting from middle
+			-  stop - spp - start when starting from start
+			-  stop - spp - continue when starting from where stopped
+
+	[] follow
+		[] stop -- ignore clock pulses if any, immediately go to pause state
+		[] start -- treat exactly as spp 0 + continue
+		[] continue -- start following clock pulses, immediately exit pause state
+		[] spp -- on next clock, set counters based on position
+		[] clock - generate ext. click -
+[] MIDI clock out
+	[] send clock messages
+	[] start? stop? spp? continue?
+[] MIDI system
+	[] start up unplugged, handle being plugged in
+	[] start up plugged, handle being unplugged, then plugged back in
+
+
+
 
 [] let M be one of { M, 1/4, 1/8, 1/16, 1/32 }
 	[] settings member
@@ -30,11 +49,6 @@ TODO
 [] let B be one of { B, 1/4, 1/8, 1/16, 1/32 }
 
 
-[] ? MIDI Clock code: include? or keep #ifdef'd? or configuration?
-	- currently using #if 0 in several places
-[] MIDI clock sync mode
-	[] timing to 24th
-	[] enable / disable event system for sw event on entry/exit
 
 
 --------------
