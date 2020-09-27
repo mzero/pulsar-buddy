@@ -1,15 +1,12 @@
 // #include <ZeroRegs.h>
 
-#if 0
-#include <usbmidi.h>
-#endif
-
 #include "clock.h"
 #include "config.h"
 #include "controls.h"
 #include "critical.h"
 #include "display.h"
 #include "layout.h"
+#include "midi.h"
 #include "state.h"
 #include "timer_hw.h"
 
@@ -38,6 +35,8 @@ void setup() {
   initializeDisplay();
 
   Configuration::initialize();
+
+  initializeMidi();
 
   if (configuration.debug.waitForSerial) {
     display.clearDisplay();
@@ -76,6 +75,8 @@ void setup() {
 
 void loop() {
   bool active = false;
+
+  updateMidi();
 
   if (measureEvent) {
     measureEvent = false;

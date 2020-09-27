@@ -231,7 +231,8 @@ namespace {
 
     if (tcc == sequenceTcc) {
       tcc->INTENSET.reg =
-        TCC_INTENSET_OVF | TCC_INTENSET_MC1 | TCC_INTENSET_MC2;
+        TCC_INTENSET_OVF
+        | TCC_INTENSET_MC1 | TCC_INTENSET_MC2 | TCC_INTENSET_MC3;
     }
 
     tcc->WEXCTRL.reg
@@ -261,16 +262,25 @@ namespace {
   q_t activeSequence;
   q_t activeMeasure;
 
-  inline q_t nextMeasure(q_t currSequence) {
+
+  inline q_t nextInterval(q_t interval, q_t currSequence) {
     auto m =
-      activeMeasure
-        ? (currSequence - currSequence % activeMeasure) + activeMeasure
+      interval
+        ? (currSequence - currSequence % interval) + interval
         : 0;
     if (m >= activeSequence)
       m = 0;
         // zero doesn't work for CC match, BUT interrupt on overflow is
         // effectively the same thing, so it is caught.
     return m;
+  }
+
+  inline q_t nextMeasure(q_t currSequence) {
+    return nextInterval(activeMeasure, currSequence);
+  }
+
+  inline q_t nextMidiClock(q_t currSequence) {
+    return nextInterval(Q_PER_MIDI_CLOCK, currSequence);
   }
 }
 
@@ -301,7 +311,7 @@ void readCounts(Offsets& counts) {
 
 void writeCounts(const Offsets& counts) {
   // sync as a group - though quantum is stopped, so shouldn't matter
-  sync(sequenceTcc, TCC_SYNCBUSY_COUNT | TCC_SYNCBUSY_CC2);
+  sync(sequenceTcc, TCC_SYNCBUSY_COUNT | TCC_SYNCBUSY_CC2 | TCC_SYNCBUSY_CC3);
   sync(measureTcc, TCC_SYNCBUSY_COUNT);
   sync(tupletTcc, TCC_SYNCBUSY_COUNT);
 
@@ -311,6 +321,7 @@ void writeCounts(const Offsets& counts) {
   tupletTcc->COUNT.reg = counts.countT;
 
   sequenceTcc->CC[2].reg = nextMeasure(counts.countS);
+  sequenceTcc->CC[3].reg = nextMidiClock(counts.countS);
 }
 
 void zeroCounts() {
@@ -547,22 +558,31 @@ void TCC0_Handler() {
     auto sequenceCapture = sequenceTcc->CC[1].reg;
     auto watchdogCapture = watchdogTc->COUNT16.COUNT.reg;
     isrClockCapture(sequenceCapture, watchdogCapture);
-    TCC0->INTFLAG.reg = TCC_INTFLAG_MC1;    // writing 1 clears the flag
   }
-  if (intflag & (TCC_INTFLAG_OVF | TCC_INTFLAG_MC2)) {
+  if (intflag & (TCC_INTFLAG_OVF | TCC_INTFLAG_MC2 | TCC_INTFLAG_MC3)) {
     sync(sequenceTcc, TCC_SYNCBUSY_CTRLB);
     sequenceTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
     while (sequenceTcc->CTRLBSET.bit.CMD);
     sync(sequenceTcc, TCC_SYNCBUSY_COUNT); // redudant with the above?
     auto s = sequenceTcc->COUNT.reg;
 
-    auto m = nextMeasure(s);
-    sync(sequenceTcc, TCC_SYNCBUSY_CC2);
-    sequenceTcc->CC[2].reg = m;
+    if (intflag & (TCC_INTFLAG_OVF | TCC_INTFLAG_MC2)) {
+      auto m = nextMeasure(s);
+      sync(sequenceTcc, TCC_SYNCBUSY_CC2);
+      sequenceTcc->CC[2].reg = m;
 
-    isrMeasure();
+      isrMeasure();
+    }
+    if (intflag & (TCC_INTFLAG_OVF | TCC_INTFLAG_MC3)) {
+      auto c = nextMidiClock(s);
+      sync(sequenceTcc, TCC_SYNCBUSY_CC3);
+      sequenceTcc->CC[3].reg = c;
+
+      isrMidiClock();
+    }
   }
-  TCC0->INTFLAG.reg = TCC_INTFLAG_OVF | TCC_INTFLAG_MC1 | TCC_INTFLAG_MC2;
+  TCC0->INTFLAG.reg =
+    TCC_INTFLAG_OVF | TCC_INTFLAG_MC1 | TCC_INTFLAG_MC2 | TCC_INTFLAG_MC3;
 }
 
 void TC3_Handler() {
