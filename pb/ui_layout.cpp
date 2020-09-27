@@ -76,6 +76,7 @@ bool Layout::click(Button::State s) {
       }
       break;
   }
+  return true;
 }
 
 void Layout::update(Encoder::Update u) {
