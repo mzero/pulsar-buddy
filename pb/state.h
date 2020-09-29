@@ -19,22 +19,27 @@ struct Settings {
 /* STATE */
 
 enum SyncMode : uint8_t {
-  syncFixed = 0,
 
-  // sync based on incoming clock
-  syncExternalFlag = 0x80,  // high bit indicates external sync
-  syncPPQNMask = 0x3f,      // lower 6 bits are parts per beat
+  // internal
+  syncInternal = 0,
+
+  // external clock
+  syncExternalMin = 0x81,
+  syncExternalMax = 0xb0,
+  syncExternalPPQNMask = 0x3f, // lower 6 bits are parts per beat
     // -- defined for generality, but only the values below are supported
+  syncExternal1ppqn = 0x81,    // clock = quarter note (beat)
+  syncExternal2ppqn = 0x82,    // clock = eigth note
+  syncExternal4ppqn = 0x84,    // clock = sixteenth note
+  syncExternal8ppqn = 0x88,    // clock = 32nd note (Pulsar sync)
+  syncExternal24ppqn = 0x98,   // clock = 24ppqn DIN sync
+  syncExternal48ppqn = 0xb0,   // clock = 48ppqn DIN sync
 
-  sync1ppqn = 0x81,    // clock = quarter note (beat)
-  sync2ppqn = 0x82,    // clock = eigth note
-  sync4ppqn = 0x84,    // clock = sixteenth note
-  sync8ppqn = 0x88,    // clock = 32nd note (Pulsar sync)
-  sync24ppqn = 0x98,   // clock = 24ppqn DIN sync
-  sync48ppqn = 0xb0,   // clock = 48ppqn DIN sync
-
-  syncMidiUSB = 0xd8,     // clock = 24ppqn MIDI sync over USB
+  syncMidiUSB = 0xd8, // clock = 24ppqn MIDI sync over USB
 };
+
+uint8_t syncPpqn(SyncMode sync);
+
 
 enum PulseWidth : uint8_t {
   pulseFixedShort = 0x00,  // just a short, ~2ms pulse

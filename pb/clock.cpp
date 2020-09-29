@@ -41,7 +41,7 @@ namespace {
    enum ClockMode {
     modeFirsttime,
     modeInternal,
-    modeExtenral
+    modeExternal
   };
 
   ClockMode   clockMode = modeFirsttime;
@@ -90,7 +90,7 @@ namespace {
         setState(clockFreeRunning);
         break;
 
-      case modeExtenral:
+      case modeExternal:
         setState(clockPaused);
         break;
 
@@ -400,19 +400,8 @@ void setBpm(bpm_t bpm) {
 }
 
 void setSync(SyncMode sync) {
-  int clocksPerBeat = 0;
-  switch (sync) {
-    case syncFixed: clocksPerBeat = 0; break;
-    default:
-      if (sync & syncExternalFlag) {
-        clocksPerBeat = sync & syncPPQNMask;
-      } else {
-        clocksPerBeat = 0;
-      }
-  }
-
-  setClockRate(clocksPerBeat);
-  setMode(sync == syncFixed ? modeInternal : modeExtenral);
+  setClockRate(syncPpqn(sync));
+  setMode(sync == syncInternal ? modeInternal : modeExternal);
 }
 
 #pragma GCC diagnostic pop
@@ -482,7 +471,7 @@ void dumpClock() {
   switch (clockMode) {
     case modeFirsttime: Serial.print("first time"); break;
     case modeInternal:  Serial.print("internal");   break;
-    case modeExtenral:  Serial.print("external");   break;
+    case modeExternal:  Serial.print("external");   break;
   }
   Serial.print(", state: ");
   switch (clockState) {

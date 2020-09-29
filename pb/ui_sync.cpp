@@ -72,7 +72,7 @@ namespace SyncImages {
     0x00, 0x00, 0x07, 0xc0, 0x0f, 0xe0, 0x0c, 0x60, 0x08, 0x60, 0x00, 0xe0, 0x01, 0xc0, 0x03, 0x80,
     0x03, 0x80, 0x00, 0x00, 0x03, 0x80, 0x03, 0x80, 0x03, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   };
-  const unsigned char fixed[] = { // 15 x 32
+  const unsigned char internal[] = { // 15 x 32
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x03, 0x80, 0x02, 0x84, 0x02, 0x98, 0x05, 0x58, 0x04, 0x60,
     0x05, 0x40, 0x08, 0xa0, 0x09, 0x20, 0x08, 0x20, 0x1d, 0x70, 0x1f, 0xf0, 0x1f, 0xf0, 0x1f, 0xf0,
@@ -137,8 +137,8 @@ void BpmField::redraw() {
     case clockPerplexed: {
       auto image = SyncImages::clkbad;
       switch (state.syncMode) {
-        case sync24ppqn:
-        case sync48ppqn:
+        case syncExternal24ppqn:
+        case syncExternal48ppqn:
           image = SyncImages::dinbad;
           break;
         default:
@@ -179,13 +179,13 @@ namespace {
   };
 
   SyncInfo syncOptions[] = {
-    { syncFixed,  SyncImages::fixed },
-    { sync1ppqn,  SyncImages::clk4 },
-    { sync2ppqn,  SyncImages::clk8 },
-    { sync4ppqn,  SyncImages::clk16 },
-    { sync8ppqn,  SyncImages::clk32 },
-    { sync24ppqn, SyncImages::din24 },
-    { sync48ppqn, SyncImages::din48 },
+    { syncInternal,  SyncImages::internal },
+    { syncExternal1ppqn,  SyncImages::clk4 },
+    { syncExternal2ppqn,  SyncImages::clk8 },
+    { syncExternal4ppqn,  SyncImages::clk16 },
+    { syncExternal8ppqn,  SyncImages::clk32 },
+    { syncExternal24ppqn, SyncImages::din24 },
+    { syncExternal48ppqn, SyncImages::din48 },
     // { syncMidi,   SyncImages::usbmidi },
   };
 

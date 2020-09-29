@@ -4,6 +4,15 @@
 
 #include "flash.h"
 
+
+uint8_t syncPpqn(SyncMode sync) {
+  if (sync == syncMidiUSB)
+    return 24;
+  if (syncExternalMin < sync && sync < syncExternalMax)
+    return sync & syncExternalPPQNMask;
+  return 0;
+}
+
 namespace {
 
 
