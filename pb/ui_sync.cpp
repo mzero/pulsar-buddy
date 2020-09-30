@@ -179,14 +179,14 @@ namespace {
   };
 
   SyncInfo syncOptions[] = {
-    { syncInternal,  SyncImages::internal },
+    { syncInternal,       SyncImages::internal },
     { syncExternal1ppqn,  SyncImages::clk4 },
     { syncExternal2ppqn,  SyncImages::clk8 },
     { syncExternal4ppqn,  SyncImages::clk16 },
     { syncExternal8ppqn,  SyncImages::clk32 },
     { syncExternal24ppqn, SyncImages::din24 },
     { syncExternal48ppqn, SyncImages::din48 },
-    // { syncMidi,   SyncImages::usbmidi },
+    { syncMidiUSB,        SyncImages::usbmidi },
   };
 
   const int numSyncOptions = sizeof(syncOptions) / sizeof(syncOptions[0]);

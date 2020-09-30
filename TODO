@@ -6,9 +6,9 @@ TODO
 == 107 ==
 
 [] MIDI Clock sync
-	[] sync clock messages
+	[x] sync clock messages
 		- already have #if'd code, check if will still work
-	[] what does Ableton send in the two modes?
+	[x] what does Ableton send in the two modes?
 		Pattern sync mode:
 			- always sends: start - clock - stop
 			- sometimes sends double stop
@@ -30,7 +30,7 @@ TODO
 		[] start -- treat exactly as spp 0 + continue
 		[] continue -- start following clock pulses, immediately exit pause state
 		[] spp -- on next clock, set counters based on position
-		[] clock - generate ext. click -
+		[x] clock - generate ext. click -
 [] MIDI clock out
 	[] send clock messages
 	[] start? stop? spp? continue?

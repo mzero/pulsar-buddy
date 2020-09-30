@@ -66,19 +66,39 @@ namespace {
 */
 
 namespace {
-  Tc* const quantumTc = TC4;
-  Tc* const watchdogTc = TC3;
-  Tc* const beatTc = TC5;
-  Tcc* const sequenceTcc = TCC0;
-  Tcc* const measureTcc = TCC1;
-  Tcc* const tupletTcc = TCC2;
-
 
 #define QUANTUM_A_EVENT_CHANNEL   5
 #define QUANTUM_B_EVENT_CHANNEL   6
 #define EXTCLK_EVENT_CHANNEL      7
 
+
+  ExtClockSource currentExtClockSource;
+
+  void setExtClockSource(ExtClockSource s) {
+    switch (s) {
+      case extClockHardware:
+        EVSYS->CHANNEL.reg
+          = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
+          | EVSYS_CHANNEL_EVGEN(EVSYS_ID_GEN_EIC_EXTINT_8)
+          | EVSYS_CHANNEL_PATH_ASYNCHRONOUS
+          ;
+        break;
+
+      case extClockSoftware:
+        EVSYS->CHANNEL.reg
+          = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
+          | EVSYS_CHANNEL_PATH_SYNCHRONOUS
+          | EVSYS_CHANNEL_EDGSEL_RISING_EDGE
+          ;
+        break;
+    }
+    currentExtClockSource = s;
+  }
+
   void initializeEvents() {
+    EVSYS->CTRL.bit.GCLKREQ = 1;
+      // for when ext clks are generated from software
+
     for ( uint16_t user :
           { EVSYS_ID_USER_TC5_EVU,
             EVSYS_ID_USER_TCC0_EV_0,
@@ -106,18 +126,11 @@ namespace {
       = EVSYS_USER_USER(EVSYS_ID_USER_TCC0_MC_1)
       | EVSYS_USER_CHANNEL(EXTCLK_EVENT_CHANNEL + 1)
       ;
-    EVSYS->CHANNEL.reg
-      = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
-      | EVSYS_CHANNEL_EVGEN(EVSYS_ID_GEN_EIC_EXTINT_8)
-      | EVSYS_CHANNEL_PATH_ASYNCHRONOUS
-      ;
+
+    setExtClockSource(extClockHardware);
   }
 
   bool quantumRunning = false;
-}
-
-void setQuantumDivisor(divisor_t d) {
-  quantumTc->COUNT16.CC[0].reg = (divisor_t)(d - 1);
 }
 
 void startQuantumEvents() {
@@ -150,40 +163,35 @@ PauseQuantum::~PauseQuantum()
   { if (wasRunning) startQuantumEvents(); }
 
 
-#if 0
-void simulateExtClk() {
-  static bool firstTime = true;
-
-  if (firstTime) {
-    GCLK->CLKCTRL.reg
-      = GCLK_CLKCTRL_CLKEN
-      | GCLK_CLKCTRL_GEN_GCLK0
-      | GCLK_CLKCTRL_ID(GCM_EVSYS_CHANNEL_6);
-
-    EVSYS->CTRL.reg
-      = EVSYS_CTRL_GCLKREQ
-      ;
-
-    EVSYS->USER.reg
-      = EVSYS_USER_USER(EVSYS_ID_USER_TCC0_MC_1)
-      | EVSYS_USER_CHANNEL(EXTCLK_EVENT_CHANNEL + 1)
-      ;
-    EVSYS->CHANNEL.reg
-      = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
-      | EVSYS_CHANNEL_PATH_SYNCHRONOUS
-      | EVSYS_CHANNEL_EDGSEL_RISING_EDGE
-      ;
-
-    firstTime = false;
-  }
-  EVSYS->CHANNEL.reg
-      = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
-      | EVSYS_CHANNEL_SWEVT
-      ;
+void useExtClockSource(ExtClockSource s) {
+  if (s != currentExtClockSource)
+    setExtClockSource(s);
 }
-#endif
+
+void softwareExtClock() {
+  if (currentExtClockSource == extClockSoftware) {
+    // According to the data sheet, this must be done with a 16-bit write.
+    // However, the data structures for EVSYS only have 32-bit register fields.
+    // Hence the following cast:
+    *(reinterpret_cast<volatile uint16_t*>(&EVSYS->CHANNEL.reg))
+        = EVSYS_CHANNEL_CHANNEL(EXTCLK_EVENT_CHANNEL)
+        | EVSYS_CHANNEL_SWEVT
+        ;
+  }
+}
+
+
+
 
 namespace {
+  Tc* const quantumTc = TC4;
+  Tc* const watchdogTc = TC3;
+  Tc* const beatTc = TC5;
+  Tcc* const sequenceTcc = TCC0;
+  Tcc* const measureTcc = TCC1;
+  Tcc* const tupletTcc = TCC2;
+
+
   // NOTE: All TC units are used in 16 bit mode.
 
   inline void sync(Tc* tc) {
@@ -282,6 +290,11 @@ namespace {
   inline q_t nextMidiClock(q_t currSequence) {
     return nextInterval(Q_PER_MIDI_CLOCK, currSequence);
   }
+}
+
+
+void setQuantumDivisor(divisor_t d) {
+  quantumTc->COUNT16.CC[0].reg = (divisor_t)(d - 1);
 }
 
 
@@ -425,7 +438,9 @@ void initializeTimers() {
 
   /** CLOCKS **/
 
-  for ( uint16_t id : { GCM_EIC, GCM_TCC0_TCC1, GCM_TCC2_TC3, GCM_TC4_TC5 }) {
+  for ( uint16_t id :
+    { GCM_EIC, GCM_EVSYS_CHANNEL_7, GCM_TCC0_TCC1, GCM_TCC2_TC3, GCM_TC4_TC5 })
+  {
     GCLK->CLKCTRL.reg
       = GCLK_CLKCTRL_CLKEN
       | GCLK_CLKCTRL_GEN_GCLK0

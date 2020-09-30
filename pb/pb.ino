@@ -142,7 +142,9 @@ void loop() {
   if (oledButtonB.update() == Button::Down) {
 #ifdef ZERO_REGS_H
     // printZeroRegs(zeroOpts);
-    printZeroRegTCC(zeroOpts, TCC0, 0);
+    // printZeroRegTCC(zeroOpts, TCC0, 0);
+    printZeroRegGCLK(zeroOpts);
+    printZeroRegEVSYS(zeroOpts);
 #endif
     //critical.printf("ouch @ %dms\n", millis());
     //critical.println("  something went wrong");

@@ -402,6 +402,7 @@ void setBpm(bpm_t bpm) {
 void setSync(SyncMode sync) {
   setClockRate(syncPpqn(sync));
   setMode(sync == syncInternal ? modeInternal : modeExternal);
+  useExtClockSource(sync == syncMidiUSB ? extClockSoftware : extClockHardware);
 }
 
 #pragma GCC diagnostic pop

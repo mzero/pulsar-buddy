@@ -3,6 +3,9 @@
 #include <Adafruit_TinyUSB.h>
 #include <Arduino.h>
 
+#include "timer_hw.h"
+
+
 
 #define MIDI_STATS
 
@@ -75,6 +78,51 @@ namespace {
 #endif
   }
 
+
+  void checkIncomingMidi() {
+    static uint32_t yieldAfter = millis() + 1;
+
+    uint8_t packet[4];
+    while (usb_midi.receive(packet)) {
+      // Serial.printf("usb packet: %02x %02x %02x %02x\n",
+      //   packet[0], packet[1], packet[2], packet[3]);
+
+      switch (packet[0] & 0x0f) {  /* the CIN value */
+
+        case 3: {
+          // Three-byte System Common messages
+          switch (packet[1]) {
+            case 0xf2: {
+              uint32_t midiBeat =
+                (static_cast<uint32_t>(packet[3]) << 7)
+                | static_cast<uint32_t>(packet[2]);
+              uint32_t midiClock = midiBeat * 6;
+              /* reposition counters */
+              break;
+            }
+          }
+          break;
+        }
+
+        case 0xf: {
+          // Single-byte messages, including real-time
+          switch (packet[1]) {
+            case 0xf8:  softwareExtClock();   break;
+            case 0xfa:  /* start */           break;
+            case 0xfb:  /* continue */        break;
+            case 0xfc:  /* stop */            break;
+            default: ;
+          }
+          break;
+        }
+
+      }
+
+      if (millis() >= yieldAfter)
+        break;
+    }
+  }
+
 }
 
 
@@ -92,6 +140,7 @@ void initializeMidi() {
 
 void updateMidi() {
   checkMidiClock();
+  checkIncomingMidi();
 }
 
 

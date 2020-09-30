@@ -38,6 +38,13 @@ void forceTriggersOff(bool);
 
 q_t resetWatchdog(q_t);
 
+enum ExtClockSource {
+  extClockHardware,
+  extClockSoftware,
+};
+
+void useExtClockSource(ExtClockSource);
+void softwareExtClock();
 
 void dumpTimers();
 
