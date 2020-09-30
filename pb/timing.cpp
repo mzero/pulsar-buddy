@@ -98,13 +98,8 @@ void computePeriods(const State& s, Timing& t) {
   }
 }
 
-void adjustOffsets(const Timing& t, Offsets& offsets) {
-  q_t now = offsets.countS % t.sequence;
-
-  if (configuration.debug.timing) {
-    Serial.println("old offsets:");
-    dumpOffsets(offsets);
-  }
+void setOffsets(const Timing& t, q_t position, Offsets& offsets) {
+  q_t now = position % t.sequence;
 
   offsets.countS = now % t.periodS;
   offsets.countM = now % t.periodM;
@@ -112,8 +107,18 @@ void adjustOffsets(const Timing& t, Offsets& offsets) {
   offsets.countT = now % t.periodT;
 
   if (configuration.debug.timing) {
-    Serial.println("new offsets:");
+    Serial.println("setting offsets to:");
     dumpOffsets(offsets);
   }
 }
+
+void adjustOffsets(const Timing& t, Offsets& offsets) {
+  if (configuration.debug.timing) {
+    Serial.println("adjusting these offsets:");
+    dumpOffsets(offsets);
+  }
+
+  setOffsets(t, offsets.countS, offsets);
+}
+
 

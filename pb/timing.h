@@ -53,6 +53,7 @@ struct Offsets {
 void computePeriods(const State& state, Timing& timing);
 
 void adjustOffsets(const Timing& periods, Offsets& offsets);
+void setOffsets(const Timing& perdiods, q_t position, Offsets& offsets);
 
 
 
