@@ -5,7 +5,8 @@
 #include "config.h"
 #include "timer_hw.h"
 
-#define DEBUG_ISR 0
+#define DEBUG_CAPTURE 0
+#define DEBUG_ISR 1
 
 // In this section of code, be very careful about numeric types
 #pragma GCC diagnostic push
@@ -187,33 +188,123 @@ namespace {
   }
 
 #if DEBUG_ISR
-  uint32_t countWatchdogISR = 0;
-  uint32_t countClockISR = 0;
-  uint32_t countUnpausing = 0;
-  uint32_t countStillPerplexed = 0;
-  uint32_t countUnPerplexing = 0;
-  uint32_t countRunningChangePeriod = 0;
-  uint32_t countRunningInvalid = 0;
-  uint32_t countRunningPerplexed = 0;
-  uint32_t countRuningWell = 0;
 
-  void zeroDebugCounts() {
-    countWatchdogISR = 0;
-    countClockISR = 0;
-    countUnpausing = 0;
-    countStillPerplexed = 0;
-    countUnPerplexing = 0;
-    countRunningChangePeriod = 0;
-    countRunningInvalid = 0;
-    countRunningPerplexed = 0;
-    countRuningWell = 0;
+
+  class DebugIsr {
+    public:
+      inline ~DebugIsr() {
+        entry.exitState = clockState;
+        if (historyNext < historySize)
+          history[historyNext++] = entry;
+      }
+
+      inline void noteDNext(uint32_t dNext) { entry.dNext = dNext; }
+      inline void noteDFilt(uint32_t dFilt) { entry.dFilt = dFilt; }
+
+    protected:
+       enum Type {
+            watchdog,
+            clock,
+        };
+
+      inline DebugIsr(Type t) {
+        entry.type = t;
+        entry.entryState = clockState;
+        entry.dNext = 0;
+        entry.dFilt = 0;
+      }
+
+    private:
+      struct Entry {
+        Type        type;
+        ClockState  entryState;
+        ClockState  exitState;
+        uint32_t    dNext;
+        uint32_t    dFilt;
+      };
+
+      Entry entry;
+
+      static const int historySize = 50;
+      static Entry history[historySize];
+      static int historyNext;
+
+    public:
+      static void clearHistory();
+      static void dumpHistory();
+
+    private:
+      static const char* typeName(Type);
+      static const char* clockStateName(ClockState);
+  };
+
+  class DebugWatchdogIsr : public DebugIsr {
+  public:
+    inline DebugWatchdogIsr() : DebugIsr(watchdog) { }
+  };
+
+  class DebugClockIsr : public DebugIsr {
+  public:
+    inline DebugClockIsr() : DebugIsr(clock) { }
+  };
+
+  DebugIsr::Entry DebugIsr::history[DebugIsr::historySize];
+  int DebugIsr::historyNext = 0;
+
+  const char* DebugIsr::typeName(Type t) {
+    switch (t) {
+      case watchdog:  return "w-dog";
+      case clock:     return "clock";
+      default:        return "???";
+    }
   }
 
-#define INC_COUNTER(c) (++c)
-#define DEC_COUNTER(c) (--c)
+  const char* DebugIsr::clockStateName(ClockState c) {
+    switch (c) {
+      case clockPaused:       return "=||=";
+      case clockPerplexed:    return "pplx";
+      case clockSyncRunning:  return "sync";
+      case clockFreeRunning:  return "free";
+      default:                return "???";
+    }
+  }
+  void DebugIsr::clearHistory() { historyNext = 0; }
+  void DebugIsr::dumpHistory() {
+    if (historyNext < 1) {
+      Serial.println("--no ISR history--");
+      return;
+    }
+    Serial.println("ISR history:");
+    for (int i = 0; i < historyNext; ++i) {
+      const Entry& ie = history[i];
+
+      Serial.printf("  [%3d] %-5s:   %-4s ",
+        i, typeName(ie.type), clockStateName(ie.entryState));
+      if (ie.exitState == ie.entryState)
+        Serial.print("        ");
+      else
+        Serial.printf("-> %-5s", clockStateName(ie.exitState));
+
+      if (ie.dNext) Serial.printf("%8d", ie.dNext );
+      else          Serial.print("      --");
+      if (ie.dFilt) Serial.printf("%8d", ie.dFilt );
+      else          Serial.print("      --");
+
+      Serial.println();
+    }
+    clearHistory();
+  }
 #else
-#define INC_COUNTER(c) (0)
-#define DEC_COUNTER(c) (0)
+  class DebugIsr {
+  public:
+      inline static void noteDNext(uint32_t) { }
+      inline static void noteDFilt(uint32_t) { }
+      inline static void clearHistory()      { }
+      inline static void dumpHistory()       { }
+  };
+  typedef DebugIsr DebugWatchdogIsr;
+  typedef DebugIsr DebugClockIsr;
+
 #endif
 }
 
@@ -223,7 +314,7 @@ void isrWatchdog() {
   if (clockState == clockPaused)
     return;
 
-  INC_COUNTER(countWatchdogISR);
+  DebugWatchdogIsr debug;
 
   // pause, as an external clock hasn't been heard in too long
   setState(clockPaused);
@@ -236,7 +327,7 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
   if (clockMode == modeInternal)
     return;
 
-  INC_COUNTER(countClockISR);
+  DebugClockIsr debug;
 
   switch (clockState) {
 
@@ -245,23 +336,18 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
 
       uint32_t dNext =
         roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
+      debug.noteDNext(dNext);
 
       if (!(divisorMin <= dNext && dNext <= divisorMax)) {
           // still perplexed
-          INC_COUNTER(countStillPerplexed);
-
           captureWatchdogStartCount = resetWatchdog(4 * Q_PER_B);
           break;
       }
-      INC_COUNTER(countUnPerplexing);
-      DEC_COUNTER(countUnpausing);
       // back to normal, act like un-pausing
       // fall through
     }
 
     case clockPaused: {
-      INC_COUNTER(countUnpausing);
-
       zeroCapture();
       setState(clockSyncRunning);
       resetWatchdog(4 * Q_PER_B);
@@ -278,12 +364,9 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
         captureSequencePeriod = activeTiming.sequence;
         captureLastSampleValid = false;
           // can't rely on last sanple if period changd
-        INC_COUNTER(countRunningChangePeriod);
       }
 
-      INC_COUNTER(countRunningInvalid);
       if (captureLastSampleValid) {
-        DEC_COUNTER(countRunningInvalid);
 
         q_t qdiff =
           (sequenceSample + captureSequencePeriod - captureLastSample)
@@ -291,9 +374,9 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
 
         uint32_t dNext =
           roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
+        debug.noteDNext(dNext);
 
         if (!(runningDivisorMin <= dNext && dNext <= runningDivisorMax)) {
-          INC_COUNTER(countRunningPerplexed);
           setState(clockPerplexed);
           captureWatchdogStartCount = resetWatchdog(4 * Q_PER_B);
             // on perplexed, wait much long for absence of clock to signal paused
@@ -313,8 +396,9 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
 
         // compute the average ext clk rate over the last captureBufferBeats
         uint32_t dFilt = roundingDivide(captureSum, (uint32_t)captureCount);
-        captureHistory[captureNext] = (divisor_t)dFilt;
+        debug.noteDFilt(dFilt);
 
+        captureHistory[captureNext] = (divisor_t)dFilt;
         captureNext = (captureNext + 1) % captureBufferSpan;
 
         // phase error (in Q)
@@ -329,7 +413,6 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
         setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
         setState(clockSyncRunning);
         resetWatchdog(captureClkQWait);
-        INC_COUNTER(countRuningWell);
       }
 
       captureLastSample = sequenceSample;
@@ -438,6 +521,7 @@ void midiClock() {
 
 
 void dumpClock() {
+#if DEBUG_CAPTURE
   if (capturesPerBeat == 0)
     return;
 
@@ -459,6 +543,7 @@ void dumpClock() {
   Serial.printf("captureNext = %d\n", captureNext);
   Serial.printf("captureSum = %d\n", captureSum);
   Serial.printf("captureCount = %d\n", captureCount);
+#endif // DEBUG_CAPTURE
 
   int activeBpm100 = (int)(roundf(100.0f * divisorToBpm(activeDivisor)));
   int targetBpm100 = (int)(roundf(100.0f * divisorToBpm(targetDivisor)));
@@ -473,6 +558,7 @@ void dumpClock() {
     case modeFirsttime: Serial.print("first time"); break;
     case modeInternal:  Serial.print("internal");   break;
     case modeExternal:  Serial.print("external");   break;
+    default:            Serial.print("???");
   }
   Serial.print(", state: ");
   switch (clockState) {
@@ -480,19 +566,16 @@ void dumpClock() {
     case clockPerplexed:    Serial.println("perplexed");      break;
     case clockSyncRunning:  Serial.println("sync running");   break;
     case clockFreeRunning:  Serial.println("free running");   break;
+    default:                Serial.println("???");
   }
 
-#if DEBUG_ISR
-  Serial.printf("countWatchdogISR = %d\n", countWatchdogISR);
-  Serial.printf("countClockISR = %d\n", countClockISR);
-  Serial.printf("countUnpausing = %d\n", countUnpausing);
-  Serial.printf("countStillPerplexed = %d\n", countStillPerplexed);
-  Serial.printf("countUnPerplexing = %d\n", countUnPerplexing);
-  Serial.printf("countRunningChangePeriod = %d\n", countRunningChangePeriod);
-  Serial.printf("countRunningInvalid = %d\n", countRunningInvalid);
-  Serial.printf("countRunningPerplexed = %d\n", countRunningPerplexed);
-  Serial.printf("countRuningWell = %d\n", countRuningWell);
+  Offsets counts;
+  readCounts(counts);
+  Serial.println("position:");
+  dumpOffsets(counts);
 
-  zeroDebugCounts();
-#endif
+  DebugIsr::dumpHistory();
 }
+
+void clearClockHistory() { DebugIsr::clearHistory(); }
+void dumpClockHistory() { DebugIsr::dumpHistory(); }

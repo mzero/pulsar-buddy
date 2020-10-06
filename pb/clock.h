@@ -58,5 +58,7 @@ void isrWatchdog();
 
 
 void dumpClock();
+void clearClockHistory();
+void dumpClockHistory();
 
 #endif // _INCLUDE_CLOCK_H_
