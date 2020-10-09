@@ -68,16 +68,6 @@ namespace {
     else {
       stopQuantumEvents();
       forceTriggersOff(true);
-
-      // set just "before" zero so first quantum after pause will trigger
-      // all the outputs
-      Offsets preZeros;
-      preZeros.countS = activeTiming.periodS - 1;
-      preZeros.countM = activeTiming.periodM - 1;
-      preZeros.countB = activeTiming.periodB - 1;
-      preZeros.countT = activeTiming.periodT - 1;
-
-      writeCounts(preZeros);
     }
   }
 
@@ -98,6 +88,20 @@ namespace {
       default:
         break;
     }
+  }
+
+  void setPosition(q_t position) {
+    position += activeTiming.sequence - 1;
+    // Pre-roll the positions one clock earlier so that when the clock
+    // starts, any output transitions for this position will fire.
+
+    Offsets counts;
+    setOffsets(activeTiming, position, counts);
+    writeCounts(counts);
+  }
+
+  void zeroPosition() {
+    setPosition(0);
   }
 
 
@@ -134,8 +138,11 @@ namespace {
   volatile int externalClocksPerBeat = 0;
   volatile bool pendingExternalClocksPerBeatChange = false;
 
-  // These variables "belong" to the interrupt service routines, capture()
-  // and missedClock().
+  volatile q_t nextPosition = 0;
+  volatile bool pendingNextPosition = false;
+
+  // These variables "belong" to the interrupt service routines, isrClock()
+  // and isrWatchdog().
   // They should not be modified, or even read, outside of those.
   int       capturesPerBeat = 0;
   q_t       captureClkQ = 0;
@@ -155,6 +162,9 @@ namespace {
   q_t captureLastSample = 0;
 
   q_t captureWatchdogStartCount = 0;
+
+  q_t currentPosition = 0;
+
 
   inline void processPending() {
     if (pendingExternalClocksPerBeatChange) {
@@ -214,6 +224,7 @@ namespace {
         entry.dNext = 0;
         entry.dFilt = 0;
         entry.dAdj = 0;
+        entry.position = currentPosition;
       }
 
     private:
@@ -224,6 +235,7 @@ namespace {
         uint32_t    dNext;
         uint32_t    dFilt;
         uint32_t    dAdj;
+        q_t         position;
       };
 
       Entry entry;
@@ -295,6 +307,8 @@ namespace {
       if (ie.dAdj)  Serial.printf("%8d", ie.dAdj );
       else          Serial.print("      --");
 
+      Serial.print("    ");
+      dumpQ(ie.position);
       Serial.println();
     }
     clearHistory();
@@ -330,6 +344,17 @@ void isrWatchdog() {
 
 void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
   processPending();
+
+  if (pendingNextPosition) {
+    currentPosition = nextPosition;
+    pendingNextPosition = false;
+    setPosition(currentPosition);
+    sequenceSample = currentPosition % captureSequencePeriod;
+  } else {
+    if (runningState(clockState))
+      currentPosition += captureClkQ;
+  }
+
   if (clockMode == modeInternal)
     return;
 
@@ -407,14 +432,26 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
         captureHistory[captureNext] = (divisor_t)dFilt;
         captureNext = (captureNext + 1) % captureBufferSpan;
 
-        // phase error (in Q)
-        q_t phase = sequenceSample % captureClkQ;
-        if (phase >= captureClkQHalf)
-          phase -= captureClkQ;
+        uint32_t dAdj = dFilt;
 
-        // adjust filterd divisor to fix the phase error over one beat
-        uint32_t dAdj = roundingDivide(dFilt * Q_PER_B, Q_PER_B - phase);
-        dAdj = constrain(dAdj, runningDivisorMin, runningDivisorMax);
+        q_t spos = currentPosition % captureSequencePeriod;
+        if (sequenceSample < spos) {
+          q_t behind = spos - sequenceSample;  // timers are behind... hurry up
+          behind = constrain(behind, 0, captureClkQHalf);
+
+          // adjust filterd divisor to fix the phase error over one beat
+          dAdj = roundingDivide(dAdj * Q_PER_B, Q_PER_B + behind);
+          dAdj = constrain(dAdj, runningDivisorMin, runningDivisorMax);
+        }
+        else if (sequenceSample > spos) {
+          q_t ahead = sequenceSample - spos;  // timers are ahead... slow down
+          ahead = constrain(ahead, 0, captureClkQ);
+
+          // adjust filterd divisor to fix the phase error over one beat
+          dAdj = roundingDivide(dAdj * Q_PER_B, Q_PER_B - ahead);
+          dAdj = constrain(dAdj, runningDivisorMin, runningDivisorMax);
+        }
+
         debug.noteDAdj(dAdj);
 
         setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
@@ -503,7 +540,7 @@ void resetTiming(const State& state) {
   {
     PauseQuantum pq;
     writePeriods(activeTiming, targetDivisor);
-    zeroCounts();
+    zeroPosition();
   }
 }
 
@@ -520,11 +557,14 @@ void updateTiming(const State& state) {
   }
 }
 
-#if 0
-void midiClock() {
-  simulateExtClk();
+void setNextPosition(q_t position) {
+  nextPosition = position;
+  pendingNextPosition = true;
 }
-#endif
+
+void pauseClock() {
+  setState(clockPaused);
+}
 
 
 void dumpClock() {

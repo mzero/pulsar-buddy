@@ -45,11 +45,12 @@ void setBpm(bpm_t);
   // sync back to externally driven tempo.
 void setSync(SyncMode);
 
-// void midiClock();
 
 void resetTiming(const State&);
 void updateTiming(const State&);
+void setNextPosition(q_t position);
 
+void pauseClock();
 
 // ISR routines
 

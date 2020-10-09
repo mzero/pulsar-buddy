@@ -30,7 +30,6 @@ private:
 
 void readCounts(Offsets&);
 void writeCounts(const Offsets&);
-void zeroCounts();
 void writePeriods(const Timing&, divisor_t);
 void updateWidths(divisor_t, const Timing&);
 

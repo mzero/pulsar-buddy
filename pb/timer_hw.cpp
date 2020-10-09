@@ -337,10 +337,6 @@ void writeCounts(const Offsets& counts) {
   sequenceTcc->CC[3].reg = nextMidiClock(counts.countS);
 }
 
-void zeroCounts() {
-  Offsets zeros = { 0, 0, 0, 0 };
-  writeCounts(zeros);
-}
 
 namespace {
   q_t lastBeatWidth = 0;
