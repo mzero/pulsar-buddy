@@ -350,11 +350,11 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
     case clockPaused: {
       zeroCapture();
       setState(clockSyncRunning);
-      resetWatchdog(4 * Q_PER_B);
+      captureWatchdogStartCount = resetWatchdog(4 * Q_PER_B);
         // on restart, the rate isn't established
         // so don't interpret slower than expected as stopped
 
-      captureLastSample = 0;
+      captureLastSample = sequenceSample;
       captureLastSampleValid = true;
       break;
     }
@@ -412,7 +412,7 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
 
         setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
         setState(clockSyncRunning);
-        resetWatchdog(captureClkQWait);
+        captureWatchdogStartCount = resetWatchdog(captureClkQWait);
       }
 
       captureLastSample = sequenceSample;
