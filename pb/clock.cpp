@@ -200,6 +200,7 @@ namespace {
 
       inline void noteDNext(uint32_t dNext) { entry.dNext = dNext; }
       inline void noteDFilt(uint32_t dFilt) { entry.dFilt = dFilt; }
+      inline void noteDAdj (uint32_t dAdj ) { entry.dAdj  = dAdj;  }
 
     protected:
        enum Type {
@@ -212,6 +213,7 @@ namespace {
         entry.entryState = clockState;
         entry.dNext = 0;
         entry.dFilt = 0;
+        entry.dAdj = 0;
       }
 
     private:
@@ -221,6 +223,7 @@ namespace {
         ClockState  exitState;
         uint32_t    dNext;
         uint32_t    dFilt;
+        uint32_t    dAdj;
       };
 
       Entry entry;
@@ -289,6 +292,8 @@ namespace {
       else          Serial.print("      --");
       if (ie.dFilt) Serial.printf("%8d", ie.dFilt );
       else          Serial.print("      --");
+      if (ie.dAdj)  Serial.printf("%8d", ie.dAdj );
+      else          Serial.print("      --");
 
       Serial.println();
     }
@@ -299,6 +304,7 @@ namespace {
   public:
       inline static void noteDNext(uint32_t) { }
       inline static void noteDFilt(uint32_t) { }
+      inline static void noteDAdj(uint32_t)  { }
       inline static void clearHistory()      { }
       inline static void dumpHistory()       { }
   };
@@ -409,6 +415,7 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
         // adjust filterd divisor to fix the phase error over one beat
         uint32_t dAdj = roundingDivide(dFilt * Q_PER_B, Q_PER_B - phase);
         dAdj = constrain(dAdj, runningDivisorMin, runningDivisorMax);
+        debug.noteDAdj(dAdj);
 
         setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
         setState(clockSyncRunning);
