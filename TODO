@@ -5,7 +5,7 @@ TODO
 
 == 107 ==
 
-[] MIDI Clock sync
+[x] MIDI Clock sync
 	[x] sync clock messages
 		- already have #if'd code, check if will still work
 	[x] what does Ableton send in the two modes?
@@ -25,20 +25,40 @@ TODO
 			-  stop - spp - start when starting from start
 			-  stop - spp - continue when starting from where stopped
 
-	[] follow
-		[] stop -- ignore clock pulses if any, immediately go to pause state
-		[] start -- treat exactly as spp 0 + continue
-		[] continue -- start following clock pulses, immediately exit pause state
-		[] spp -- on next clock, set counters based on position
+	[x] follow
+		[x] stop -- ignore clock pulses if any, immediately go to pause state
+		[x] start -- treat exactly as spp 0 + continue
+		[x] continue -- start following clock pulses, immediately exit pause state
+		[x] spp -- on next clock, set counters based on position
 		[x] clock - generate ext. click -
 [] MIDI clock out
 	[] send clock messages
 	[] start? stop? spp? continue?
 [] MIDI system
+	[] USB name
 	[] start up unplugged, handle being plugged in
 	[] start up plugged, handle being unplugged, then plugged back in
 
 
+[] Revamp clock and position and perplex
+	[x] keep position in clock ISR
+		[] is the range enough? or does it need to be kept mod'd?
+	[x] use full position to compute phase error
+	[~] don't perplex, just keep slewin'
+	[] perplex if off for over a beat?
+	[] reset watch down on start (on set position?)
+	[] support stop in clock.cpp
+		[] paused | assumed paused | running
+	[] don't loose prior est.
+		[] if explicitly paused, and clocks continue
+		[] when assumed paused ('cause clocks stopped)
+	[] reset position after perplex? pause? when?
+
+
+[] when the clock is paused, changes to timing should be immediate
+
+
+[] bug in sync mode display on first entry
 
 
 [] let M be one of { M, 1/4, 1/8, 1/16, 1/32 }

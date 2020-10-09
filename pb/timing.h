@@ -22,6 +22,7 @@ typedef uint32_t q_t;
 const q_t Q_PER_B = 10080;
 
 const q_t Q_PER_MIDI_CLOCK = Q_PER_B / 24;
+const q_t Q_PER_MIDI_BEAT = Q_PER_B / 4;
 
 template< typename T >
 inline q_t qcast(const T& x) { return static_cast<q_t>(x); }

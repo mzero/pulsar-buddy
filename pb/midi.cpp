@@ -3,6 +3,7 @@
 #include <Adafruit_TinyUSB.h>
 #include <Arduino.h>
 
+#include "clock.h"
 #include "timer_hw.h"
 
 
@@ -79,6 +80,52 @@ namespace {
   }
 
 
+  bool running = false;
+  bool runOnClock = false;
+
+  // FIXME: maybe should be using clock routines to start and stop
+  // FIXME: maybe needs to position one click less so triggers will fire
+  // FIXME: is runOnClock always equal to positionOnClock?
+  //          -- not when stop / continue w/o start or SPP
+
+  void midiClock() {
+    if (runOnClock) {
+      Serial.println("runOnClock");
+      running = true;
+      runOnClock = false;
+      // No need to do it explicitly, the softwareExtClock() below will cause
+      // the clock to start.
+
+      clearClockHistory();
+      dumpClock();
+    }
+    if (running) {
+      softwareExtClock();
+    }
+  }
+
+  void midiPosition(q_t position) {
+    setNextPosition(position);
+    Serial.printf("setting MIDI position to %d = ", position / Q_PER_MIDI_BEAT);
+    dumpQ(position);
+    Serial.println();
+  }
+
+  void midiStop() {
+    running = false;
+    pauseClock();
+    // TODO: move counts up to next MIDI beat.
+    Serial.println("midiStop");
+    dumpClock();
+  }
+
+  void midiContinue() {
+    runOnClock = true;
+    Serial.println("midiContinue");
+  }
+
+
+
   void checkIncomingMidi() {
     static uint32_t yieldAfter = millis() + 1;
 
@@ -96,8 +143,8 @@ namespace {
               uint32_t midiBeat =
                 (static_cast<uint32_t>(packet[3]) << 7)
                 | static_cast<uint32_t>(packet[2]);
-              uint32_t midiClock = midiBeat * 6;
-              /* reposition counters */
+
+              midiPosition(midiBeat * Q_PER_MIDI_BEAT);
               break;
             }
           }
@@ -107,10 +154,10 @@ namespace {
         case 0xf: {
           // Single-byte messages, including real-time
           switch (packet[1]) {
-            case 0xf8:  softwareExtClock();   break;
-            case 0xfa:  /* start */           break;
-            case 0xfb:  /* continue */        break;
-            case 0xfc:  /* stop */            break;
+            case 0xf8:  midiClock();      break;
+            case 0xfa:  midiPosition(0);  // fall through
+            case 0xfb:  midiContinue();   break;
+            case 0xfc:  midiStop();       break;
             default: ;
           }
           break;
