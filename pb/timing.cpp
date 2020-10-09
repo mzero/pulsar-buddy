@@ -105,19 +105,9 @@ void setOffsets(const Timing& t, q_t position, Offsets& offsets) {
   offsets.countM = now % t.periodM;
   offsets.countB = now % t.periodB;
   offsets.countT = now % t.periodT;
-
-  if (configuration.debug.timing) {
-    Serial.println("setting offsets to:");
-    dumpOffsets(offsets);
-  }
 }
 
 void adjustOffsets(const Timing& t, Offsets& offsets) {
-  if (configuration.debug.timing) {
-    Serial.println("adjusting these offsets:");
-    dumpOffsets(offsets);
-  }
-
   setOffsets(t, offsets.countS, offsets);
 }
 
