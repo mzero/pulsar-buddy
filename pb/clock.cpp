@@ -304,8 +304,12 @@ namespace {
       else          Serial.print("      --");
       if (ie.dFilt) Serial.printf("%8d", ie.dFilt );
       else          Serial.print("      --");
-      if (ie.dAdj)  Serial.printf("%8d", ie.dAdj );
-      else          Serial.print("      --");
+      if (ie.dAdj) {
+        if      (ie.dAdj > ie.dFilt) Serial.printf("%8d+", ie.dAdj-ie.dFilt);
+        else if (ie.dAdj < ie.dFilt) Serial.printf("%8d-", ie.dFilt-ie.dAdj);
+        else                         Serial.printf("%8d=", 0);
+      }
+      else          Serial.print("      -- ");
 
       Serial.print("    ");
       dumpQ(ie.position);
@@ -345,14 +349,24 @@ void isrWatchdog() {
 void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
   processPending();
 
+  if (captureSequencePeriod != activeTiming.sequence) {
+    captureSequencePeriod = activeTiming.sequence;
+    captureLastSampleValid = false;
+      // can't rely on last sanple if period changd
+    if (currentPosition >= captureSequencePeriod) {
+      currentPosition = currentPosition % captureSequencePeriod;
+      setPosition(currentPosition);
+    }
+  }
+
   if (pendingNextPosition) {
-    currentPosition = nextPosition;
+    currentPosition = nextPosition % captureSequencePeriod;
     pendingNextPosition = false;
     setPosition(currentPosition);
-    sequenceSample = currentPosition % captureSequencePeriod;
+    sequenceSample = currentPosition;
   } else {
     if (runningState(clockState))
-      currentPosition += captureClkQ;
+      currentPosition = (currentPosition + captureClkQ) % captureSequencePeriod;
   }
 
   if (clockMode == modeInternal)
@@ -391,12 +405,6 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
     }
 
     case clockSyncRunning: {
-      if (captureSequencePeriod != activeTiming.sequence) {
-        captureSequencePeriod = activeTiming.sequence;
-        captureLastSampleValid = false;
-          // can't rely on last sanple if period changd
-      }
-
       if (captureLastSampleValid) {
 
         q_t qdiff =
@@ -434,25 +442,30 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
 
         uint32_t dAdj = dFilt;
 
-        q_t spos = currentPosition % captureSequencePeriod;
-        if (sequenceSample < spos) {
-          q_t behind = spos - sequenceSample;  // timers are behind... hurry up
-          behind = constrain(behind, 0, captureClkQHalf);
+        if (sequenceSample != currentPosition) {
+          q_t ahead =
+            (sequenceSample + captureSequencePeriod - currentPosition)
+              % captureSequencePeriod;
+          q_t behind = captureSequencePeriod - ahead;
 
-          // adjust filterd divisor to fix the phase error over one beat
-          dAdj = roundingDivide(dAdj * Q_PER_B, Q_PER_B + behind);
-          dAdj = constrain(dAdj, runningDivisorMin, runningDivisorMax);
+          if (behind < ahead) {
+            // timers are behind... hurry up
+            // behind = constrain(behind, 0, captureClkQ);
+
+            // adjust filterd divisor to fix the phase error over one beat
+            dAdj = roundingDivide(dAdj * Q_PER_B, Q_PER_B + behind);
+            dAdj = constrain(dAdj, runningDivisorMin, runningDivisorMax);
+          }
+          else {
+            // timers are ahead... slow down
+            ahead = constrain(ahead, 0, Q_PER_B - 1);
+
+            // adjust filterd divisor to fix the phase error over one beat
+            dAdj = roundingDivide(dAdj * Q_PER_B, Q_PER_B - ahead);
+            dAdj = constrain(dAdj, runningDivisorMin, runningDivisorMax);
+          }
+          debug.noteDAdj(dAdj);
         }
-        else if (sequenceSample > spos) {
-          q_t ahead = sequenceSample - spos;  // timers are ahead... slow down
-          ahead = constrain(ahead, 0, captureClkQ);
-
-          // adjust filterd divisor to fix the phase error over one beat
-          dAdj = roundingDivide(dAdj * Q_PER_B, Q_PER_B - ahead);
-          dAdj = constrain(dAdj, runningDivisorMin, runningDivisorMax);
-        }
-
-        debug.noteDAdj(dAdj);
 
         setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
         setState(clockSyncRunning);
