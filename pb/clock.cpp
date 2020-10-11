@@ -146,13 +146,11 @@ namespace {
   // They should not be modified, or even read, outside of those.
   int       capturesPerBeat = 0;
   q_t       captureClkQ = 0;
-  q_t       captureClkQHalf = 0;
   q_t       captureClkQWait = 0;
   q_t       captureSequencePeriod = 0;
   const int captureBufferBeats = 2;
   const int captureBufferSize = captureBufferBeats * 48;
   divisor_t captureBuffer[captureBufferSize];
-  divisor_t captureHistory[captureBufferSize];
   int       captureBufferSpan;
   int       captureNext = 0;
   uint32_t  captureSum = 0;
@@ -172,7 +170,6 @@ namespace {
       if (capturesPerBeat != perBeat) {
         capturesPerBeat = perBeat;
         captureClkQ = perBeat ? Q_PER_B / perBeat : 0;
-        captureClkQHalf = captureClkQ / 2;
         captureClkQWait = captureClkQ * 2;  // TODO: 3? 2.5?
         captureBufferSpan = captureBufferBeats * perBeat;
         captureNext = 0;
@@ -301,13 +298,11 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
           captureCount += 1;
         }
         captureBuffer[captureNext] = (divisor_t)dNext;
+        captureNext = (captureNext + 1) % captureBufferSpan;
 
         // compute the average ext clk rate over the last captureBufferBeats
         uint32_t dFilt = roundingDivide(captureSum, (uint32_t)captureCount);
         debug.noteDFilt(dFilt);
-
-        captureHistory[captureNext] = (divisor_t)dFilt;
-        captureNext = (captureNext + 1) % captureBufferSpan;
 
         uint32_t dAdj = dFilt;
 
@@ -458,7 +453,7 @@ void dumpClock() {
 
   for (int i = 0; i < captureCount; ++i) {
     sum += captureBuffer[i];
-    Serial.printf("[%2d] %8d -- %8d\n", i, captureBuffer[i], captureHistory[i]);
+    Serial.printf("[%2d] %8d\n", i, captureBuffer[i]);
   }
 
   if (captureCount > 0)
