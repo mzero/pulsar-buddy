@@ -105,7 +105,7 @@ namespace {
   }
 
   void midiPosition(q_t position) {
-    setNextPosition(position);
+    setPosition(position);
     Serial.printf("setting MIDI position to %d = ", position / Q_PER_MIDI_BEAT);
     dumpQ(position);
     Serial.println();

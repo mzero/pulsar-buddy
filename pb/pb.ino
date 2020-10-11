@@ -56,7 +56,8 @@ void setup() {
 
   setBpm(userState().userBpm);
   setSync(userState().syncMode);
-  resetTiming(userState());
+  setTiming(userState());
+  setPosition(0);
 
   if (configuration.options.alwaysDim)
     display.dim(true);
@@ -81,7 +82,7 @@ void loop() {
   if (measureEvent) {
     measureEvent = false;
     if (pendingState()) {
-      updateTiming(userState());
+      setTiming(userState());
       commitState();
       active = true;
     }
@@ -135,7 +136,8 @@ void loop() {
 
   if (oledButtonA.update() == Button::Down) {
     dumpDisplayPBM(Serial);
-    //resetTiming(userState());
+    //setTiming(userState());
+    //setPosition(0);
     active = true;
   }
 

@@ -90,7 +90,7 @@ namespace {
     }
   }
 
-  void setPosition(q_t position) {
+  void setCountsToPosition(q_t position) {
     position += activeTiming.sequence - 1;
     // Pre-roll the positions one clock earlier so that when the clock
     // starts, any output transitions for this position will fire.
@@ -101,7 +101,7 @@ namespace {
   }
 
   void zeroPosition() {
-    setPosition(0);
+    setCountsToPosition(0);
   }
 
 
@@ -221,14 +221,14 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
       // can't rely on last sanple if period changd
     if (currentPosition >= captureSequencePeriod) {
       currentPosition = currentPosition % captureSequencePeriod;
-      setPosition(currentPosition);
+      setCountsToPosition(currentPosition);
     }
   }
 
   if (pendingNextPosition) {
     currentPosition = nextPosition % captureSequencePeriod;
     pendingNextPosition = false;
-    setPosition(currentPosition);
+    setCountsToPosition(currentPosition);
     sequenceSample = currentPosition;
   } else {
     if (runningState(clockState))
@@ -412,16 +412,7 @@ void setSync(SyncMode sync) {
 #pragma GCC diagnostic pop
 
 
-void resetTiming(const State& state) {
-  computePeriods(state, activeTiming);
-  {
-    PauseQuantum pq;
-    writePeriods(activeTiming, targetDivisor);
-    zeroPosition();
-  }
-}
-
-void updateTiming(const State& state) {
+void setTiming(const State& state) {
   computePeriods(state, activeTiming);
   {
     PauseQuantum pq;
@@ -431,12 +422,20 @@ void updateTiming(const State& state) {
     adjustOffsets(activeTiming, counts);
     writePeriods(activeTiming, targetDivisor);
     writeCounts(counts);
+
+    // FIXME: Needs to update position here
   }
 }
 
-void setNextPosition(q_t position) {
-  nextPosition = position;
-  pendingNextPosition = true;
+void setPosition(q_t position) {
+  switch (clockMode) {
+    case modeExternal:
+      nextPosition = position;
+      pendingNextPosition = true;
+      break;
+    default:
+      setCountsToPosition(position);
+  }
 }
 
 void pauseClock() {

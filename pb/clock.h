@@ -44,11 +44,9 @@ void setBpm(bpm_t);
   // if sync'd, this resets the current BPM, but system will immediately try to
   // sync back to externally driven tempo.
 void setSync(SyncMode);
+void setTiming(const State&);
+void setPosition(q_t position);
 
-
-void resetTiming(const State&);
-void updateTiming(const State&);
-void setNextPosition(q_t position);
 
 void pauseClock();
 
@@ -57,6 +55,8 @@ void pauseClock();
 void isrClockCapture(q_t, q_t);
 void isrWatchdog();
 
+
+// Debugging
 
 void dumpClock();
 void clearClockHistory();
