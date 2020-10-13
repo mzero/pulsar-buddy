@@ -7,14 +7,35 @@
 
 
 enum ClockState : uint16_t {
-  clockPaused       = 0,
-  clockPerplexed    = 1,
-  clockSyncRunning  = 2,
-  clockFreeRunning  = 3,
+  clockStopped      = 0,
+    // outputs are off;
+    // external clocks may happen, but don't advance position
+    // clock estimation may happen if external clocks do
+
+  clockPaused       = 1,
+    // outputs are off;
+    // ext. clocks have stopped long enough to consider this a pause
+    // Note: likely to have stopped a beat ahead of the source, when it
+    // restarts, there will be a period of re-syncing the alignment.
+
+  clockPerplexed    = 2,
+    // Just like sync, but the clock rate doesn't make sense and so position
+    // cannot be assured
+
+  clockSyncRunning  = 3,
+    // Normal running mode, estimating tempo from external clocks
+    // position is tracked, and phase locking implemented
+
+  clockFreeRunning  = 4,
+    // Running with a fixed tempo, extneral clocks are ignored.
 };
 
-inline bool runningState(ClockState cs)
-  { return cs >= clockSyncRunning; }
+
+inline bool runningState(ClockState cs) {
+  return cs >= clockPerplexed;
+}
+
+
 
 struct ClockStatus {
 public:
@@ -47,8 +68,8 @@ void setSync(SyncMode);
 void setTiming(const State&);
 void setPosition(q_t position);
 
-
-void pauseClock();
+void runClock();
+void stopClock();
 
 // ISR routines
 

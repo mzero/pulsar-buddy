@@ -80,28 +80,9 @@ namespace {
   }
 
 
-  bool running = false;
-  bool runOnClock = false;
 
-  // FIXME: maybe should be using clock routines to start and stop
-  // FIXME: maybe needs to position one click less so triggers will fire
-  // FIXME: is runOnClock always equal to positionOnClock?
-  //          -- not when stop / continue w/o start or SPP
-
-  void midiClock() {
-    if (runOnClock) {
-      Serial.println("runOnClock");
-      running = true;
-      runOnClock = false;
-      // No need to do it explicitly, the softwareExtClock() below will cause
-      // the clock to start.
-
-      clearClockHistory();
-      dumpClock();
-    }
-    if (running) {
-      softwareExtClock();
-    }
+  inline void midiClock() {
+    softwareExtClock();
   }
 
   void midiPosition(q_t position) {
@@ -112,17 +93,17 @@ namespace {
   }
 
   void midiStop() {
-    running = false;
-    pauseClock();
-    // TODO: move counts up to next MIDI beat.
+    stopClock();
+    // TODO: move position up to next MIDI beat. (?)
     Serial.println("midiStop");
     dumpClock();
   }
 
   void midiContinue() {
-    runOnClock = true;
     Serial.println("midiContinue");
-  }
+    clearClockHistory();
+    runClock();
+ }
 
 
 

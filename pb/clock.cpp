@@ -31,7 +31,7 @@ namespace {
       activeDivisor = active;
     }
 
-    if (targetDivisor != target) {
+    if (target != 0 && targetDivisor != target) {
       updateWidths(target, activeTiming);
       targetDivisor = target;
     }
@@ -100,10 +100,6 @@ namespace {
     writeCounts(counts);
   }
 
-  void zeroPosition() {
-    setCountsToPosition(0);
-  }
-
 
   /** BPM RANGE **/
 
@@ -123,6 +119,8 @@ namespace {
     runningDivisorMin = divisorFromBpm(high * 1.05f);
     runningDivisorMax = divisorFromBpm(low * 0.95f);
   }
+
+
 
   /** EXTERNAL CLOCK FREQ ESTIMATOR & PHASE LOCKED LOOP **/
 
@@ -159,8 +157,6 @@ namespace {
   bool captureLastSampleValid = false;
   q_t captureLastSample = 0;
 
-  q_t captureWatchdogStartCount = 0;
-
   q_t currentPosition = 0;
 
 
@@ -170,7 +166,7 @@ namespace {
       if (capturesPerBeat != perBeat) {
         capturesPerBeat = perBeat;
         captureClkQ = perBeat ? Q_PER_B / perBeat : 0;
-        captureClkQWait = captureClkQ * 2;  // TODO: 3? 2.5?
+        captureClkQWait = max(2 * Q_PER_B, captureClkQ * 2);  // TODO: 3? 2.5?
         captureBufferSpan = captureBufferBeats * perBeat;
         captureNext = 0;
         captureSum = 0;
@@ -201,15 +197,20 @@ namespace {
 void isrWatchdog() {
   if (clockMode == modeInternal)
     return;
-  if (clockState == clockPaused)
-    return;
 
   DebugWatchdogIsr debug;
 
-  // pause, as an external clock hasn't been heard in too long
-  setState(clockPaused);
-  zeroCapture();
   captureLastSampleValid = false;
+
+  if (clockState == clockPaused) {
+    // already paused.... and 2nd watchdog!
+    zeroCapture();
+  }
+  else {
+    // pause, as an external clock hasn't been heard in too long
+    setState(clockPaused);
+    resetWatchdog(4 * Q_PER_B);
+  }
 }
 
 void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
@@ -222,6 +223,7 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
     if (currentPosition >= captureSequencePeriod) {
       currentPosition = currentPosition % captureSequencePeriod;
       setCountsToPosition(currentPosition);
+      sequenceSample = currentPosition;
     }
   }
 
@@ -240,110 +242,103 @@ void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
 
   DebugClockIsr debug;
 
-  switch (clockState) {
+  bool dNextInRange = false;
 
-    case clockPerplexed: {
-      q_t qdiff = watchdogSample - captureWatchdogStartCount;
+  if (captureLastSampleValid) {
 
-      uint32_t dNext =
-        roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
-      debug.noteDNext(dNext);
+    // compute new divisor based on measurement of last ext. clock interval
 
-      if (!(divisorMin <= dNext && dNext <= divisorMax)) {
-          // still perplexed
-          captureWatchdogStartCount = resetWatchdog(4 * Q_PER_B);
-          break;
+    q_t qdiff =
+      (sequenceSample + captureSequencePeriod - captureLastSample)
+      % captureSequencePeriod;
+
+    uint32_t dNext =
+      roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
+    debug.noteDNext(dNext);
+
+    dNextInRange = 0 < dNext && dNext < 16000;   // FIXME: pickd out of a hat
+    // if in a rational range, include in the running average
+
+    uint32_t dFilt = 0;
+
+    if (dNextInRange) {
+      // record this in the capture buffer, and average it with up to
+      // captureBufferBeats' worth of measurements
+      captureSum += dNext;
+      if (captureCount >= captureBufferSpan) {
+        captureSum -= captureBuffer[captureNext];
+      } else {
+        captureCount += 1;
       }
-      // back to normal, act like un-pausing
-      // fall through
+      captureBuffer[captureNext] = (divisor_t)dNext;
+      captureNext = (captureNext + 1) % captureBufferSpan;
+
+      // compute the average ext clk rate over the last captureBufferBeats
+      dFilt = roundingDivide(captureSum, (uint32_t)captureCount);
+      debug.noteDFilt(dFilt);
     }
 
-    case clockPaused: {
-      zeroCapture();
-      setState(clockSyncRunning);
-      captureWatchdogStartCount = resetWatchdog(4 * Q_PER_B);
-        // on restart, the rate isn't established
-        // so don't interpret slower than expected as stopped
+    uint32_t dAdj = dFilt;
 
-      captureLastSample = sequenceSample;
-      captureLastSampleValid = true;
-      break;
-    }
-
-    case clockSyncRunning: {
-      if (captureLastSampleValid) {
-
-        q_t qdiff =
-          (sequenceSample + captureSequencePeriod - captureLastSample)
+    // find phase difference if we can
+    if (clockState != clockStopped  &&  dFilt) {
+      q_t ahead =
+        (sequenceSample + captureSequencePeriod - currentPosition)
           % captureSequencePeriod;
+      q_t behind = captureSequencePeriod - ahead;
 
-        uint32_t dNext =
-          roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
-        debug.noteDNext(dNext);
-
-        if (!(runningDivisorMin <= dNext && dNext <= runningDivisorMax)) {
-          setState(clockPerplexed);
-          captureWatchdogStartCount = resetWatchdog(4 * Q_PER_B);
-            // on perplexed, wait much long for absence of clock to signal paused
-            // setting of the watchdog timer is the new last sample
-          break;
-        }
-
-        // record this in the capture buffer, and average it with up to
-        // captureBufferBeats' worth of measurements
-        captureSum += dNext;
-        if (captureCount >= captureBufferSpan) {
-          captureSum -= captureBuffer[captureNext];
-        } else {
-          captureCount += 1;
-        }
-        captureBuffer[captureNext] = (divisor_t)dNext;
-        captureNext = (captureNext + 1) % captureBufferSpan;
-
-        // compute the average ext clk rate over the last captureBufferBeats
-        uint32_t dFilt = roundingDivide(captureSum, (uint32_t)captureCount);
-        debug.noteDFilt(dFilt);
-
-        uint32_t dAdj = dFilt;
-
-        if (sequenceSample != currentPosition) {
-          q_t ahead =
-            (sequenceSample + captureSequencePeriod - currentPosition)
-              % captureSequencePeriod;
-          q_t behind = captureSequencePeriod - ahead;
-
-          if (behind < ahead) {
-            // timers are behind... hurry up
-            // behind = constrain(behind, 0, captureClkQ);
-
-            // adjust filterd divisor to fix the phase error over one beat
-            dAdj = roundingDivide(dAdj * Q_PER_B, Q_PER_B + behind);
-            dAdj = constrain(dAdj, runningDivisorMin, runningDivisorMax);
-          }
-          else {
-            // timers are ahead... slow down
-            ahead = constrain(ahead, 0, Q_PER_B - 1);
-
-            // adjust filterd divisor to fix the phase error over one beat
-            dAdj = roundingDivide(dAdj * Q_PER_B, Q_PER_B - ahead);
-            dAdj = constrain(dAdj, runningDivisorMin, runningDivisorMax);
-          }
-          debug.noteDAdj(dAdj);
-        }
-
-        setDivisors((divisor_t)dFilt, (divisor_t)dAdj);
-        setState(clockSyncRunning);
-        captureWatchdogStartCount = resetWatchdog(captureClkQWait);
+      if (ahead == 0) {
+        // do nothing!
+      }
+      else if (min(ahead, behind) > 2 * Q_PER_B) {  // FIXME: 4? 2? 1?
+        // too far, just jump
+        setCountsToPosition(currentPosition);
+      }
+      else if (behind < ahead) {
+        // timers are behind... hurry up
+        behind = constrain(behind, 0, Q_PER_B);
+        dAdj = roundingDivide(dAdj * Q_PER_B, Q_PER_B + behind);
+      }
+      else {
+        // timers are ahead... slow down
+        ahead = constrain(ahead, 0, Q_PER_B / 2);
+        dAdj = roundingDivide(dAdj * Q_PER_B, Q_PER_B - ahead);
       }
 
-      captureLastSample = sequenceSample;
-      captureLastSampleValid = true;
+      if (dAdj != dFilt) {
+        debug.noteDAdj(dAdj);
+      }
     }
 
-    case clockFreeRunning:
-      break;
+    dNext = constrain(dAdj ? dAdj : dNext, runningDivisorMin, runningDivisorMax);
+    setDivisors((divisor_t)dFilt, (divisor_t)dNext);
   }
+
+  captureLastSample = sequenceSample;
+  captureLastSampleValid = true;
+
+  bool slowWatchDog = true;
+
+  switch (clockState) {
+    case clockPaused:
+      setState(clockSyncRunning);
+      break;
+    case clockPerplexed:
+      if (dNextInRange)
+        setState(clockSyncRunning);
+      break;
+    case clockSyncRunning:
+      if (dNextInRange)
+        slowWatchDog = false;
+      else
+        setState(clockPerplexed);
+    default:
+      ;
+  }
+
+  resetWatchdog(slowWatchDog ? 4 * Q_PER_B : captureClkQWait);
 }
+
 
 
 ClockStatus ClockStatus::current() {
@@ -409,9 +404,6 @@ void setSync(SyncMode sync) {
   useExtClockSource(sync == syncMidiUSB ? extClockSoftware : extClockHardware);
 }
 
-#pragma GCC diagnostic pop
-
-
 void setTiming(const State& state) {
   computePeriods(state, activeTiming);
   {
@@ -438,9 +430,17 @@ void setPosition(q_t position) {
   }
 }
 
-void pauseClock() {
-  setState(clockPaused);
+void runClock() {
+  setState(clockMode == modeInternal ? clockFreeRunning : clockPaused);
 }
+
+void stopClock() {
+  setState(clockStopped);
+}
+
+
+#pragma GCC diagnostic pop
+
 
 
 void dumpClock() {
