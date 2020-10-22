@@ -48,6 +48,7 @@ namespace {
   ClockMode   clockMode = modeFirsttime;
   ClockState  clockState = clockPaused;
 
+  Offsets notRunningCounts = { 0, 0, 0, 0 };
 
   void setState(ClockState cs) {
     if (clockState == cs)
@@ -61,12 +62,14 @@ namespace {
     if (wasRunning == setRunning)
       return;
 
+    PauseQuantum pq;
+
     if (setRunning) {
       forceTriggersOff(false);
-      startQuantumEvents();
+      writeCounts(notRunningCounts);
     }
     else {
-      stopQuantumEvents();
+      readCounts(notRunningCounts);
       forceTriggersOff(true);
     }
   }
@@ -97,7 +100,14 @@ namespace {
 
     Offsets counts;
     setOffsets(activeTiming, position, counts);
-    writeCounts(counts);
+
+    if (runningState(clockState)) {
+      PauseQuantum pq;
+      writeCounts(counts);
+    }
+    else {
+      notRunningCounts = counts;
+    }
   }
 
 
@@ -202,14 +212,20 @@ void isrWatchdog() {
 
   captureLastSampleValid = false;
 
-  if (clockState == clockPaused) {
-    // already paused.... and 2nd watchdog!
-    zeroCapture();
-  }
-  else {
-    // pause, as an external clock hasn't been heard in too long
-    setState(clockPaused);
-    resetWatchdog(4 * Q_PER_B);
+  switch (clockState) {
+    case clockStopped:
+      // ignore - no external clock while explicitly stopped is okay
+      break;
+
+    case clockPaused:
+      // already paused.... and 2nd watchdog!
+      zeroCapture();
+      break;
+
+    default:
+      // pause, as an external clock hasn't been heard in too long
+      setState(clockPaused);
+      resetWatchdog(4 * Q_PER_B);
   }
 }
 
@@ -390,6 +406,8 @@ void initializeClock() {
     setBpmRange(10, 900);
   else
     setBpmRange(30, 300);
+
+  startQuantumEvents();
 }
 
 void setBpm(bpm_t bpm) {

@@ -85,6 +85,7 @@ namespace {
 
   const char* DebugIsr::clockStateName(ClockState c) {
     switch (c) {
+      case clockStopped:      return "-xx-";
       case clockPaused:       return "=||=";
       case clockPerplexed:    return "pplx";
       case clockSyncRunning:  return "sync";

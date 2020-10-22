@@ -5,32 +5,6 @@ TODO
 
 == 107 ==
 
-[x] MIDI Clock sync
-	[x] sync clock messages
-		- already have #if'd code, check if will still work
-	[x] what does Ableton send in the two modes?
-		Pattern sync mode:
-			- always sends: start - clock - stop
-			- sometimes sends double stop
-			- no clocks when transport stopped
-			- if continuing mid-measure, it waits to next measure to send
-				start, and then clocks
-				- based on the meter!
-
-		Song sync mode:
-			- uses SPP, clock stopped when transport stopped
-			- sends SPP as needed, will wait untiil transport hits 1/16th
-			- typical: stop - spp - continue when jumping
-			-  spp - stop - spp - continue when starting from middle
-			-  stop - spp - start when starting from start
-			-  stop - spp - continue when starting from where stopped
-
-	[x] follow
-		[x] stop -- ignore clock pulses if any, immediately go to pause state
-		[x] start -- treat exactly as spp 0 + continue
-		[x] continue -- start following clock pulses, immediately exit pause state
-		[x] spp -- on next clock, set counters based on position
-		[x] clock - generate ext. click -
 [] MIDI clock out
 	[] send clock messages
 	[] start? stop? spp? continue?
@@ -41,24 +15,33 @@ TODO
 
 
 [] Revamp clock and position and perplex
-	[x] keep position in clock ISR
-		[] is the range enough? or does it need to be kept mod'd?
-	[x] use full position to compute phase error
-	[~] don't perplex, just keep slewin'
+	[x] keep quantum events running when stopped
+		[x] save position at time of stop
+		[x] reset back to that position when restarting
+		[x] only set position when running
+
 	[] perplex if off for over a beat?
-	[] reset watch down on start (on set position?)
-	[] support stop in clock.cpp
-		[] paused | assumed paused | running
-	[] don't loose prior est.
-		[] if explicitly paused, and clocks continue
-		[] when assumed paused ('cause clocks stopped)
-	[] reset position after perplex? pause? when?
+		[] reset position after perplex?
+
+	[] tune factor in captureClkQWait calc
+	[] tune phase correction - perhaps a bit slower?
+		- shouldn't be faster than the averaging, should it?
+
+	[] display BPM when following Live starting from non-1/16 boundry
+		- gets very fast and then comes down
+		- but what you hear is right
+		[] bpm display should be based on target, not adjusted
+		[] bpm display should be perhaps not displayed until stable?
+		[] and/or don't flush the capture buffer?
 
 
-[] when the clock is paused, changes to timing should be immediate
 
+[] when the clock is paused, changes to settings should be immediate
+	- not waiting for measure boundry
 
 [] bug in sync mode display on first entry
+
+
 
 
 [] let M be one of { M, 1/4, 1/8, 1/16, 1/32 }
