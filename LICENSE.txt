@@ -1,0 +1,21 @@
+Open Hardware
+-------------
+The hardware design, and all files other than software, are governed by the
+Creative Commons Attribution-ShareAlike 3.0 Unported license.
+
+This design uses some of the work in Adafruit's Feather M0 Express design,
+which is goverend by the same license.
+
+See the file LICENSE-HW.txt
+
+
+
+Open Software
+-------------
+The software in this repository, in the directory "pd", is goverened by
+a BSD 3-clause license.
+
+See the file LICENSE-SW.txt
+
+
+
