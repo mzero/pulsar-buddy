@@ -155,15 +155,12 @@ namespace {
 
 
 void initializeMidi() {
+  USBDevice.setManufacturerDescriptor("electric.kitchen");
+  USBDevice.setProductDescriptor("Pulsar Buddy");
+
   usb_midi.begin();
-  //while (!USBDevice.mounted()) delay(1);
 
-  // force USB reconnect so MIDI port will be re-found
-  // TODO: How to do this gracefully?
-  USBDevice.detach();
-  delay(3000);
   USBDevice.attach();
-
 }
 
 void updateMidi() {
