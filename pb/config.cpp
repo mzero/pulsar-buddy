@@ -68,11 +68,12 @@ namespace {
     display.setCursor(0, 0);
     drawButton("\x1b", 0);
 #ifndef PB_DEVELOPMENT
-    display.print(" Pulsar Buddy v. ");
+    display.print(" Pulsar Buddy v");
 #else
     display.print(" Pulsar Buddy dev");
 #endif
     display.print(PB_VERSION);
+    display.print('r');
 
     // options line
     display.setCursor(0, 8);
