@@ -30,7 +30,7 @@ private:
 class SyncField : public Field {
 public:
   SyncField(int16_t x, int16_t y, uint16_t w, uint16_t h, State& state)
-    : Field(x, y, w, h), state(state)
+    : Field(x, y, w, h), state(state), pending(false)
     { }
 
     virtual void enter(bool);
@@ -45,6 +45,7 @@ protected:
 private:
     State& state;
 
+    bool pending;
     SyncMode pendingSync;
     SyncMode syncAsDrawn;
 };

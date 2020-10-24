@@ -42,7 +42,7 @@ TODO
 [] when the clock is paused, changes to settings should be immediate
 	- not waiting for measure boundry
 
-[] bug in sync mode display on first entry
+[x] bug in sync mode display on first entry
 
 
 

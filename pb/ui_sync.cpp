@@ -165,10 +165,12 @@ bool SyncField::isOutOfDate() {
 
 void SyncField::enter(bool alternate) {
   pendingSync = state.syncMode;
+  pending = true;
 }
 
 void SyncField::exit() {
   state.syncMode = pendingSync;
+  pending = false;
   setSync(state.syncMode);
 }
 
@@ -207,14 +209,16 @@ void SyncField::update(Encoder::Update update) {
 }
 
 void SyncField::redraw() {
+  auto s = pending ? pendingSync : state.syncMode;
+
   display.setTextColor(foreColor());
 
-  int i = findSyncModeIndex(pendingSync);
+  int i = findSyncModeIndex(s);
   if (i >= 0)
     display.drawBitmap(x, y, syncOptions[i].image, 15, 32, foreColor());
   else
     centerText("?", x, y, w, h);
-  syncAsDrawn = pendingSync;
+  syncAsDrawn = s;
 }
 
 
