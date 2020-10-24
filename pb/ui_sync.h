@@ -45,6 +45,7 @@ protected:
 private:
     State& state;
 
+    bool pending;
     SyncMode pendingSync;
     SyncMode syncAsDrawn;
 };
