@@ -13,19 +13,12 @@ TODO
 	[] perplex if off for over a beat?
 		[] reset position after perplex?
 
-	[x] tune factor in captureClkQWait calc
 	[] tune phase correction - perhaps a bit slower?
 		- shouldn't be faster than the averaging, should it?
 
-	[] display BPM when following Live starting from non-1/16 boundry
+	[x] display BPM when following Live starting from non-1/16 boundry
 		- gets very fast and then comes down
 		- but what you hear is right
-		[] bpm display should be based on target, not adjusted
-		[] bpm display should be perhaps not displayed until stable?
-		[] and/or don't flush the capture buffer?
-
-	[x] remove watchdogSample from isrCLockCapture
-
 
 
 [] when the clock is paused, changes to settings should be immediate

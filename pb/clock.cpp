@@ -355,11 +355,8 @@ ClockStatus ClockStatus::current() {
   static auto updateAt = millis() - 1; // ensure update the first time
   static float reportedBpmf = 0;
   static bpm_t reportedBpm = 0;
-  static const float fastThreasholdDeltaBpmf = 1.0f;
+  static const float fastThreasholdDeltaBpmf = 0.5f;
     // If moving faster than this, then just jump
-    // TODO: Consider setting this lower to 0.5f
-    // That is good enough for the Digitakt, but too low for the the
-    // janky clock divider test rig I have
 
   auto now = millis();
   if (updateAt < now) {
