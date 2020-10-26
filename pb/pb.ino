@@ -34,10 +34,9 @@ void setup() {
   Serial.begin(115200);
   initializeDisplay();
 
-  Configuration::initialize();
-
   initializeMidi();
 
+  Configuration::initialize();
   if (configuration.debug.waitForSerial) {
     display.clearDisplay();
     display.setTextColor(WHITE);
