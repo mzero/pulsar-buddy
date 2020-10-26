@@ -155,6 +155,7 @@ namespace {
 
 
 void initializeMidi() {
+  USBDevice.setID(0x1209, 0x6f00);  // see pid.codes for this allocation
   USBDevice.setManufacturerDescriptor("electric.kitchen");
   USBDevice.setProductDescriptor("Pulsar Buddy");
 

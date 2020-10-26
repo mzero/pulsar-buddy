@@ -14,7 +14,7 @@ TODO
 	[x] start up unplugged, handle being plugged in
 	[x] start up plugged, handle being unplugged, then plugged back in
 
-[] USB PID/VID code
+[x] USB PID/VID code
 	- waiting for pid.codes to accept pull request for allocation
 
 [] Revamp clock and position and perplex
