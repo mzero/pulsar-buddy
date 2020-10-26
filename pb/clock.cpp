@@ -223,7 +223,7 @@ void isrWatchdog() {
   }
 }
 
-void isrClockCapture(q_t sequenceSample, q_t watchdogSample) {
+void isrClockCapture(q_t sequenceSample) {
   processPending();
 
   if (captureSequencePeriod != activeTiming.sequence) {

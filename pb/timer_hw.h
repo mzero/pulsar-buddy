@@ -7,7 +7,7 @@ void initializeTimers();
 
 extern void isrMeasure();
 extern void isrMidiClock();
-extern void isrClockCapture(q_t, q_t);
+extern void isrClockCapture(q_t);
 extern void isrWatchdog();
 
 

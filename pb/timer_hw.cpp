@@ -567,8 +567,7 @@ void TCC0_Handler() {
   if (intflag & TCC_INTFLAG_MC1) {
     sync(sequenceTcc, TCC_SYNCBUSY_CC1);
     auto sequenceCapture = sequenceTcc->CC[1].reg;
-    auto watchdogCapture = watchdogTc->COUNT16.COUNT.reg;
-    isrClockCapture(sequenceCapture, watchdogCapture);
+    isrClockCapture(sequenceCapture);
   }
   if (intflag & (TCC_INTFLAG_OVF | TCC_INTFLAG_MC2 | TCC_INTFLAG_MC3)) {
     sync(sequenceTcc, TCC_SYNCBUSY_CTRLB);

@@ -9,24 +9,11 @@ TODO
 	[] send clock messages
 	[] start? stop? spp? continue?
 
-[x] MIDI system
-	[x] USB name
-	[x] start up unplugged, handle being plugged in
-	[x] start up plugged, handle being unplugged, then plugged back in
-
-[x] USB PID/VID code
-	- waiting for pid.codes to accept pull request for allocation
-
 [] Revamp clock and position and perplex
-	[x] keep quantum events running when stopped
-		[x] save position at time of stop
-		[x] reset back to that position when restarting
-		[x] only set position when running
-
 	[] perplex if off for over a beat?
 		[] reset position after perplex?
 
-	[] tune factor in captureClkQWait calc
+	[x] tune factor in captureClkQWait calc
 	[] tune phase correction - perhaps a bit slower?
 		- shouldn't be faster than the averaging, should it?
 
@@ -37,13 +24,15 @@ TODO
 		[] bpm display should be perhaps not displayed until stable?
 		[] and/or don't flush the capture buffer?
 
+	[x] remove watchdogSample from isrCLockCapture
+
 
 
 [] when the clock is paused, changes to settings should be immediate
 	- not waiting for measure boundry
 
-[x] bug in sync mode display on first entry
 
+[] reverse display config option
 
 
 

@@ -73,7 +73,7 @@ void stopClock();
 
 // ISR routines
 
-void isrClockCapture(q_t, q_t);
+void isrClockCapture(q_t);
 void isrWatchdog();
 
 
