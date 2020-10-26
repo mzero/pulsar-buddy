@@ -48,8 +48,6 @@ namespace {
   ClockMode   clockMode = modeFirsttime;
   ClockState  clockState = clockPaused;
 
-  Offsets notRunningCounts = { 0, 0, 0, 0 };
-
   void setState(ClockState cs) {
     if (clockState == cs)
       return;
@@ -62,14 +60,10 @@ namespace {
     if (wasRunning == setRunning)
       return;
 
-    PauseQuantum pq;
-
     if (setRunning) {
       forceTriggersOff(false);
-      writeCounts(notRunningCounts);
     }
     else {
-      readCounts(notRunningCounts);
       forceTriggersOff(true);
     }
   }
@@ -101,13 +95,8 @@ namespace {
     Offsets counts;
     setOffsets(activeTiming, position, counts);
 
-    if (runningState(clockState)) {
-      PauseQuantum pq;
-      writeCounts(counts);
-    }
-    else {
-      notRunningCounts = counts;
-    }
+    PauseQuantum pq;
+    writeCounts(counts);
   }
 
 
@@ -176,7 +165,7 @@ namespace {
       if (capturesPerBeat != perBeat) {
         capturesPerBeat = perBeat;
         captureClkQ = perBeat ? Q_PER_B / perBeat : 0;
-        captureClkQWait = max(2 * Q_PER_B, captureClkQ * 2);  // TODO: 3? 2.5?
+        captureClkQWait = max(Q_PER_B / 4, captureClkQ * 2);
         captureBufferSpan = captureBufferBeats * perBeat;
         captureNext = 0;
         captureSum = 0;
@@ -226,6 +215,11 @@ void isrWatchdog() {
       // pause, as an external clock hasn't been heard in too long
       setState(clockPaused);
       resetWatchdog(4 * Q_PER_B);
+
+      // When the next external clock eventually shows up, it corresponds to
+      // one clock after the last position - so set that position pending.
+      nextPosition = currentPosition + captureClkQ;
+      pendingNextPosition = true;
   }
 }
 
