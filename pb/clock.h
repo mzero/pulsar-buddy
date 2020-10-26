@@ -41,8 +41,7 @@ struct ClockStatus {
 public:
   static ClockStatus current();
 
-  inline bool running() const
-    { return state == clockFreeRunning || clockSyncRunning; }
+  inline bool running() const { return runningState(state); }
 
   bpm_t       bpm;
   ClockState  state;

@@ -78,20 +78,21 @@ void loop() {
 
   updateMidi();
 
-  if (measureEvent) {
-    measureEvent = false;
-    if (pendingState()) {
-      setTiming(userState());
-      commitState();
-      active = true;
-    }
-  } else {
-    auto status = ClockStatus::current();
-    if (status.running() && userState().userBpm != status.bpm) {
-      userState().userBpm = status.bpm;
-      active = true;
-    }
-    persistState();
+  auto status = ClockStatus::current();
+  bool running = status.running();
+  if (running && userState().userBpm != status.bpm) {
+    userState().userBpm = status.bpm;
+    active = true;
+  }
+  persistState();
+
+  bool checkPending = measureEvent || !running;
+  measureEvent = false;
+
+  if (checkPending && pendingState()) {
+    setTiming(userState());
+    commitState();
+    active = true;
   }
 
   switch (critical.update()) {

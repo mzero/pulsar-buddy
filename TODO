@@ -9,24 +9,20 @@ TODO
 	[] send clock messages
 	[] start? stop? spp? continue?
 
+
+[x] when the clock is paused, changes to settings should be immediate
+	- not waiting for measure boundry
+
+
+[] reverse display config option
+
+
 [] Revamp clock and position and perplex
 	[] perplex if off for over a beat?
 		[] reset position after perplex?
 
 	[] tune phase correction - perhaps a bit slower?
 		- shouldn't be faster than the averaging, should it?
-
-	[x] display BPM when following Live starting from non-1/16 boundry
-		- gets very fast and then comes down
-		- but what you hear is right
-
-
-[] when the clock is paused, changes to settings should be immediate
-	- not waiting for measure boundry
-
-
-[] reverse display config option
-
 
 
 [] let M be one of { M, 1/4, 1/8, 1/16, 1/32 }
