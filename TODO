@@ -10,11 +10,13 @@ TODO
 	[] start? stop? spp? continue?
 
 
-[x] when the clock is paused, changes to settings should be immediate
-	- not waiting for measure boundry
+[] handle shortening sequence while running w/o perplexing
+	- has something to do with setting the counts correctly
 
 
-[] reverse display config option
+[] remove extended BPM option
+
+[x] flip display config option
 
 
 [] Revamp clock and position and perplex

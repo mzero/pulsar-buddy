@@ -9,7 +9,8 @@ struct Configuration {
     uint8_t alwaysDim:1;
     uint8_t saverDisable:1;
     uint8_t extendedBpmRange:1;
-    uint8_t :5;
+    uint8_t flipDisplay:1;
+    uint8_t :4;
   } options;
 
   struct {

@@ -6,6 +6,9 @@
 
 #include <Fonts/FreeSerifBold9pt7b.h>
 
+#include "config.h"
+
+
 #define FONT FreeSerifBold9pt7b
 #define DIGIT_WIDTH 9
 #define DIGIT_HEIGHT 12
@@ -16,13 +19,16 @@
 Adafruit_SSD1306 display =
   Adafruit_SSD1306(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire);
 
-// Display is mounted upside down on PCB
+
+// Display is mounted upside down on PCB, so "normal" is rotation 2,
+// and "flipped" is rotation 0.
+
 void setRotationNormal() {
-  display.setRotation(2);
+  display.setRotation(configuration.options.flipDisplay ? 0 : 2);
 }
 
 void setRotationSideways() {
-  display.setRotation(1);
+  display.setRotation(configuration.options.flipDisplay ? 3 : 1);
 }
 
 
