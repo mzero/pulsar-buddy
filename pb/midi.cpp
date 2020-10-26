@@ -24,7 +24,7 @@ namespace {
   Adafruit_USBD_MIDI usb_midi;
 
   void sendMidiClock() {
-    const uint8_t packet[4] = { 5, 0xf8, 0, 0 };
+    const uint8_t packet[4] = { 0x0f, 0xf8, 0, 0 };
     usb_midi.send(packet);
   }
 
