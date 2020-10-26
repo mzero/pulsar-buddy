@@ -9,6 +9,7 @@
 
 
 #define MIDI_STATS
+// #define MIDI_SYNC_DEBUG
 
 namespace {
   volatile uint32_t midiClocksToSend = 0;
@@ -87,24 +88,34 @@ namespace {
 
   void midiPosition(q_t position) {
     setPosition(position);
+#ifdef MIDI_SYNC_DEBUG
     Serial.printf("setting MIDI position to %d = ", position / Q_PER_MIDI_BEAT);
     dumpQ(position);
     Serial.println();
+#endif
   }
 
   void midiStop() {
     stopClock();
     // TODO: move position up to next MIDI beat. (?)
+#ifdef MIDI_SYNC_DEBUG
     Serial.println("midiStop");
     dumpClock();
+#endif
   }
 
   void midiContinue() {
+#ifdef MIDI_SYNC_DEBUG
     Serial.println("midiContinue");
-    clearClockHistory();
+    // clearClockHistory();
+#endif
     runClock();
  }
 
+inline void midiStart() {
+  midiPosition(0);
+  midiContinue();
+}
 
 
   void checkIncomingMidi() {
@@ -136,7 +147,7 @@ namespace {
           // Single-byte messages, including real-time
           switch (packet[1]) {
             case 0xf8:  midiClock();      break;
-            case 0xfa:  midiPosition(0);  // fall through
+            case 0xfa:  midiStart();      break;
             case 0xfb:  midiContinue();   break;
             case 0xfc:  midiStop();       break;
             default: ;
