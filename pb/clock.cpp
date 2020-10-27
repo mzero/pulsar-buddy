@@ -226,25 +226,39 @@ void isrWatchdog() {
 void isrClockCapture(q_t sequenceSample) {
   processPending();
 
-  if (captureSequencePeriod != activeTiming.sequence) {
-    captureSequencePeriod = activeTiming.sequence;
-    captureLastSampleValid = false;
-      // can't rely on last sanple if period changd
-    if (currentPosition >= captureSequencePeriod) {
-      currentPosition = currentPosition % captureSequencePeriod;
+  // how far did the sequence advance between ext. clocks
+  q_t qdiff = captureClkQ;
+  if (captureLastSampleValid)
+    qdiff = (sequenceSample + captureSequencePeriod - captureLastSample)
+      % captureSequencePeriod;
+
+  {
+    bool forcePosition = false;
+
+   if (runningState(clockState))
+    currentPosition = (currentPosition + captureClkQ) % captureSequencePeriod;
+
+   if (captureSequencePeriod != activeTiming.sequence) {
+      // switch to new sequence length as requested
+      captureSequencePeriod = activeTiming.sequence;
+
+      // if current position is "too far".. will need to correct it
+      if (currentPosition >= captureSequencePeriod) {
+        currentPosition = currentPosition % captureSequencePeriod;
+        forcePosition = true;
+      }
+    }
+
+    if (pendingNextPosition) {
+      pendingNextPosition = false;
+      currentPosition = nextPosition % captureSequencePeriod;
+      forcePosition = true;
+    }
+
+    if (forcePosition) {
       setCountsToPosition(currentPosition);
       sequenceSample = currentPosition;
     }
-  }
-
-  if (pendingNextPosition) {
-    currentPosition = nextPosition % captureSequencePeriod;
-    pendingNextPosition = false;
-    setCountsToPosition(currentPosition);
-    sequenceSample = currentPosition;
-  } else {
-    if (runningState(clockState))
-      currentPosition = (currentPosition + captureClkQ) % captureSequencePeriod;
   }
 
   if (clockMode == modeInternal)
@@ -257,11 +271,6 @@ void isrClockCapture(q_t sequenceSample) {
   if (captureLastSampleValid) {
 
     // compute new divisor based on measurement of last ext. clock interval
-
-    q_t qdiff =
-      (sequenceSample + captureSequencePeriod - captureLastSample)
-      % captureSequencePeriod;
-
     uint32_t dNext =
       roundingDivide((uint32_t)activeDivisor * qdiff, captureClkQ);
     debug.noteDNext(dNext);
@@ -303,6 +312,7 @@ void isrClockCapture(q_t sequenceSample) {
       else if (min(ahead, behind) > 2 * Q_PER_B) {  // FIXME: 4? 2? 1?
         // too far, just jump
         setCountsToPosition(currentPosition);
+        sequenceSample = currentPosition;
       }
       else if (behind < ahead) {
         // timers are behind... hurry up
@@ -420,13 +430,13 @@ void setTiming(const State& state) {
   {
     PauseQuantum pq;
 
-    Offsets counts;
-    readCounts(counts);
-    adjustOffsets(activeTiming, counts);
+    if (clockMode == modeInternal) {
+      Offsets counts;
+      readCounts(counts);
+      adjustOffsets(activeTiming, counts);
+      writeCounts(counts);
+    }
     writePeriods(activeTiming, targetDivisor);
-    writeCounts(counts);
-
-    // FIXME: Needs to update position here
   }
 }
 
