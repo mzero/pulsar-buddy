@@ -39,13 +39,8 @@ namespace {
 
   /** CLOCK STATE **/
 
-   enum ClockMode {
-    modeFirsttime,
-    modeInternal,
-    modeExternal
-  };
 
-  ClockMode   clockMode = modeFirsttime;
+  bool        clockInternal = false;
   ClockState  clockState = clockPaused;
 
   void setState(ClockState cs) {
@@ -65,25 +60,6 @@ namespace {
     }
     else {
       forceTriggersOff(true);
-    }
-  }
-
-  void setMode(ClockMode cm) {
-    if (clockMode == cm)
-      return;
-    clockMode = cm;
-
-    switch (cm) {
-      case modeInternal:
-        setState(clockFreeRunning);
-        break;
-
-      case modeExternal:
-        setState(clockPaused);
-        break;
-
-      default:
-        break;
     }
   }
 
@@ -194,7 +170,7 @@ namespace {
 
 
 void isrWatchdog() {
-  if (clockMode == modeInternal)
+  if (clockInternal)
     return;
 
   DebugWatchdogIsr debug;
@@ -261,7 +237,7 @@ void isrClockCapture(q_t sequenceSample) {
     }
   }
 
-  if (clockMode == modeInternal)
+  if (clockInternal)
     return;
 
   DebugClockIsr debug;
@@ -421,8 +397,14 @@ void setBpm(bpm_t bpm) {
 
 void setSync(SyncMode sync) {
   setClockRate(syncPpqn(sync));
-  setMode(sync == syncInternal ? modeInternal : modeExternal);
+  clockInternal = sync == syncInternal;
   useExtClockSource(sync == syncMidiUSB ? extClockSoftware : extClockHardware);
+
+  switch (sync) {
+    case syncInternal:  setState(clockFreeRunning); break;
+    case syncMidiUSB:   setState(clockStopped);     break;
+    default:            setState(clockPaused);      break;
+  }
 }
 
 void setTiming(const State& state) {
@@ -430,7 +412,7 @@ void setTiming(const State& state) {
   {
     PauseQuantum pq;
 
-    if (clockMode == modeInternal) {
+    if (clockInternal) {
       Offsets counts;
       readCounts(counts);
       adjustOffsets(activeTiming, counts);
@@ -441,18 +423,16 @@ void setTiming(const State& state) {
 }
 
 void setPosition(q_t position) {
-  switch (clockMode) {
-    case modeExternal:
-      nextPosition = position;
-      pendingNextPosition = true;
-      break;
-    default:
-      setCountsToPosition(position);
+  if (clockInternal) {
+    setCountsToPosition(position);
+  } else {
+    nextPosition = position;
+    pendingNextPosition = true;
   }
 }
 
 void runClock() {
-  setState(clockMode == modeInternal ? clockFreeRunning : clockPaused);
+  setState(clockInternal ? clockFreeRunning : clockPaused);
 }
 
 void stopClock() {
@@ -497,13 +477,7 @@ void dumpClock() {
     activeBpm100 / 100, activeBpm100 % 100, activeDivisor,
     targetBpm100 / 100, targetBpm100 % 100, targetDivisor);
 
-  Serial.print("mode: ");
-  switch (clockMode) {
-    case modeFirsttime: Serial.print("first time"); break;
-    case modeInternal:  Serial.print("internal");   break;
-    case modeExternal:  Serial.print("external");   break;
-    default:            Serial.print("???");
-  }
+  Serial.printf("source: %s", clockInternal ? "internal" : "external");
   Serial.print(", state: ");
   switch (clockState) {
     case clockPaused:       Serial.println("paused");         break;
