@@ -324,8 +324,6 @@ void isrClockCapture(q_t sequenceSample) {
     setDivisors((divisor_t)dFilt, (divisor_t)dNext);
   }
 
-  captureLastSample = sequenceSample;
-  captureLastSampleValid = true;
 
   bool slowWatchDog = true;
 
@@ -338,7 +336,7 @@ void isrClockCapture(q_t sequenceSample) {
         setState(clockSyncRunning);
       break;
     case clockSyncRunning:
-      if (dNextInRange)
+      if (!captureLastSampleValid || dNextInRange)
         slowWatchDog = false;
       else
         setState(clockPerplexed);
@@ -347,6 +345,10 @@ void isrClockCapture(q_t sequenceSample) {
   }
 
   resetWatchdog(slowWatchDog ? 4 * Q_PER_B : captureClkQWait);
+
+
+  captureLastSample = sequenceSample;
+  captureLastSampleValid = true;
 }
 
 
