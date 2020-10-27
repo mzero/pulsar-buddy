@@ -245,6 +245,7 @@ void isrClockCapture(q_t sequenceSample) {
   bool dNextInRange = false;
 
   if (captureLastSampleValid) {
+    debug.noteQDiff(qdiff);
 
     // compute new divisor based on measurement of last ext. clock interval
     uint32_t dNext =

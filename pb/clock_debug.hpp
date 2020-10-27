@@ -17,6 +17,7 @@ namespace {
           history[historyNext++] = entry;
       }
 
+      inline void noteQDiff(uint32_t qDiff) { entry.qDiff = qDiff; }
       inline void noteDNext(uint32_t dNext) { entry.dNext = dNext; }
       inline void noteDFilt(uint32_t dFilt) { entry.dFilt = dFilt; }
       inline void noteDAdj (uint32_t dAdj ) { entry.dAdj  = dAdj;  }
@@ -30,6 +31,7 @@ namespace {
       inline DebugIsr(Type t) {
         entry.type = t;
         entry.entryState = clockState;
+        entry.qDiff = 0;
         entry.dNext = 0;
         entry.dFilt = 0;
         entry.dAdj = 0;
@@ -41,6 +43,7 @@ namespace {
         Type        type;
         ClockState  entryState;
         ClockState  exitState;
+        uint32_t    qDiff;
         uint32_t    dNext;
         uint32_t    dFilt;
         uint32_t    dAdj;
@@ -110,6 +113,8 @@ namespace {
       else
         Serial.printf("-> %-5s", clockStateName(ie.exitState));
 
+      if (ie.qDiff) Serial.printf("%8dqΔ", ie.qDiff );
+      else          Serial.print("      --  ");
       if (ie.dNext) Serial.printf("%8d", ie.dNext );
       else          Serial.print("      --");
       if (ie.dFilt) Serial.printf("%8d", ie.dFilt );
@@ -132,6 +137,7 @@ namespace {
 
   class DebugIsr {
   public:
+      inline static void noteQDiff(uint32_t) { }
       inline static void noteDNext(uint32_t) { }
       inline static void noteDFilt(uint32_t) { }
       inline static void noteDAdj(uint32_t)  { }
