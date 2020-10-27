@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #include "clock.h"
+#include "state.h"
 #include "timer_hw.h"
 
 
@@ -120,11 +121,11 @@ inline void midiStart() {
 
   void checkIncomingMidi() {
     static uint32_t yieldAfter = millis() + 1;
+    bool flushAll = userState().syncMode != syncMidiUSB;
 
     uint8_t packet[4];
     while (usb_midi.receive(packet)) {
-      // Serial.printf("usb packet: %02x %02x %02x %02x\n",
-      //   packet[0], packet[1], packet[2], packet[3]);
+      if (flushAll) goto checkTime;
 
       switch (packet[0] & 0x0f) {  /* the CIN value */
 
@@ -154,9 +155,9 @@ inline void midiStart() {
           }
           break;
         }
-
       }
 
+    checkTime:
       if (millis() >= yieldAfter)
         break;
     }
