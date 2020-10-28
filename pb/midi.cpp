@@ -14,6 +14,7 @@
 
 namespace {
   volatile uint32_t midiClocksToSend = 0;
+  uint32_t          midiClocksSent = 0;
 }
 
 void isrMidiClock() {
@@ -68,7 +69,6 @@ namespace {
 #endif
 
   void checkMidiClock() {
-    static uint32_t midiClocksSent = 0;
     uint32_t sendThisTime = midiClocksToSend - midiClocksSent;
 
     for (auto i = sendThisTime; i > 0; --i)
@@ -114,6 +114,9 @@ namespace {
  }
 
 inline void midiStart() {
+#ifdef MIDI_SYNC_DEBUG
+    Serial.println("midiStart");
+#endif
   midiPosition(0);
   midiContinue();
 }
@@ -163,6 +166,23 @@ inline void midiStart() {
     }
   }
 
+
+  void checkDeviceStatus() {
+    static bool midiReady = false;
+
+    bool nowReady = USBDevice.ready();
+    if (midiReady == nowReady) return;    // no change
+
+    midiReady = nowReady;
+    if (nowReady) {
+      midiClocksSent = midiClocksToSend;
+      if (userState().syncMode == syncMidiUSB) {
+        runClock();
+      }
+    }
+  }
+
+
 }
 
 
@@ -177,6 +197,7 @@ void initializeMidi() {
 }
 
 void updateMidi() {
+  checkDeviceStatus();
   checkMidiClock();
   checkIncomingMidi();
 }

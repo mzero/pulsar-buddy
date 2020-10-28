@@ -5,18 +5,7 @@ TODO
 
 == 107 ==
 
-[x] handle shortening sequence while running w/o perplexing
-	- has something to do with setting the counts correctly
-
-[x] Ignore MIDI in if not sync MIDI
-[x] After MIDI stop continue if changing sync to non-MIDI
-
-[x] BPM display when stop / pause
-
-[x] is default for MIDI stopped or paused?
-	- paused!
-
-[] replugging USB should reset MIDI
+[x] replugging USB should reset MIDI
 	- in particular revert to paused, not stopped
 
 [] UI for start / continue / stop ?
