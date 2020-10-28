@@ -5,11 +5,14 @@
 #include <Wire.h>
 
 #include <Fonts/FreeSerifBold9pt7b.h>
+#include <Fonts/Picopixel.h>
 
 #include "config.h"
 
 
 #define FONT FreeSerifBold9pt7b
+#define FONT_TINY Picopixel
+
 #define DIGIT_WIDTH 9
 #define DIGIT_HEIGHT 12
 
@@ -48,6 +51,13 @@ void resetText() {
 
 void smallText() {
   display.setFont();
+}
+
+void tinyText() {
+  display.setTextSize(1);
+  display.setFont(&FONT_TINY);
+  display.setTextColor(WHITE);
+  display.setTextWrap(false);
 }
 
 void centerText(const char* s, int16_t x, int16_t y, uint16_t w, uint16_t h) {
