@@ -7,51 +7,44 @@
 
 
 enum ClockState : uint16_t {
-  clockStopped      = 0,
-    // outputs are off;
-    // external clocks may happen, but don't advance position
-    // clock estimation may happen if external clocks do
-
-  clockPaused       = 1,
+  clockPaused       = 0,
     // outputs are off;
     // ext. clocks have stopped long enough to consider this a pause
     // Note: likely to have stopped a beat ahead of the source, when it
     // restarts, there will be a period of re-syncing the alignment.
 
-  clockPerplexed    = 2,
+  clockPerplexed    = 1,
     // Just like sync, but the clock rate doesn't make sense and so position
     // cannot be assured
 
-  clockSyncRunning  = 3,
+  clockSyncRunning  = 2,
     // Normal running mode, estimating tempo from external clocks
     // position is tracked, and phase locking implemented
 
-  clockFreeRunning  = 4,
+  clockFreeRunning  = 3,
     // Running with a fixed tempo, extneral clocks are ignored.
 };
-
-
-inline bool runningState(ClockState cs) {
-  return cs >= clockPerplexed;
-}
-
 
 
 struct ClockStatus {
 public:
   static ClockStatus current();
 
-  inline bool running() const { return runningState(state); }
-
   bpm_t       bpm;
   ClockState  state;
+  bool        stopped;
 
-  inline ClockStatus(bpm_t b, ClockState s) : bpm(b), state(s) { }
-  inline ClockStatus() : bpm(0), state(clockPaused) { }
+  inline bool advancing() const
+    { return !stopped && state != clockPaused; }
+
+  inline ClockStatus(bpm_t b, ClockState s, bool t) : bpm(b), state(s), stopped(t) { }
+  inline ClockStatus() : bpm(0), state(clockPaused), stopped(false) { }
  };
 
 inline bool operator==(const ClockStatus& rhs, const ClockStatus& lhs) {
-  return rhs.bpm == lhs.bpm && rhs.state == lhs.state;
+  return rhs.bpm == lhs.bpm
+    && rhs.state == lhs.state
+    && rhs.stopped == lhs.stopped;
 }
 inline bool operator!=(const ClockStatus& rhs, const ClockStatus& lhs) {
   return !(rhs == lhs);

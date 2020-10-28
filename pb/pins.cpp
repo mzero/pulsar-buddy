@@ -47,7 +47,7 @@ void TriggerOutput::initialize() {
   pinPeripheral(pin, pin == PIN_SPI_MOSI ? PIO_TIMER_ALT : PIO_TIMER);
 }
 
-void TriggerOutput::forceOff(bool off) {
+void TriggerOutput::disable(bool off) {
   PORT->Group[g_APinDescription[pin].ulPort]
     .PINCFG[g_APinDescription[pin].ulPin]
       .bit.PMUXEN = off ? 0 : 1;

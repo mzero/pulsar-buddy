@@ -5,19 +5,31 @@ TODO
 
 == 107 ==
 
+[x] handle shortening sequence while running w/o perplexing
+	- has something to do with setting the counts correctly
+
+[x] Ignore MIDI in if not sync MIDI
+[x] After MIDI stop continue if changing sync to non-MIDI
+
+[x] BPM display when stop / pause
+
+[x] is default for MIDI stopped or paused?
+	- paused!
+
+[] replugging USB should reset MIDI
+	- in particular revert to paused, not stopped
+
+[] UI for start / continue / stop ?
+
+[] bug with saving state to flash when user changes just sync mode
+
 [] MIDI clock out
 	[] send clock messages
 	[] start? stop? spp? continue?
 
-
-[] handle shortening sequence while running w/o perplexing
-	- has something to do with setting the counts correctly
-
-
 [] remove extended BPM option
 
-[x] flip display config option
-
+----
 
 [] Revamp clock and position and perplex
 	[] perplex if off for over a beat?
@@ -39,6 +51,9 @@ TODO
 
 --------------
 
+[] support MIDI sync w/o transport
+	- essentially means ignore transport
+	- and setSync needs to setState(clockPaused) not clockStopped
 
 [] support DIN24 and DIN48 sync outputs
 	[] force 50% duty cycle

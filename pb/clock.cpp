@@ -42,25 +42,19 @@ namespace {
 
   bool        clockInternal = false;
   ClockState  clockState = clockPaused;
+  bool        clockStopped = false;
+
+
+  inline bool advancing() { return !clockStopped && clockState > clockPaused; }
 
   void setState(ClockState cs) {
-    if (clockState == cs)
-      return;
-
-    bool wasRunning = runningState(clockState);
-    bool setRunning = runningState(cs);
-
     clockState = cs;
+    disableTriggers(!advancing());
+  }
 
-    if (wasRunning == setRunning)
-      return;
-
-    if (setRunning) {
-      forceTriggersOff(false);
-    }
-    else {
-      forceTriggersOff(true);
-    }
+  void setStopped(bool s) {
+    clockStopped = s;
+    disableTriggers(!advancing());
   }
 
   void setCountsToPosition(q_t position) {
@@ -178,10 +172,6 @@ void isrWatchdog() {
   captureLastSampleValid = false;
 
   switch (clockState) {
-    case clockStopped:
-      // ignore - no external clock while explicitly stopped is okay
-      break;
-
     case clockPaused:
       // already paused.... and 2nd watchdog!
       zeroCapture();
@@ -211,10 +201,10 @@ void isrClockCapture(q_t sequenceSample) {
   {
     bool forcePosition = false;
 
-   if (runningState(clockState))
-    currentPosition = (currentPosition + captureClkQ) % captureSequencePeriod;
+    if (!clockStopped)
+      currentPosition = (currentPosition + captureClkQ) % captureSequencePeriod;
 
-   if (captureSequencePeriod != activeTiming.sequence) {
+    if (captureSequencePeriod != activeTiming.sequence) {
       // switch to new sequence length as requested
       captureSequencePeriod = activeTiming.sequence;
 
@@ -277,7 +267,7 @@ void isrClockCapture(q_t sequenceSample) {
     uint32_t dAdj = dFilt;
 
     // find phase difference if we can
-    if (clockState != clockStopped  &&  dFilt) {
+    if (!clockStopped  &&  dFilt) {
       q_t ahead =
         (sequenceSample + captureSequencePeriod - currentPosition)
           % captureSequencePeriod;
@@ -377,7 +367,7 @@ ClockStatus ClockStatus::current() {
     }
   }
 
-  return ClockStatus(reportedBpm, clockState);
+  return ClockStatus(reportedBpm, clockState, clockStopped);
 }
 
 
@@ -403,9 +393,10 @@ void setSync(SyncMode sync) {
 
   switch (sync) {
     case syncInternal:  setState(clockFreeRunning); break;
-    case syncMidiUSB:   setState(clockStopped);     break;
     default:            setState(clockPaused);      break;
   }
+
+  setStopped(false);  // reset stopped state when changing sync
 }
 
 void setTiming(const State& state) {
@@ -433,11 +424,11 @@ void setPosition(q_t position) {
 }
 
 void runClock() {
-  setState(clockInternal ? clockFreeRunning : clockPaused);
+  setStopped(false);
 }
 
 void stopClock() {
-  setState(clockStopped);
+  setStopped(true);
 }
 
 
@@ -481,12 +472,13 @@ void dumpClock() {
   Serial.printf("source: %s", clockInternal ? "internal" : "external");
   Serial.print(", state: ");
   switch (clockState) {
-    case clockPaused:       Serial.println("paused");         break;
-    case clockPerplexed:    Serial.println("perplexed");      break;
-    case clockSyncRunning:  Serial.println("sync running");   break;
-    case clockFreeRunning:  Serial.println("free running");   break;
-    default:                Serial.println("???");
+    case clockPaused:       Serial.print("paused");         break;
+    case clockPerplexed:    Serial.print("perplexed");      break;
+    case clockSyncRunning:  Serial.print("sync running");   break;
+    case clockFreeRunning:  Serial.print("free running");   break;
+    default:                Serial.print("???");
   }
+  Serial.println(clockStopped ? ", stopped" : "");
 
   Offsets counts;
   readCounts(counts);

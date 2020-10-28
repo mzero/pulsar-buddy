@@ -393,18 +393,23 @@ namespace {
     TriggerOutput::B.initialize();
     TriggerOutput::T.initialize();
 
-    forceTriggersOff(true);
+    disableTriggers(true, true);
 
     TriggerInput::C.initialize();
     TriggerInput::O.initialize();   // though otherwise unused
   }
 }
 
-void forceTriggersOff(bool off) {
-  TriggerOutput::S.forceOff(off);
-  TriggerOutput::M.forceOff(off);
-  TriggerOutput::B.forceOff(off);
-  TriggerOutput::T.forceOff(off);
+void disableTriggers(bool off, bool force) {
+  static bool currentlyOff = false;
+
+  if (!force && off == currentlyOff) return;
+  currentlyOff = off;
+
+  TriggerOutput::S.disable(off);
+  TriggerOutput::M.disable(off);
+  TriggerOutput::B.disable(off);
+  TriggerOutput::T.disable(off);
 }
 
 

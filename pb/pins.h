@@ -7,7 +7,7 @@
 class TriggerOutput {
 public:
   void initialize();
-  void forceOff(bool);
+  void disable(bool);
 
   void testInitialize();
   void testWrite(bool);

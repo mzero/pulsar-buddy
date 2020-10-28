@@ -13,6 +13,7 @@ namespace {
     public:
       inline ~DebugIsr() {
         entry.exitState = clockState;
+        entry.exitStopped = clockStopped;
         if (historyNext < historySize)
           history[historyNext++] = entry;
       }
@@ -31,6 +32,7 @@ namespace {
       inline DebugIsr(Type t) {
         entry.type = t;
         entry.entryState = clockState;
+        entry.entryStopped = clockStopped;
         entry.qDiff = 0;
         entry.dNext = 0;
         entry.dFilt = 0;
@@ -42,7 +44,9 @@ namespace {
       struct Entry {
         Type        type;
         ClockState  entryState;
+        bool        entryStopped;
         ClockState  exitState;
+        bool        exitStopped;
         uint32_t    qDiff;
         uint32_t    dNext;
         uint32_t    dFilt;
@@ -62,7 +66,7 @@ namespace {
 
     private:
       static const char* typeName(Type);
-      static const char* clockStateName(ClockState);
+      static const char* clockStateName(ClockState, bool);
   };
 
   class DebugWatchdogIsr : public DebugIsr {
@@ -86,14 +90,13 @@ namespace {
     }
   }
 
-  const char* DebugIsr::clockStateName(ClockState c) {
+  const char* DebugIsr::clockStateName(ClockState c, bool s) {
     switch (c) {
-      case clockStopped:      return "-xx-";
-      case clockPaused:       return "=||=";
-      case clockPerplexed:    return "pplx";
-      case clockSyncRunning:  return "sync";
-      case clockFreeRunning:  return "free";
-      default:                return "???";
+      case clockPaused:       return s ? "[||]" : "-||-";
+      case clockPerplexed:    return s ? "[pp]" : "pplx";
+      case clockSyncRunning:  return s ? "[sy]" : "sync";
+      case clockFreeRunning:  return s ? "[fr]" : "free";
+      default:                return s ? "[??]" : "????";
     }
   }
   void DebugIsr::clearHistory() { historyNext = 0; }
@@ -107,11 +110,11 @@ namespace {
       const Entry& ie = history[i];
 
       Serial.printf("  [%3d] %-5s:   %-4s ",
-        i, typeName(ie.type), clockStateName(ie.entryState));
+        i, typeName(ie.type), clockStateName(ie.entryState, ie.entryStopped));
       if (ie.exitState == ie.entryState)
         Serial.print("        ");
       else
-        Serial.printf("-> %-5s", clockStateName(ie.exitState));
+        Serial.printf("-> %-5s", clockStateName(ie.exitState, ie.exitStopped));
 
       if (ie.qDiff) Serial.printf("%8dqΔ", ie.qDiff );
       else          Serial.print("      --  ");

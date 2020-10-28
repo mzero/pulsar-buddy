@@ -79,14 +79,14 @@ void loop() {
   updateMidi();
 
   auto status = ClockStatus::current();
-  bool running = status.running();
-  if (running && userState().userBpm != status.bpm) {
+  bool advancing = status.advancing();
+  if (advancing && userState().userBpm != status.bpm) {
     userState().userBpm = status.bpm;
     active = true;
   }
   persistState();
 
-  bool checkPending = measureEvent || !running;
+  bool checkPending = measureEvent || !advancing;
   measureEvent = false;
 
   if (checkPending && pendingState()) {

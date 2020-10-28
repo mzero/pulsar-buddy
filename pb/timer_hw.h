@@ -33,7 +33,7 @@ void writeCounts(const Offsets&);
 void writePeriods(const Timing&, divisor_t);
 void updateWidths(divisor_t, const Timing&);
 
-void forceTriggersOff(bool);
+void disableTriggers(bool off, bool force = false);
 
 q_t resetWatchdog(q_t);
 

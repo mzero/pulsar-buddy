@@ -2,7 +2,6 @@
 
 #include "display.h"
 #include "layout.h"
-#include "timer_hw.h"
 
 
 namespace SyncImages {
@@ -114,38 +113,62 @@ void BpmField::redraw() {
 
   auto status = ClockStatus::current();
 
-  switch (status.state) {
-    case clockFreeRunning:
-    case clockSyncRunning: {
-      // rotated coordinates of the field
-      const int16_t xr = display.height() - (y + h);
-      const int16_t yr = x;
-      const int16_t wr = h;
-      const int16_t hr = w;
+  if (status.advancing()) {
+    switch (status.state) {
+      case clockFreeRunning:
+      case clockSyncRunning: {
+        // rotated coordinates of the field
+        const int16_t xr = display.height() - (y + h);
+        const int16_t yr = x;
+        const int16_t wr = h;
+        const int16_t hr = w;
 
-      setRotationSideways();
-      centerNumber(status.bpm, xr, yr, wr, hr);
-      setRotationNormal();
-      break;
-    }
+        setRotationSideways();
+        centerNumber(status.bpm, xr, yr, wr, hr);
+        setRotationNormal();
 
-    case clockPaused: {
-      display.drawBitmap(x, y, SyncImages::paused, 15, 32, foreColor());
-      break;
-    }
-
-    case clockPerplexed: {
-      auto image = SyncImages::clkbad;
-      switch (state.syncMode) {
-        case syncExternal24ppqn:
-        case syncExternal48ppqn:
-          image = SyncImages::dinbad;
-          break;
-        default:
-          break;
+        break;
       }
-      display.drawBitmap(x, y, image, 15, 32, foreColor());
-      break;
+
+      case clockPerplexed: {
+        auto image = SyncImages::clkbad;
+        switch (state.syncMode) {
+          case syncExternal24ppqn:
+          case syncExternal48ppqn:
+            image = SyncImages::dinbad;
+            break;
+          default:
+            break;
+        }
+        display.drawBitmap(x, y, image, 15, 32, foreColor());
+        break;
+      }
+
+      case clockPaused:
+        // can't happen if advancing()!
+        break;
+    }
+  } else {
+    // user sees the paused symbol if the clock isn't advancing
+    display.drawBitmap(x, y, SyncImages::paused, 15, 32, foreColor());
+
+    // if we still have sync of some sort, display it tiny at the bottom
+    switch (status.state) {
+      case clockFreeRunning:
+      case clockSyncRunning:
+        tinyText();
+        centerNumber(status.bpm, x, y + h - 8, w, 8);
+        resetText();
+        break;
+
+      case clockPerplexed:
+        tinyText();
+        centerText("???", x, y + h - 8, w, 8);
+        resetText();
+        break;
+
+      default:
+        break;
     }
   }
 
