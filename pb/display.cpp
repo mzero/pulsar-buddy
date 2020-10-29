@@ -20,7 +20,7 @@
 #define DISPLAY_HEIGHT 32
 
 Adafruit_SSD1306 display =
-  Adafruit_SSD1306(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire);
+  Adafruit_SSD1306(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire, -1, 1000000UL);
 
 
 // Display is mounted upside down on PCB, so "normal" is rotation 2,
