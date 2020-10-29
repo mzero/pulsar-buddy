@@ -1,24 +1,21 @@
 TODO
 
 
-
-
 == 107 ==
 
-[x] replugging USB should reset MIDI
-	- in particular revert to paused, not stopped
-
-[] UI for start / continue / stop ?
-
 [] bug with saving state to flash when user changes just sync mode
+
+[x] disable extended BPM option (force it on all the time)
+[x] speed up display
+[x] disable MIDI sync out for now
+
+== 108 ==
 
 [] MIDI clock out
 	[] send clock messages
 	[] start? stop? spp? continue?
-
-[] remove extended BPM option
-
-----
+	[] don't generate clock when USB is disconnected
+		- esp. don't send them all when reconnected later!
 
 [] Revamp clock and position and perplex
 	[] perplex if off for over a beat?
@@ -35,10 +32,14 @@ TODO
 
 [] let B be one of { B, 1/4, 1/8, 1/16, 1/32 }
 
+[ ] remove extended BPM option
 
 
 
 --------------
+
+[] UI for start / continue / stop ?
+	- perhaps just start if stopped?
 
 [] support MIDI sync w/o transport
 	- essentially means ignore transport
@@ -106,7 +107,9 @@ NOTES
 	- uf2conf.py script comes from:
 		https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py
 
-
+- sending the bitmap to the display takes 14.1ms
+	- setting I2C to 1MHz brings it down to 7ms, but isn't clear that it is
+	  within spec of the controller chip
 SYNC
 ----
 
