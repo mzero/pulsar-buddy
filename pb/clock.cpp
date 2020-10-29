@@ -372,7 +372,9 @@ ClockStatus ClockStatus::current() {
 
 
 void initializeClock() {
-  if (configuration.options.extendedBpmRange)
+  // TODO: Once extendedBpmRange config is deprecated, simplify this code.
+  // For now, just force it extended.
+  if (true || configuration.options.extendedBpmRange)
     setBpmRange(10, 900);
   else
     setBpmRange(30, 300);
