@@ -588,6 +588,7 @@ void TCC0_Handler() {
 
       isrMeasure();
     }
+    if (false)  // TODO: enable this code
     if (intflag & (TCC_INTFLAG_OVF | TCC_INTFLAG_MC3)) {
       auto c = nextMidiClock(s);
       sync(sequenceTcc, TCC_SYNCBUSY_CC3);
