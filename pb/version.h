@@ -2,9 +2,26 @@
 #define _INCLUDE_VERSION_H_
 
 //#define PB_DEVELOPMENT
+#define PB_BETA
 
-#define PB_VERSION 106
-/*
+#define PB_VERSION 107
+/* 2020-10-29
+  - user facing:
+    - added option to sync to MIDI (over USB)
+      - handle both "clock while stopped" and "no clock when stopped"
+      - handle song position (SPP)
+      - handle DAW startup sequences from non-sixteenth note positions
+    - disabled extended bpm option, it's always extended now
+    - improved display when paused or stopped
+    - flip display option
+  - internal:
+    - complete rework of the clock - much cleaner now
+    - introduction of concept of position, and stopped for clock
+*/
+
+
+// PB_VERSION 106
+/* 2020-07-13
   - user facing:
     - settings page UI
     - pulse width control

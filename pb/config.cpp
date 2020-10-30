@@ -7,6 +7,14 @@
 #include "test.h"
 #include "version.h"
 
+#ifdef PB_DEVELOPMENT
+#define PB_VERSION_TAG "d"
+#endif
+#ifdef PB_BETA
+#define PB_VERSION_TAG "b"
+#endif
+
+
 Configuration configuration;
 
 namespace {
@@ -88,12 +96,11 @@ namespace {
     // top line
     display.setCursor(0, 0);
     drawButton("\x1b", fidSaveAndExit);
-#ifndef PB_DEVELOPMENT
-    display.print(" Pulsar Buddy v. ");
-#else
-    display.print(" Pulsar Buddy dev");
-#endif
+    display.print(" Pulsar Buddy v");
     display.print(PB_VERSION);
+#ifdef PB_VERSION_TAG
+    display.print(PB_VERSION_TAG);
+#endif
 
     // options line
     display.setCursor(0, 8);
