@@ -52,6 +52,8 @@ namespace {
         uint32_t    dFilt;
         uint32_t    dAdj;
         q_t         position;
+
+        void dump(int index) const;
       };
 
       Entry entry;
@@ -99,6 +101,33 @@ namespace {
       default:                return s ? "[??]" : "????";
     }
   }
+
+  void DebugIsr::Entry::dump(int i) const {
+    Serial.printf("  [%3d] %-5s:   %-4s ",
+      i, typeName(type), clockStateName(entryState, entryStopped));
+    if (exitState == entryState)
+      Serial.print("        ");
+    else
+      Serial.printf("-> %-5s", clockStateName(exitState, exitStopped));
+
+    if (qDiff) Serial.printf("%8dqΔ", qDiff );
+    else       Serial.print("      --  ");
+    if (dNext) Serial.printf("%8d", dNext );
+    else       Serial.print("      --");
+    if (dFilt) Serial.printf("%8d", dFilt );
+    else       Serial.print("      --");
+    if (dAdj) {
+      if      (dAdj > dFilt) Serial.printf("%8d+", dAdj-dFilt);
+      else if (dAdj < dFilt) Serial.printf("%8d-", dFilt-dAdj);
+      else                   Serial.printf("%8d=", 0);
+    }
+    else          Serial.print("      -- ");
+
+    Serial.print("    ");
+    dumpQ(position);
+    Serial.println();
+  }
+
   void DebugIsr::clearHistory() { historyNext = 0; }
   void DebugIsr::dumpHistory() {
     if (historyNext < 1) {
@@ -106,33 +135,8 @@ namespace {
       return;
     }
     Serial.println("ISR history:");
-    for (int i = 0; i < historyNext; ++i) {
-      const Entry& ie = history[i];
-
-      Serial.printf("  [%3d] %-5s:   %-4s ",
-        i, typeName(ie.type), clockStateName(ie.entryState, ie.entryStopped));
-      if (ie.exitState == ie.entryState)
-        Serial.print("        ");
-      else
-        Serial.printf("-> %-5s", clockStateName(ie.exitState, ie.exitStopped));
-
-      if (ie.qDiff) Serial.printf("%8dqΔ", ie.qDiff );
-      else          Serial.print("      --  ");
-      if (ie.dNext) Serial.printf("%8d", ie.dNext );
-      else          Serial.print("      --");
-      if (ie.dFilt) Serial.printf("%8d", ie.dFilt );
-      else          Serial.print("      --");
-      if (ie.dAdj) {
-        if      (ie.dAdj > ie.dFilt) Serial.printf("%8d+", ie.dAdj-ie.dFilt);
-        else if (ie.dAdj < ie.dFilt) Serial.printf("%8d-", ie.dFilt-ie.dAdj);
-        else                         Serial.printf("%8d=", 0);
-      }
-      else          Serial.print("      -- ");
-
-      Serial.print("    ");
-      dumpQ(ie.position);
-      Serial.println();
-    }
+    for (int i = 0; i < historyNext; ++i)
+      history[i].dump(i);
     clearHistory();
   }
 
