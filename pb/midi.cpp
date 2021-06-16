@@ -27,7 +27,7 @@ namespace {
 
   void sendMidiClock() {
     const uint8_t packet[4] = { 0x0f, 0xf8, 0, 0 };
-    usb_midi.send(packet);
+    usb_midi.writePacket(packet);
   }
 
 
@@ -127,7 +127,7 @@ inline void midiStart() {
     bool flushAll = userState().syncMode != syncMidiUSB;
 
     uint8_t packet[4];
-    while (usb_midi.receive(packet)) {
+    while (usb_midi.readPacket(packet)) {
       if (flushAll) goto checkTime;
 
       switch (packet[0] & 0x0f) {  /* the CIN value */
