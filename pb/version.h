@@ -1,10 +1,12 @@
 #ifndef _INCLUDE_VERSION_H_
 #define _INCLUDE_VERSION_H_
 
-//#define PB_DEVELOPMENT
-#define PB_BETA
+#define PB_DEVELOPMENT
+//#define PB_BETA
 
-#define PB_VERSION 107
+#define PB_VERSION 108
+
+// PB_VERSION 107
 /* 2020-10-29
   - user facing:
     - added option to sync to MIDI (over USB)
