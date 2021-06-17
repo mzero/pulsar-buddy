@@ -14,8 +14,10 @@ namespace {
       inline ~DebugIsr() {
         entry.exitState = clockState;
         entry.exitStopped = clockStopped;
-        if (historyNext < historySize)
-          history[historyNext++] = entry;
+        history[historyNext] = entry;
+        historyNext = (historyNext + 1) % historySize;
+        if (historyCount < historySize)   historyCount += 1;
+        else                              historyFirst = historyNext;
       }
 
       inline void noteQDiff(uint32_t qDiff) { entry.qDiff = qDiff; }
@@ -60,7 +62,9 @@ namespace {
 
       static const int historySize = 500;
       static Entry history[historySize];
+      static int historyFirst;
       static int historyNext;
+      static int historyCount;
 
     public:
       static void clearHistory();
@@ -82,7 +86,9 @@ namespace {
   };
 
   DebugIsr::Entry DebugIsr::history[DebugIsr::historySize];
+  int DebugIsr::historyFirst = 0;
   int DebugIsr::historyNext = 0;
+  int DebugIsr::historyCount = 0;
 
   const char* DebugIsr::typeName(Type t) {
     switch (t) {
@@ -128,15 +134,17 @@ namespace {
     Serial.println();
   }
 
-  void DebugIsr::clearHistory() { historyNext = 0; }
+  void DebugIsr::clearHistory() { historyFirst = historyNext = historyCount = 0; }
   void DebugIsr::dumpHistory() {
-    if (historyNext < 1) {
+    if (historyCount < 1) {
       Serial.println("--no ISR history--");
       return;
     }
     Serial.println("ISR history:");
-    for (int i = 0; i < historyNext; ++i)
-      history[i].dump(i);
+    for (int i = 0; i < historyCount; ++i) {
+      int j = (i + historyFirst) % historySize;
+      history[j].dump(i);
+    }
     clearHistory();
   }
 
