@@ -135,7 +135,10 @@ namespace {
       if (capturesPerBeat != perBeat) {
         capturesPerBeat = perBeat;
         captureClkQ = perBeat ? Q_PER_B / perBeat : 0;
-        captureClkQWait = max(Q_PER_B / 4, captureClkQ * 2);
+        //captureClkQWait = max(Q_PER_B / 4, captureClkQ * 2);
+        captureClkQWait = max(Q_PER_B / 4, captureClkQ * 4);
+          // get watchdog out of the way for now
+          // FIXME: figure out what the right multiplier is!
         captureBufferSpan = captureBufferBeats * perBeat;
         captureNext = 0;
         captureSum = 0;
