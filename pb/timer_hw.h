@@ -35,7 +35,8 @@ void updateWidths(divisor_t, const Timing&);
 
 void disableTriggers(bool off, bool force = false);
 
-q_t resetWatchdog(q_t);
+void resetWatchdog(q_t);
+q_t readWatchdog();
 
 enum ExtClockSource {
   extClockHardware,
