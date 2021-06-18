@@ -571,6 +571,10 @@ void dumpTimers() {
 
 void TCC0_Handler() {
   auto intflag = TCC0->INTFLAG.reg;
+  TCC0->INTFLAG.reg = intflag;
+    // Clear just the interrupts that will be handled,
+    // Other interrupts can happen while this is going on!
+
   if (intflag & TCC_INTFLAG_MC1) {
     sync(sequenceTcc, TCC_SYNCBUSY_CC1);
     auto sequenceCapture = sequenceTcc->CC[1].reg;
@@ -599,14 +603,14 @@ void TCC0_Handler() {
       isrMidiClock();
     }
   }
-  TCC0->INTFLAG.reg =
-    TCC_INTFLAG_OVF | TCC_INTFLAG_MC1 | TCC_INTFLAG_MC2 | TCC_INTFLAG_MC3;
 }
 
 void TC3_Handler() {
-  if (TC3->COUNT16.INTFLAG.reg & TC_INTFLAG_OVF) {
+  auto intflag = TC3->COUNT16.INTFLAG.reg;
+  TC3->COUNT16.INTFLAG.reg = intflag;
+
+  if (intflag & TC_INTFLAG_OVF) {
     isrWatchdog();
-    TC3->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;   // writing 1 clears the flag
   }
 }
 
