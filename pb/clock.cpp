@@ -6,7 +6,7 @@
 #include "timer_hw.h"
 
 #define DEBUG_CAPTURE 0
-#define DEBUG_ISR 1
+#define DEBUG_ISR 0
 
 // In this section of code, be very careful about numeric types
 #pragma GCC diagnostic push
