@@ -1,0 +1,5 @@
+{
+    "configuration": "opt=small,usbstack=tinyusb,debug=off",
+    "board": "adafruit:samd:adafruit_feather_m0_express",
+    "sketch": "pb/pb.ino"
+}
