@@ -469,11 +469,19 @@ void initializeTimers() {
 
   EIC->CTRL.reg = EIC_CTRL_SWRST;
   while (EIC->STATUS.bit.SYNCBUSY);
+
+  // the C pin is interrupt 8, but just route it to the event system
   EIC->EVCTRL.reg
     |= EIC_EVCTRL_EXTINTEO8;
   EIC->CONFIG[1].bit.FILTEN0 = 1;
   EIC->CONFIG[1].bit.SENSE0 = EIC_CONFIG_SENSE0_FALL_Val;
     // input buffer circuit inverts the signal
+
+  // the O pin is interrupt 9
+  EIC->CONFIG[1].bit.FILTEN1 = 1;
+  EIC->CONFIG[1].bit.SENSE1 = EIC_CONFIG_SENSE0_BOTH_Val;
+	EIC->INTENSET.reg = EIC_INTENSET_EXTINT9;
+
   EIC->CTRL.reg = EIC_CTRL_ENABLE;
   while (EIC->STATUS.bit.SYNCBUSY);
 
@@ -519,9 +527,6 @@ void initializeTimers() {
 
   enable(watchdogTc);
 
-  NVIC_SetPriority(TC3_IRQn, 0);
-  NVIC_EnableIRQ(TC3_IRQn);
-
   /** BEAT TIMER **/
 
   disableAndReset(beatTc);
@@ -546,14 +551,17 @@ void initializeTimers() {
   enable(beatTc);
 
   initializeTcc(measureTcc);
-
   initializeTcc(sequenceTcc);
-  NVIC_SetPriority(TCC0_IRQn, 0);
-  NVIC_EnableIRQ(TCC0_IRQn);
-
   initializeTcc(tupletTcc);
 
   initializePins();
+
+  for ( IRQn irq : { TCC0_IRQn, TC3_IRQn, EIC_IRQn } ) {
+    NVIC_DisableIRQ(irq);
+    NVIC_ClearPendingIRQ(irq);
+    NVIC_SetPriority(irq, 0);
+    NVIC_EnableIRQ(irq);
+  }
 }
 
 
@@ -622,5 +630,15 @@ void TC3_Handler() {
   }
 }
 
+
+void EIC_Handler() {
+  auto intflag = EIC->INTFLAG.reg;
+  EIC->INTFLAG.reg = intflag;
+
+  if (intflag & EIC_INTFLAG_EXTINT9) {
+    isrOtherSync(TriggerInput::O.read());
+  }
+  return;
+}
 
 #endif // __SAMD21__

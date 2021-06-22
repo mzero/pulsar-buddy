@@ -9,6 +9,7 @@ extern void isrMeasure();
 extern void isrMidiClock();
 extern void isrClockCapture(q_t);
 extern void isrWatchdog();
+extern void isrOtherSync(bool);
 
 
 typedef uint16_t divisor_t;     // the quantum timer has a 16 bit counter

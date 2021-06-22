@@ -332,6 +332,8 @@ void isrClockCapture(q_t sequenceSample) {
 }
 
 
+void isrOtherSync(bool otherState) {
+}
 
 ClockStatus ClockStatus::current() {
   static auto updateAt = millis() - 1; // ensure update the first time
