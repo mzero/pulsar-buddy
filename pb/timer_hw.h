@@ -29,6 +29,7 @@ private:
 
 
 void readCounts(Offsets&);
+q_t  readSequenceCount();
 void writeCounts(const Offsets&);
 void writePeriods(const Timing&, divisor_t);
 void updateWidths(divisor_t, const Timing&);

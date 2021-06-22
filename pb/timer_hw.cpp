@@ -322,6 +322,14 @@ void readCounts(Offsets& counts) {
   counts.countT = tupletTcc->COUNT.reg;
 }
 
+q_t readSequenceCount() {
+  sync(sequenceTcc, TCC_SYNCBUSY_CTRLB);
+  sequenceTcc->CTRLBSET.reg = TCC_CTRLBSET_CMD_READSYNC;
+  while (sequenceTcc->CTRLBSET.bit.CMD);
+  sync(sequenceTcc, TCC_SYNCBUSY_COUNT);
+  return sequenceTcc->COUNT.reg;
+}
+
 void writeCounts(const Offsets& counts) {
   // sync as a group - though quantum is stopped, so shouldn't matter
   sync(sequenceTcc, TCC_SYNCBUSY_COUNT | TCC_SYNCBUSY_CC2 | TCC_SYNCBUSY_CC3);
