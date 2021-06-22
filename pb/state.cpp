@@ -56,6 +56,8 @@ namespace {
   template <typename T, uint32_t currentVersion, size_t maxSize>
   bool Container<T, currentVersion, maxSize>::
     begin(uint32_t startSector, uint32_t sectorCount) {
+      static_assert(sizeof(T) <= maxSize);
+
       _log.begin(startSector, sectorCount);
 
       _box._magic = 0;
