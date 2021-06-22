@@ -89,6 +89,35 @@ namespace {
     runningDivisorMax = divisorFromBpm(low * 0.95f);
   }
 
+  /** OtherSync **/
+
+  OtherSyncMode otherSyncMode = otherSyncNone;
+  q_t           otherSyncAlignment = 0;
+
+  void recomputeAlignment() {
+    q_t base = 0;
+
+    switch (otherSyncMode) {
+      case otherSyncAlignBeat:     base = 1 * Q_PER_B;             break;
+      case otherSyncAlign2Beat:    base = 2 * Q_PER_B;             break;
+      case otherSyncAlign4Beat:    base = 4 * Q_PER_B;             break;
+      case otherSyncAlignMeasure:  base = activeTiming.periodM;    break;
+      case otherSyncAlignSequence: base = activeTiming.periodS;    break;
+      default:
+        otherSyncAlignment = 0;
+        return;
+    }
+
+    // quick GCD calculation here
+    q_t a = activeTiming.periodS;
+    q_t b = base;
+    while (b > 0) {
+      q_t r = a % b;
+      a = b;
+      b = r;
+    }
+    otherSyncAlignment = a;
+  }
 
 
   /** EXTERNAL CLOCK FREQ ESTIMATOR & PHASE LOCKED LOOP **/
@@ -147,6 +176,28 @@ namespace {
       }
       pendingExternalClocksPerBeatChange = false;
     }
+  }
+
+  void alignPosition(q_t m) {
+    if (m == 0) return;   // just to be safe
+
+    q_t s = readSequenceCount();
+    bool upcomingClk = 2*(s % captureClkQ) >= captureClkQ;
+
+    q_t p = currentPosition;
+    if (upcomingClk)      // if an external clock is about to happen
+      p += captureClkQ;   // then lets align where that is going to be
+
+    // find the place the sequence should be now
+    q_t r = p % m;
+    p -= r;               // align to multiple
+    if (2*r > m)          // if position was closer to next multiple
+      p += m;             // then place it there
+
+    if (upcomingClk)      // if an external clock is about to happen
+      p -= captureClkQ;   // then say we are just before it
+
+    currentPosition = (p + captureSequencePeriod) % captureSequencePeriod;
   }
 
   inline void setClockRate(int perBeat) {
@@ -333,6 +384,35 @@ void isrClockCapture(q_t sequenceSample) {
 
 
 void isrOtherSync(bool otherState) {
+  switch (otherSyncMode) {
+    case otherSyncNone:
+      break;
+
+    case otherSyncRunStop:
+      if (otherState) setPosition(0);
+      // fall through
+    case otherSyncRunPause:
+      setStopped(!otherState);
+      break;
+
+    case otherSyncRunStopToggle:
+      if (otherState)
+        if (clockStopped) setPosition(0);
+      // fall through
+    case otherSyncRunPauseToggle:
+      if (otherState)
+        setStopped(!clockStopped);
+      break;
+
+    case otherSyncAlignBeat:
+    case otherSyncAlign2Beat:
+    case otherSyncAlign4Beat:
+    case otherSyncAlignMeasure:
+    case otherSyncAlignSequence:
+      // alignment has already been computed (as GCD of mode and sequence)
+      alignPosition(otherSyncAlignment);
+      break;
+  }
 }
 
 ClockStatus ClockStatus::current() {
@@ -406,6 +486,11 @@ void setSync(SyncMode sync) {
   setStopped(false);  // reset stopped state when changing sync
 }
 
+void setOtherSync(OtherSyncMode o) {
+  otherSyncMode = o;
+  recomputeAlignment();
+}
+
 void setTiming(const State& state) {
   computePeriods(state, activeTiming);
   {
@@ -418,6 +503,7 @@ void setTiming(const State& state) {
       writeCounts(counts);
     }
     writePeriods(activeTiming, targetDivisor);
+    recomputeAlignment();
   }
 }
 

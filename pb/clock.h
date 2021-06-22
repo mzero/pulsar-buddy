@@ -57,6 +57,7 @@ void setBpm(bpm_t);
   // if sync'd, this resets the current BPM, but system will immediately try to
   // sync back to externally driven tempo.
 void setSync(SyncMode);
+void setOtherSync(OtherSyncMode);
 void setTiming(const State&);
 void setPosition(q_t position);
 
