@@ -58,6 +58,10 @@ void TriggerInput::initialize() {
   pinPeripheral(pin, PIO_EXTINT);
 }
 
+bool TriggerInput::read() {
+  return digitalRead(pin) == LOW;     // inputs are inverted
+}
+
 
 // TEST MODE OPERATION
 

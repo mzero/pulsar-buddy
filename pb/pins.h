@@ -28,6 +28,7 @@ private:
 class TriggerInput {
 public:
   void initialize();
+  bool read();
 
   void testInitialize();
   bool testRead();
