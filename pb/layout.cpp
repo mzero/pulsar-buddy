@@ -117,14 +117,15 @@ namespace {
   auto fieldSync
     = SyncField(19, 0, 15, 32, userState());
 
+  auto fieldOtherSync
+    = OtherSyncField(41, 0, 70, 12, userState());
+
   constexpr int16_t x_pins = 37;
   constexpr int16_t x_pin_width = 16;
   constexpr int16_t x_pinT = x_pins + 0 * x_pin_width;
   constexpr int16_t x_pinB = x_pins + 1 * x_pin_width;
   constexpr int16_t x_pinM = x_pins + 2 * x_pin_width;
   constexpr int16_t x_pinS = x_pins + 3 * x_pin_width;
-
-  const int16_t x_pw = x_pins + 4;
 
   auto pulseWitdhT = PulseWidthField(x_pinT + 4, 19, 15, 12, userState().pulseWidthT);
   auto pulseWitdhB = PulseWidthField(x_pinB + 4, 19, 15, 12, userState().pulseWidthB);
@@ -134,6 +135,7 @@ namespace {
   const std::initializer_list<Field*> setupFields =
     { &fieldReturnToMain,
       &fieldSync,
+      &fieldOtherSync,
       &pulseWitdhT,
       &pulseWitdhB,
       &pulseWitdhM,

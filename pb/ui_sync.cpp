@@ -245,6 +245,81 @@ void SyncField::redraw() {
 }
 
 
+/**
+ **  OtherSync Field
+ **/
+
+bool OtherSyncField::isOutOfDate() {
+  return
+    (syncAsDrawn != pendingSync)
+    || Field::isOutOfDate();
+}
+
+void OtherSyncField::enter(bool alternate) {
+  pendingSync = state.otherSyncMode;
+  pending = true;
+}
+
+void OtherSyncField::exit() {
+  state.otherSyncMode = pendingSync;
+  pending = false;
+  setOtherSync(state.otherSyncMode);
+}
+
+namespace {
+  struct OtherSyncInfo {
+    OtherSyncMode mode;
+    const char *  text;
+  };
+
+  OtherSyncInfo otherSyncOptions[] = {
+    { otherSyncNone,            "--" },
+
+    { otherSyncRunStop,         "din START" },
+    { otherSyncRunPause,        "din RUN" },
+    { otherSyncRunStopToggle,   "trig START" },
+    { otherSyncRunPauseToggle,  "trig RUN" },
+
+    { otherSyncAlignBeat,       "align 4" },
+    { otherSyncAlign2Beat,      "align 2" },
+    { otherSyncAlign4Beat,      "align 1" },
+    { otherSyncAlignMeasure,    "align M" },
+    { otherSyncAlignSequence,   "align S" },
+  };
+
+  const int numotherSyncOptions = sizeof(otherSyncOptions) / sizeof(otherSyncOptions[0]);
+
+  int findOtherSyncModeIndex(OtherSyncMode sync) {
+    for (int i = 0; i < numotherSyncOptions; ++i) {
+      if (sync == otherSyncOptions[i].mode)
+        return i;
+    }
+    return -1;
+  }
+}
+
+void OtherSyncField::update(Encoder::Update update) {
+  int i = findOtherSyncModeIndex(pendingSync);
+  int j = constrain(i + update.dir(), 0, numotherSyncOptions - 1);
+  pendingSync = otherSyncOptions[j].mode;
+}
+
+void OtherSyncField::redraw() {
+  auto s = pending ? pendingSync : state.otherSyncMode;
+
+  smallText();
+  display.setTextColor(foreColor());
+
+  int i = findOtherSyncModeIndex(s);
+  if (i >= 0)
+    centerText(otherSyncOptions[i].text, x, y, w, h);
+  else
+    centerText("?", x, y, w, h);
+  syncAsDrawn = s;
+
+  resetText();
+}
+
 namespace ReturnImage {
   const unsigned char returnArrow[] = { // 15 x 22
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x38, 0x00, 0x38, 0x00, 0x38,

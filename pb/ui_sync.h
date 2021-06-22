@@ -51,6 +51,31 @@ private:
 };
 
 
+class OtherSyncField : public Field {
+public:
+  OtherSyncField(int16_t x, int16_t y, uint16_t w, uint16_t h, State& state)
+    : Field(x, y, w, h), state(state), pending(false)
+    { }
+
+    virtual void enter(bool);
+    virtual void exit();
+
+    virtual void update(Encoder::Update);
+
+protected:
+    virtual bool isOutOfDate();
+    virtual void redraw();
+
+private:
+    State& state;
+
+    bool pending;
+    OtherSyncMode pendingSync;
+    OtherSyncMode syncAsDrawn;
+};
+
+
+
 class ReturnField : public Field {
 public:
   ReturnField(int16_t x, int16_t y, uint16_t w, uint16_t h)
