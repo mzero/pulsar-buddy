@@ -60,6 +60,21 @@ enum OutputMode : uint8_t {
   otuputTuplet    = 0x03,
 };
 
+enum OtherSyncMode : uint8_t {
+  otherSyncNone               = 0x00,
+
+  otherSyncRunStop            = 0x40,
+  otherSyncRunPause           = 0x41,
+  otherSyncRunStopToggle      = 0x42,
+  otherSyncRunPauseToggle     = 0x43,
+
+  otherSyncAlignBeat          = 0x81,
+  otherSyncAlign2Beat         = 0x82,
+  otherSyncAlign4Beat         = 0x84,
+  otherSyncAlignMeasure       = 0xC0,
+  otherSyncAlignSequence      = 0xC1
+};
+
 struct State {
   Settings    settings;
   uint8_t     memoryIndex;
@@ -76,6 +91,9 @@ struct State {
   OutputMode  outputModeM = outputMeasure;
   OutputMode  outputModeB = outputBeat;
   OutputMode  outputModeT = otuputTuplet;
+
+  // FIXME: added during dev
+  OtherSyncMode otherSyncMode;
 };
 
 // Settings and the memory index are buffered:
