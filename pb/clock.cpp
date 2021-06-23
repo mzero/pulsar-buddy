@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "config.h"
+#include "pins.h"
 #include "timer_hw.h"
 
 #define DEBUG_CAPTURE 0
@@ -489,6 +490,23 @@ void setSync(SyncMode sync) {
 void setOtherSync(OtherSyncMode o) {
   otherSyncMode = o;
   recomputeAlignment();
+
+  bool run;
+  switch(otherSyncMode) {
+    case otherSyncRunPause:
+    case otherSyncRunStop:
+      run = TriggerInput::O.read();
+      break;
+
+    case otherSyncRunPauseToggle:
+    case otherSyncRunStopToggle:
+      run = false;
+      break;
+
+    default:
+      run = true;
+  }
+  setStopped(!run);
 }
 
 void setTiming(const State& state) {
