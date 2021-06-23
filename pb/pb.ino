@@ -55,6 +55,7 @@ void setup() {
 
   setBpm(userState().userBpm);
   setSync(userState().syncMode);
+  setOtherSync(userState().otherSyncMode);
   setTiming(userState());
   setPosition(0);
 
