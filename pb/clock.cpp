@@ -179,11 +179,8 @@ namespace {
     }
   }
 
-  void alignPosition(q_t m) {
+  void alignPosition(bool upcomingClk, q_t m) {
     if (m == 0) return;   // just to be safe
-
-    q_t s = readSequenceCount();
-    bool upcomingClk = 2*(s % captureClkQ) >= captureClkQ;
 
     q_t p = currentPosition;
     if (upcomingClk)      // if an external clock is about to happen
@@ -416,8 +413,15 @@ void isrOtherSync(bool otherState) {
     case otherSyncAlignMeasure:
     case otherSyncAlignSequence:
       // alignment has already been computed (as GCD of mode and sequence)
-      if (otherState)
-        alignPosition(otherSyncAlignment);
+      if (otherState && otherSyncAlignment && captureLastSampleValid) {
+        q_t s = readSequenceCount();
+        q_t qdiff = (s + captureSequencePeriod - captureLastSample)
+          % captureSequencePeriod;
+ 
+ 
+        bool upcomingClk = 2*qdiff >= captureClkQ;
+        alignPosition(upcomingClk, otherSyncAlignment);
+      }
       break;
   }
 }
