@@ -29,6 +29,7 @@ namespace {
        enum Type {
             watchdog,
             clock,
+            osync,
         };
 
       inline DebugIsr(Type t) {
@@ -85,6 +86,11 @@ namespace {
     inline DebugClockIsr() : DebugIsr(clock) { }
   };
 
+  class DebugOtherSyncIsr : public DebugIsr {
+  public:
+    inline DebugOtherSyncIsr() : DebugIsr(osync) { }
+  };
+
   DebugIsr::Entry DebugIsr::history[DebugIsr::historySize];
   int DebugIsr::historyFirst = 0;
   int DebugIsr::historyNext = 0;
@@ -94,6 +100,7 @@ namespace {
     switch (t) {
       case watchdog:  return "w-dog";
       case clock:     return "clock";
+      case osync:     return "o-syn";
       default:        return "???";
     }
   }
@@ -161,6 +168,7 @@ namespace {
   };
   typedef DebugIsr DebugWatchdogIsr;
   typedef DebugIsr DebugClockIsr;
+  typedef DebugIsr DebugOtherSyncIsr;
 
 #endif
 

@@ -382,6 +382,8 @@ void isrClockCapture(q_t sequenceSample) {
 
 
 void isrOtherSync(bool otherState) {
+  DebugOtherSyncIsr debug;
+
   static unsigned long ignoreUntil = 0;
   unsigned long now = millis();
   if (now < ignoreUntil) return;
@@ -421,6 +423,10 @@ void isrOtherSync(bool otherState) {
  
         bool upcomingClk = 2*qdiff >= captureClkQ;
         alignPosition(upcomingClk, otherSyncAlignment);
+
+        debug.noteQDiff(qdiff);
+        debug.noteDNext(upcomingClk);
+        debug.noteDFilt(currentPosition);
       }
       break;
   }
