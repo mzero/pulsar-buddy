@@ -416,7 +416,8 @@ void isrOtherSync(bool otherState) {
     case otherSyncAlignMeasure:
     case otherSyncAlignSequence:
       // alignment has already been computed (as GCD of mode and sequence)
-      alignPosition(otherSyncAlignment);
+      if (otherState)
+        alignPosition(otherSyncAlignment);
       break;
   }
 }
