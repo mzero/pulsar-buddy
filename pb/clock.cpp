@@ -385,6 +385,11 @@ void isrClockCapture(q_t sequenceSample) {
 
 
 void isrOtherSync(bool otherState) {
+  static unsigned long ignoreUntil = 0;
+  unsigned long now = millis();
+  if (now < ignoreUntil) return;
+  ignoreUntil = now + 30;   // very cheap-ass debouncing
+
   switch (otherSyncMode) {
     case otherSyncNone:
       break;
