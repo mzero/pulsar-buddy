@@ -364,8 +364,8 @@ namespace {
     { otherSyncAlignBeat,       OtherSyncImages::align1 },
     { otherSyncAlign2Beat,      OtherSyncImages::align2 },
     { otherSyncAlign4Beat,      OtherSyncImages::align4 },
-    { otherSyncAlignMeasure,    OtherSyncImages::alignM1 },
-    { otherSyncAlignSequence,   OtherSyncImages::alignS1 },
+    { otherSyncAlignMeasure,    OtherSyncImages::alignM2 },
+    { otherSyncAlignSequence,   OtherSyncImages::alignS2 },
   };
 
   const int numotherSyncOptions = sizeof(otherSyncOptions) / sizeof(otherSyncOptions[0]);
