@@ -118,7 +118,7 @@ namespace {
     = SyncField(19, 0, 15, 32, userState());
 
   auto fieldOtherSync
-    = OtherSyncField(41, 0, 70, 12, userState());
+    = OtherSyncField(111, 0, 15, 32, userState());
 
   constexpr int16_t x_pins = 37;
   constexpr int16_t x_pin_width = 16;
@@ -135,11 +135,11 @@ namespace {
   const std::initializer_list<Field*> setupFields =
     { &fieldReturnToMain,
       &fieldSync,
-      &fieldOtherSync,
       &pulseWitdhT,
       &pulseWitdhB,
       &pulseWitdhM,
-      &pulseWitdhS
+      &pulseWitdhS,
+      &fieldOtherSync
     };
 
 
