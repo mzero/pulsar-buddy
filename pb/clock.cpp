@@ -234,10 +234,14 @@ void isrWatchdog() {
       setState(clockPaused);
       resetWatchdog(4 * Q_PER_B);
 
-      // When the next external clock eventually shows up, it corresponds to
-      // one clock after the last position - so set that position pending.
-      nextPosition = currentPosition + captureClkQ;
-      pendingNextPosition = true;
+      if (!pendingNextPosition) {
+        // When the next external clock eventually shows up, it corresponds to
+        // one clock after the last position - so set that position pending.
+        nextPosition = currentPosition + captureClkQ;
+        pendingNextPosition = true;
+      } else {
+        // Unless there was a next position pending... then just leave it be.
+      }
   }
 }
 
