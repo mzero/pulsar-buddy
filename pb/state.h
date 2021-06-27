@@ -62,6 +62,7 @@ enum OutputMode : uint8_t {
 
 enum OtherSyncMode : uint8_t {
   otherSyncNone               = 0x00,
+  otherSyncNextSettings       = 0x01,
 
   otherSyncRunStop            = 0x40,
   otherSyncRunPause           = 0x41,
@@ -133,6 +134,10 @@ void persistState();
 void loadFromMemory(int index);
 void storeToMemory(int index);
   // memory indexes are numbered from 1, because that's how users roll.
+
+void loadNextMemory();
+  // Sets user state to the next settings from memory after the active memory
+  // slot, wrapping around to the start if needed.
 
 void showMemoryPreview(int index);
 void endMemoryPreview();

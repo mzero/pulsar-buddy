@@ -68,6 +68,9 @@ void stopClock();
 
 void isrClockCapture(q_t);
 void isrWatchdog();
+void isrOtherSync(bool);
+
+extern void isrNextSettings();
 
 
 // Debugging

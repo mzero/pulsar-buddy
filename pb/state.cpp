@@ -272,6 +272,14 @@ void storeToMemory(int index) {
   storageContainer.save();
 }
 
+void loadNextMemory() {
+  int i = _activeState.memoryIndex;
+  i = i - 1; // make zero based
+  i = (i + 1) % Storage::numSlots;
+  i = i + 1; // make one based
+  loadFromMemory(i);
+}
+
 void showMemoryPreview(int index) {
   if (!previewActive) {
     _savedUserState = _userState;

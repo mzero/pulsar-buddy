@@ -21,6 +21,12 @@ void isrMeasure() {
   measureEvent = true;
 }
 
+volatile bool nextSettingsEvent = false;
+
+void isrNextSettings() {
+  nextSettingsEvent = true;
+}
+
 extern "C" char* sbrk(int incr);
 
 uint32_t sramUsed() {
@@ -86,6 +92,11 @@ void loop() {
     active = true;
   }
   persistState();
+
+  if (nextSettingsEvent) {
+    loadNextMemory();
+    nextSettingsEvent = false;
+  }
 
   bool checkPending = measureEvent || !advancing;
   measureEvent = false;

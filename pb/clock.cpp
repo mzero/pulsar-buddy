@@ -419,8 +419,7 @@ void isrOtherSync(bool otherState) {
         q_t s = readSequenceCount();
         q_t qdiff = (s + captureSequencePeriod - captureLastSample)
           % captureSequencePeriod;
- 
- 
+
         bool upcomingClk = 2*qdiff >= captureClkQ;
         alignPosition(upcomingClk, otherSyncAlignment);
 
@@ -428,6 +427,10 @@ void isrOtherSync(bool otherState) {
         debug.noteDNext(upcomingClk);
         debug.noteDFilt(currentPosition);
       }
+      break;
+
+    case otherSyncNextSettings:
+      isrNextSettings();
       break;
   }
 }
