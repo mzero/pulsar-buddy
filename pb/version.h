@@ -1,10 +1,21 @@
 #ifndef _INCLUDE_VERSION_H_
 #define _INCLUDE_VERSION_H_
 
-#define PB_DEVELOPMENT
-//#define PB_BETA
+//#define PB_DEVELOPMENT
+#define PB_BETA
 
 #define PB_VERSION 108
+/* 2021-06-27
+  - bugs:
+    - sync to 1/4, and DIN 48 didn't work due to silly selection bug
+    - occasionally clock pulse would be dropped causing the timing to slip
+      by that amount, fixed by making interrupt handling more robust
+  - features:
+    - New options for the O input:
+      - start/stop signal (DIN styles, and toggle button styles)
+      - align to some larger metric boundry on trigger
+      - advance to next memory settings
+*/
 
 // PB_VERSION 107
 /* 2020-10-29
