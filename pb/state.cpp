@@ -97,9 +97,12 @@ namespace {
   bool previewActive = false;
 
 
-  typedef State State_v2;
+  typedef State State_v3;
 
-  typedef Container<State_v2, 2, 40> StateContainer;
+  typedef State State_v2;
+    // it is the same except for the added fields
+
+  typedef Container<State_v3, 3, 40> StateContainer;
   StateContainer stateContainer;
 
   struct State_v1 {
@@ -110,7 +113,13 @@ namespace {
     uint16_t    reserved;
   };
 
-  bool upgrade(State_v2& s, const State_v1& u) {
+  bool upgrade2to3(State_v3& s, const State_v2& u) {
+    s = u;
+    s.otherSyncMode = otherSyncNone;
+    return true;
+  }
+
+  bool upgrade1to3(State_v3& s, const State_v1& u) {
     s.settings = u.settings;
     s.memoryIndex = u.memoryIndex;
     s.syncMode = u.syncMode;
@@ -124,15 +133,19 @@ namespace {
     s.outputModeM = outputMeasure;
     s.outputModeB = outputBeat;
     s.outputModeT = otuputTuplet;
+    s.otherSyncMode = otherSyncNone;
     return true;
   }
 
+
+
   template<>
-  bool upgrade(State_v2& s, uint32_t version, const uint8_t* bytes) {
+  bool upgrade(State_v3& s, uint32_t version, const uint8_t* bytes) {
     switch (version) {
-      case 1: {
-        return upgrade(s, *reinterpret_cast<const State_v1*>(bytes));
-      }
+      case 1:
+        return upgrade1to3(s, *reinterpret_cast<const State_v1*>(bytes));
+      case 2:
+        return upgrade2to3(s, *reinterpret_cast<const State_v2*>(bytes));
     }
     return false;
   }
@@ -319,7 +332,7 @@ void initializeState() {
     if (oldStateLog.begin(0, 8)) {
       State_v1 oldState;
       if (oldStateLog.load(oldState)) {
-        if (upgrade(_flashState, oldState)) {
+        if (upgrade1to3(_flashState, oldState)) {
           stateContainer.save();
           stateLoaded = true;
         }

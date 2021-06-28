@@ -93,7 +93,7 @@ struct State {
   OutputMode  outputModeB = outputBeat;
   OutputMode  outputModeT = otuputTuplet;
 
-  // FIXME: added during dev
+  // added in V3
   OtherSyncMode otherSyncMode;
 };
 
