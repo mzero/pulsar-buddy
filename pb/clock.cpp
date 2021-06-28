@@ -515,21 +515,37 @@ void setOtherSync(OtherSyncMode o) {
   recomputeAlignment();
 
   bool run;
+  bool reset = false;
+
   switch(otherSyncMode) {
-    case otherSyncRunPause:
     case otherSyncRunStop:
+      reset = true;
+      // fall through
+    case otherSyncRunPause:
       run = TriggerInput::O.read();
       break;
 
-    case otherSyncRunPauseToggle:
     case otherSyncRunStopToggle:
+      reset = true;
+      // fall through
+    case otherSyncRunPauseToggle:
       run = false;
       break;
 
     default:
       run = true;
   }
+
+  if (clockStopped && reset) {
+    // if clock is alrady stopped, reset now before possible starting
+    setPosition(0);
+    reset = false;
+  }
+
   setStopped(!run);
+
+  if (reset)
+    setPosition(0);
 }
 
 void setTiming(const State& state) {
