@@ -136,15 +136,11 @@ namespace {
       if (redraw) {
         drawConfiguration();
         redraw = false;
+      }
 
-#ifdef SCREENSHOT_CONFIG_SCREEN
-        static bool firstTime = true;
-        if (firstTime) {
-          while (!Serial);
-          dumpDisplayPBM(Serial);
-          firstTime = false;
-        }
-#endif
+      if (oledButtonA.update() == Button::Down) {
+        // while (!Serial);  // ensure it is set up
+        dumpDisplayPBM(Serial);
       }
 
       auto update = encoder.update();
