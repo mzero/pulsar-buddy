@@ -176,14 +176,22 @@ void dumpDisplayPBM(Print& stream) {
   stream.println("");
   stream.println("P1");
 
-  auto w = display.width();
-  auto h = display.height();
+  const int w = display.width();
+  const int h = display.height();
+  const int border = 6;
+  const int jbegin = 0 - border;
+  const int jend = h + border;
+  const int ibegin = 0 - border;
+  const int iend = w + border;
 
-  stream.print(w); stream.print(' '); stream.println(h);
+  stream.print(w + 2*border); stream.print(' '); stream.println(h + 2*border);
 
-  for (auto j = 0; j < h; ++j) {
-    for (auto i = 0; i < w; ++i) {
-      stream.print(display.getPixel(i, j) == WHITE ? " 0" : " 1");
+  for (int j = jbegin; j < jend; ++j) {
+    for (int i = ibegin; i < iend; ++i) {
+      bool p = (0 <= j && j < h && 0 <= i && i < w)
+        ? display.getPixel(i, j)
+        : BLACK;
+      stream.print(p == WHITE ? " 0" : " 1");
         // 1 is black in PBM
     }
     stream.println("");
